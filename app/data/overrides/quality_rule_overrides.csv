@@ -1,0 +1,1 @@
+source_table_name,source_field_name,rule_type,original_rule_expression,final_rule_expression,original_severity,final_severity,review_action,reviewer_note,reviewed_at,source

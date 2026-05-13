@@ -1,0 +1,28 @@
+technical_intermediate:
+  - tmp
+  - temp
+  - mid
+  - stg
+  - stage
+  - cache
+log_table:
+  - log
+  - logfile
+  - trace
+  - audit
+backup_table:
+  - bak
+  - backup
+  - bck
+historical_table:
+  - hist
+  - history
+  - archive
+  - snapshot
+ods_table:
+  - ods
+sync_table:
+  - sync
+  - etl
+  - job
+  - task

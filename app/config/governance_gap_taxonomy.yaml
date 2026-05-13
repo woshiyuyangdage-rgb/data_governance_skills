@@ -1,0 +1,38 @@
+gaps:
+  - gap_type: metadata_completion_gap
+    sources:
+      - missing_table_description
+      - missing_field_description
+      - missing_field_cn_name
+    category: metadata
+
+  - gap_type: naming_standardization_gap
+    sources:
+      - naming_standard_defect
+      - naming_contains_disallowed_prefix
+      - naming_not_snake_case
+    category: standardization
+
+  - gap_type: standard_mapping_gap
+    sources:
+      - standard_mapping_missing
+      - standard_mapping_low_confidence
+    category: mapping
+
+  - gap_type: structural_standardization_gap
+    sources:
+      - stg_field_low_confidence
+      - stg_table_requires_manual_review
+    category: structure
+
+  - gap_type: quality_rule_gap
+    sources:
+      - quality_rule_not_recommended
+      - quality_rule_low_confidence
+    category: quality
+
+  - gap_type: review_backlog_gap
+    sources:
+      - manual_review
+      - low_confidence_review
+    category: review

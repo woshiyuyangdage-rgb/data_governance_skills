@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+streamlit
+pydantic
+pandas
+openpyxl
+pyyaml
+pytest

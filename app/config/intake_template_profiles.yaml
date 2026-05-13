@@ -1,0 +1,93 @@
+profiles:
+  - profile_name: standard_metadata_template
+    enabled: true
+    description: Standard normalized metadata table/field input
+    file_types: [xlsx, csv]
+    sheet_candidates: [data, metadata, table_fields]
+    required_target_fields:
+      - table_name
+      - field_name
+    optional_target_fields:
+      - table_name_cn
+      - table_description
+      - schema_name
+      - system_name
+      - field_name_cn
+      - field_description
+      - data_type
+      - nullable
+    mapping_spec_name: standard_metadata_spec
+
+  - profile_name: governance_platform_export_template
+    enabled: true
+    description: Typical metadata export from governance platform
+    file_types: [xlsx, csv]
+    sheet_candidates: [导出结果, metadata_export, data]
+    required_target_fields:
+      - table_name
+      - field_name
+    optional_target_fields:
+      - table_name_cn
+      - table_description
+      - schema_name
+      - system_name
+      - field_name_cn
+      - field_description
+      - data_type
+      - nullable
+    mapping_spec_name: governance_platform_export_spec
+
+  - profile_name: manual_inventory_template
+    enabled: true
+    description: Manual metadata inventory worksheet
+    file_types: [xlsx, csv]
+    sheet_candidates: [盘点表, inventory, data]
+    required_target_fields:
+      - table_name
+      - field_name
+    optional_target_fields:
+      - table_name_cn
+      - table_description
+      - schema_name
+      - system_name
+      - field_name_cn
+      - field_description
+      - data_type
+      - nullable
+    mapping_spec_name: manual_inventory_spec
+
+  - profile_name: mapping_confirmation_template
+    enabled: true
+    description: Mapping confirmation workbook that can provide metadata-like columns
+    file_types: [xlsx, csv]
+    sheet_candidates: [mapping_confirmation, mapping, data]
+    required_target_fields:
+      - table_name
+      - field_name
+    optional_target_fields:
+      - table_name_cn
+      - schema_name
+      - system_name
+      - field_name_cn
+      - field_description
+      - data_type
+      - nullable
+    mapping_spec_name: standard_metadata_spec
+
+  - profile_name: quality_rule_confirmation_template
+    enabled: true
+    description: Quality rule confirmation workbook that can provide metadata-like columns
+    file_types: [xlsx, csv]
+    sheet_candidates: [quality_rule_confirmation, quality_rules, data]
+    required_target_fields:
+      - table_name
+      - field_name
+    optional_target_fields:
+      - schema_name
+      - system_name
+      - field_name_cn
+      - field_description
+      - data_type
+      - nullable
+    mapping_spec_name: standard_metadata_spec
+

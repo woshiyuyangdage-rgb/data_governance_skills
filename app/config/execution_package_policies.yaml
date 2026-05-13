@@ -1,0 +1,38 @@
+package_policy:
+  include_only_confirmed_rules: true
+  include_manual_review_rules: false
+  include_trace_metadata: true
+  include_export_hints: true
+
+execution_priority_map:
+  high: P1
+  medium: P2
+  low: P3
+
+default_execution_mode:
+  not_null: batch_validation
+  uniqueness: batch_validation
+  value_set: batch_validation
+  numeric_range: batch_validation
+  length_range: batch_validation
+  date_format: batch_validation
+  regex_format: batch_validation
+  reference_hint: advisory_only
+  temporal_order: batch_validation
+  paired_presence: batch_validation
+  conditional_presence_hint: advisory_only
+  reference_consistency_hint: advisory_only
+  identifier_presence_group: advisory_only
+  amount_currency_pair: advisory_only
+  transaction_date_presence: advisory_only
+  code_name_pair: advisory_only
+
+engine_compatibility:
+  dbt:
+    enabled: true
+  great_expectations:
+    enabled: false
+  soda:
+    enabled: false
+  custom_json:
+    enabled: true

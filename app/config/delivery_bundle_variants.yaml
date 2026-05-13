@@ -1,0 +1,34 @@
+variants:
+  - variant_name: standard_delivery_bundle
+    enabled: true
+    description: Standard governance delivery bundle
+    included_outputs:
+      - mapping_confirmation_workbook
+      - stg_confirmation_workbook
+      - quality_rule_confirmation_workbook
+      - backlog_delivery_workbook
+      - governance_delivery_manifest
+
+  - variant_name: business_confirmation_bundle
+    enabled: true
+    description: Business-oriented confirmation bundle
+    included_outputs:
+      - mapping_confirmation_workbook
+      - quality_rule_confirmation_workbook
+      - governance_delivery_manifest
+
+  - variant_name: architecture_design_bundle
+    enabled: true
+    description: Architecture-oriented design bundle
+    included_outputs:
+      - stg_confirmation_workbook
+      - execution_ready_package
+      - governance_delivery_manifest
+
+  - variant_name: quality_rule_build_bundle
+    enabled: true
+    description: Quality rule build bundle
+    included_outputs:
+      - quality_rule_confirmation_workbook
+      - execution_ready_package
+      - governance_delivery_manifest

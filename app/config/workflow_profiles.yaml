@@ -1,0 +1,435 @@
+profiles:
+  - name: run_project_template
+    enabled: true
+    description: Run a project template that applies workflow, output, review, and domain defaults
+    stages:
+      - project_template_apply
+      - base_workflow_run
+    supports_review_replay: true
+    default_report_mode: package
+
+  - name: diagnose_confirmation_template
+    enabled: true
+    description: Diagnose a confirmation workbook template before import
+    stages:
+      - confirmation_template_diagnosis
+    supports_review_replay: false
+    default_report_mode: import
+
+  - name: import_confirmation_with_template
+    enabled: true
+    description: Import a confirmation workbook using template-specific column mapping
+    stages:
+      - confirmation_template_diagnosis
+      - workbook_import
+      - roundtrip_merge
+    supports_review_replay: false
+    default_report_mode: import
+
+  - name: import_confirmation_template_and_rerun
+    enabled: true
+    description: Import a templated confirmation workbook and prepare changed-object rerun scope
+    stages:
+      - confirmation_template_diagnosis
+      - workbook_import
+      - roundtrip_merge
+      - changed_object_rerun_scope
+    supports_review_replay: false
+    default_report_mode: rerun
+
+  - name: metadata_diagnosis_only
+    enabled: true
+    description: Run metadata diagnosis only
+    stages:
+      - diagnosis
+    supports_review_replay: false
+    default_report_mode: diagnosis
+
+  - name: diagnosis_plus_mapping
+    enabled: true
+    description: Run diagnosis and standard mapping
+    stages:
+      - diagnosis
+      - mapping
+    supports_review_replay: false
+    default_report_mode: mapping
+
+  - name: diagnosis_mapping_stg
+    enabled: true
+    description: Run diagnosis, mapping, and STG suggestion
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+    supports_review_replay: false
+    default_report_mode: stg
+
+  - name: diagnosis_mapping_stg_with_review
+    enabled: true
+    description: Run diagnosis, mapping, STG suggestion, and apply review overrides
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - review_replay
+    supports_review_replay: true
+    default_report_mode: confirmed
+
+  - name: diagnosis_mapping_stg_quality
+    enabled: true
+    description: Run diagnosis, mapping, STG suggestion, and quality rule recommendation
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+    supports_review_replay: false
+    default_report_mode: quality
+
+  - name: diagnosis_mapping_stg_quality_with_review
+    enabled: true
+    description: Run diagnosis, mapping, STG suggestion, quality rule recommendation, and apply review overrides
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+    supports_review_replay: true
+    default_report_mode: confirmed
+
+  - name: diagnosis_mapping_stg_quality_package
+    enabled: true
+    description: Run diagnosis, mapping, STG suggestion, quality rule recommendation, and build the execution-ready package layer
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - execution_package_build
+    supports_review_replay: false
+    default_report_mode: package
+
+  - name: diagnosis_mapping_stg_quality_package_with_review
+    enabled: true
+    description: Run diagnosis, mapping, STG, quality review replay, and build the execution-ready package layer
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+    supports_review_replay: true
+    default_report_mode: package
+
+  - name: governance_readiness_assessment
+    enabled: true
+    description: Run quality intelligence, package build, readiness assessment, and gap classification
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+    supports_review_replay: false
+    default_report_mode: readiness
+
+  - name: governance_readiness_assessment_with_review
+    enabled: true
+    description: Run quality review replay, package build, readiness assessment, and remediation planning
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+    supports_review_replay: true
+    default_report_mode: readiness
+
+  - name: full_governance_work_package
+    enabled: true
+    description: Build the full governance readiness and remediation work package
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+    supports_review_replay: true
+    default_report_mode: remediation
+
+  - name: governance_backlog_build
+    enabled: true
+    description: Run readiness, remediation planning, and build governance backlog items
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+    supports_review_replay: false
+    default_report_mode: backlog
+
+  - name: governance_backlog_build_with_review
+    enabled: true
+    description: Run review replay, readiness, remediation planning, and backlog build
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+    supports_review_replay: true
+    default_report_mode: backlog
+
+  - name: full_governance_backlog_package
+    enabled: true
+    description: Build the full governance work package and local tracking backlog
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+    supports_review_replay: true
+    default_report_mode: backlog
+
+  - name: governance_portfolio_assessment
+    enabled: true
+    description: Run backlog build, SLA analysis, portfolio aggregation, and progress snapshot
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+      - backlog_sla
+      - portfolio_aggregation
+      - progress_snapshot
+    supports_review_replay: false
+    default_report_mode: portfolio
+
+  - name: full_governance_portfolio_package
+    enabled: true
+    description: Build the full governance backlog package with SLA, portfolio summary, and progress snapshot
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+      - backlog_sla
+      - portfolio_aggregation
+      - progress_snapshot
+    supports_review_replay: true
+    default_report_mode: portfolio
+
+  - name: governance_delivery_package
+    enabled: true
+    description: Build confirmation workbooks and a local governance delivery package
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+      - confirmation_workbook_export
+      - delivery_package_build
+    supports_review_replay: false
+    default_report_mode: package
+
+  - name: governance_delivery_package_with_review
+    enabled: true
+    description: Build reviewed confirmation workbooks and a local governance delivery package
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+      - confirmation_workbook_export
+      - delivery_package_build
+    supports_review_replay: true
+    default_report_mode: package
+
+  - name: confirmation_workbook_only
+    enabled: true
+    description: Export confirmation workbooks for mapping, STG, quality rules, and backlog
+    stages:
+      - diagnosis
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - review_replay
+      - quality_review_replay
+      - execution_package_build
+      - readiness_assessment
+      - gap_classification
+      - remediation_planning
+      - backlog_build
+      - confirmation_workbook_export
+    supports_review_replay: true
+    default_report_mode: workbook
+
+  - name: batch_governance_run
+    enabled: true
+    description: Run multi-file batch governance grouped by configured metadata fields
+    stages:
+      - batch_load
+      - grouping
+      - fingerprint
+      - incremental_diff
+      - rerun_scope_selection
+      - governance_workflow
+    supports_review_replay: true
+    default_report_mode: batch
+
+  - name: batch_incremental_rerun
+    enabled: true
+    description: Run changed-only batch governance using local fingerprint snapshots
+    stages:
+      - batch_load
+      - grouping
+      - fingerprint
+      - incremental_diff
+      - rerun_scope_selection
+      - governance_workflow
+    supports_review_replay: true
+    default_report_mode: incremental
+
+  - name: batch_delivery_package
+    enabled: true
+    description: Run multi-file batch governance and build a delivery package
+    stages:
+      - batch_load
+      - grouping
+      - fingerprint
+      - incremental_diff
+      - rerun_scope_selection
+      - governance_workflow
+      - delivery_package_build
+    supports_review_replay: true
+    default_report_mode: delivery
+
+  - name: import_confirmation_workbook
+    enabled: true
+    description: Import a filled confirmation workbook and merge local updates
+    stages:
+      - workbook_validate
+      - workbook_import
+      - roundtrip_merge
+    supports_review_replay: false
+    default_report_mode: import
+
+  - name: import_and_rerun_changed_objects
+    enabled: true
+    description: Import a confirmation workbook and prepare changed-object rerun scope
+    stages:
+      - workbook_validate
+      - workbook_import
+      - roundtrip_merge
+      - roundtrip_rerun
+    supports_review_replay: false
+    default_report_mode: rerun
+
+  - name: mapping_only
+    enabled: true
+    description: Run standard mapping only
+    stages:
+      - mapping
+    supports_review_replay: false
+    default_report_mode: mapping
+
+  - name: stg_only_from_mapping
+    enabled: true
+    description: Run mapping and STG suggestion without full diagnosis packaging
+    stages:
+      - mapping
+      - stg
+    supports_review_replay: false
+    default_report_mode: stg
+
+  - name: quality_only_from_stg
+    enabled: true
+    description: Run mapping, STG suggestion, and quality rule recommendation without full diagnosis packaging
+    stages:
+      - mapping
+      - stg
+      - quality_rule_recommendation
+    supports_review_replay: false
+    default_report_mode: quality
+
+  - name: quality_only_from_stg_with_review
+    enabled: true
+    description: Run mapping, STG suggestion, quality rule recommendation, and quality review replay without full diagnosis packaging
+    stages:
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - quality_review_replay
+    supports_review_replay: true
+    default_report_mode: confirmed
+
+  - name: quality_package_only_from_confirmed
+    enabled: true
+    description: Run the lightweight quality review chain and build the execution-ready package layer
+    stages:
+      - mapping
+      - stg
+      - quality_rule_recommendation
+      - quality_review_replay
+      - execution_package_build
+    supports_review_replay: true
+    default_report_mode: package

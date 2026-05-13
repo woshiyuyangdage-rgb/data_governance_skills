@@ -1,0 +1,33 @@
+keywords:
+  - 临时
+  - 历史
+  - 备份
+  - 日志
+  - 审计
+  - 中间
+  - 同步
+  - 归档
+  - cache
+  - staging
+  - archive
+  - snapshot
+category_hints:
+  technical_intermediate:
+    - 临时
+    - 中间
+    - cache
+    - staging
+  log_table:
+    - 日志
+    - 审计
+  backup_table:
+    - 备份
+  historical_table:
+    - 历史
+    - 归档
+    - archive
+    - snapshot
+  sync_table:
+    - 同步
+  ods_table:
+    - staging

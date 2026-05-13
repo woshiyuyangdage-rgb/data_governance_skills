@@ -1,0 +1,27 @@
+default_nullable: true
+default_keep_unmapped_fields: true
+default_stg_name_prefix: stg_
+remove_source_prefixes:
+  - ods_
+  - tmp_
+  - dim_
+  - fct_
+  - dwd_
+  - t_
+  - s_
+technical_field_keywords:
+  - etl_time
+  - sync_time
+  - batch_no
+  - job_id
+  - create_by_task
+  - update_by_task
+audit_field_keywords:
+  - created_date
+  - updated_date
+  - created_by
+  - updated_by
+priority_rules:
+  - mapped_standard_first
+  - normalized_name_second
+  - original_name_last

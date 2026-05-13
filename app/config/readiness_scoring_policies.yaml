@@ -1,0 +1,24 @@
+dimensions:
+  metadata_readiness:
+    weight: 0.25
+  mapping_readiness:
+    weight: 0.20
+  stg_readiness:
+    weight: 0.20
+  quality_rule_readiness:
+    weight: 0.20
+  review_completion_readiness:
+    weight: 0.15
+
+thresholds:
+  ready: 0.80
+  partially_ready: 0.50
+  not_ready: 0.00
+
+scoring_rules:
+  missing_table_description_penalty: 0.1
+  missing_field_description_penalty: 0.05
+  unmapped_field_penalty: 0.08
+  low_confidence_rule_penalty: 0.05
+  manual_review_backlog_penalty: 0.08
+  confirmed_quality_rule_bonus: 0.03

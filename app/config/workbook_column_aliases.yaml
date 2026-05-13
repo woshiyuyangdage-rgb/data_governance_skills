@@ -1,0 +1,50 @@
+aliases:
+  source_table_name:
+    - source_table_name
+    - table_name
+    - source_table
+  source_field_name:
+    - source_field_name
+    - field_name
+    - source_field
+  confirmation_status:
+    - confirmation_status
+    - status
+    - review_status
+  reviewer_note:
+    - reviewer_note
+    - note
+    - reviewer_comments
+    - comments
+  recommended_standard_code:
+    - recommended_standard_code
+    - standard_code
+  recommended_stg_field_name:
+    - recommended_stg_field_name
+    - stg_field_name
+  recommended_data_type:
+    - recommended_data_type
+    - data_type
+  rule_scope:
+    - rule_scope
+    - scope
+  field_group:
+    - field_group
+    - fields
+  rule_type:
+    - rule_type
+    - quality_rule_type
+  rule_expression:
+    - rule_expression
+    - expression
+  severity:
+    - severity
+    - rule_severity
+  backlog_id:
+    - backlog_id
+    - action_id
+  new_status:
+    - new_status
+    - status_update
+    - target_status
+

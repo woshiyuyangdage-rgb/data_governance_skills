@@ -1,0 +1,20 @@
+confirmation_policy:
+  require_confirmation_for_profiles:
+    - diagnosis_mapping_stg
+    - diagnosis_mapping_stg_with_review
+    - diagnosis_mapping_stg_quality
+    - diagnosis_mapping_stg_quality_with_review
+    - quality_only_from_stg
+  auto_run_profiles:
+    - metadata_diagnosis_only
+    - mapping_only
+
+validation_policy:
+  require_file_path: true
+
+session_policy:
+  max_recent_plans: 10
+
+default_behavior:
+  preview_before_run: true
+  allow_force_run_without_confirmation: false

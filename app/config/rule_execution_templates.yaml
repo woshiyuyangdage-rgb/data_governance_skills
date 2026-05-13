@@ -1,0 +1,99 @@
+templates:
+  not_null:
+    semantic_type: completeness
+    execution_expression: value IS NOT NULL
+    engine_hints:
+      dbt: not_null
+      custom_json: not_null_check
+
+  uniqueness:
+    semantic_type: uniqueness
+    execution_expression: values are unique
+    engine_hints:
+      dbt: unique
+      custom_json: uniqueness_check
+
+  value_set:
+    semantic_type: domain_constraint
+    execution_expression: value in accepted set
+    engine_hints:
+      dbt: accepted_values
+      custom_json: value_set_check
+
+  numeric_range:
+    semantic_type: numeric_constraint
+    execution_expression: numeric value within range
+    engine_hints:
+      custom_json: numeric_range_check
+
+  length_range:
+    semantic_type: length_constraint
+    execution_expression: text length within range
+    engine_hints:
+      custom_json: length_range_check
+
+  date_format:
+    semantic_type: temporal_constraint
+    execution_expression: valid date format
+    engine_hints:
+      custom_json: date_format_check
+
+  regex_format:
+    semantic_type: format_constraint
+    execution_expression: matches regex pattern
+    engine_hints:
+      custom_json: regex_check
+
+  reference_hint:
+    semantic_type: referential_advisory
+    execution_expression: reference relationship should be inspected
+    engine_hints:
+      custom_json: reference_hint_check
+
+  temporal_order:
+    semantic_type: cross_field_temporal_constraint
+    execution_expression: left temporal field should be <= right temporal field
+    engine_hints:
+      custom_json: temporal_order_check
+
+  paired_presence:
+    semantic_type: cross_field_presence_constraint
+    execution_expression: paired fields should be present together
+    engine_hints:
+      custom_json: paired_presence_check
+
+  conditional_presence_hint:
+    semantic_type: conditional_presence_advisory
+    execution_expression: key field presence implies companion field presence
+    engine_hints:
+      custom_json: conditional_presence_hint
+
+  reference_consistency_hint:
+    semantic_type: referential_advisory
+    execution_expression: reference fields should be checked for consistency
+    engine_hints:
+      custom_json: reference_consistency_hint
+
+  identifier_presence_group:
+    semantic_type: domain_presence_advisory
+    execution_expression: domain identifier/name fields should be reviewed as a group
+    engine_hints:
+      custom_json: identifier_presence_group_hint
+
+  amount_currency_pair:
+    semantic_type: domain_amount_currency_constraint
+    execution_expression: amount fields should have currency context
+    engine_hints:
+      custom_json: amount_currency_pair_hint
+
+  transaction_date_presence:
+    semantic_type: domain_temporal_presence_advisory
+    execution_expression: transaction records should include key date fields
+    engine_hints:
+      custom_json: transaction_date_presence_hint
+
+  code_name_pair:
+    semantic_type: domain_reference_pair_advisory
+    execution_expression: code/name fields should be reviewed as a pair
+    engine_hints:
+      custom_json: code_name_pair_hint

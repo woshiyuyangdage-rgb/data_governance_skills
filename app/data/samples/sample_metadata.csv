@@ -1,0 +1,13 @@
+table_name,table_name_cn,table_description,schema_name,system_name,field_name,field_name_cn,field_description,data_type,nullable
+customer_master,客户主数据,Active customer master data.,dim,crm,customer_id,客户ID,Unique customer identifier.,varchar,false
+customer_master,客户主数据,Active customer master data.,dim,crm,customer_name,客户名称,Official customer display name.,varchar,false
+customer_master,客户主数据,Active customer master data.,dim,crm,created_dt,创建日期,Creation date of the customer record.,datetime,true
+Sales Order Header,销售订单头,Sales order header from ERP.,mart,erp,Order__ID,订单ID,Order identifier.,string,false
+Sales Order Header,销售订单头,Sales order header from ERP.,mart,erp,Cust ID,客户ID,Customer identifier on order.,string,yes
+Sales Order Header,销售订单头,Sales order header from ERP.,mart,erp,order_status,订单状态,Current order status.,varchar,true
+Sales Order Header,销售订单头,Sales order header from ERP.,mart,erp,order_amt,订单金额,Order amount before settlement.,decimal,false
+ods_customer_snapshot,客户快照,Snapshot extract for customer records.,ods,crm,customer_id,客户ID,Customer identifier,string,0
+ods_customer_snapshot,客户快照,Snapshot extract for customer records.,ods,crm,snapshot_dt,快照日期,Snapshot business date,date,false
+ods_customer_snapshot,客户快照,Snapshot extract for customer records.,ods,crm,batch_no,批次号,ETL batch identifier,bigint,false
+user_audit_log,用户审计日志,System audit log table for internal operations.,ops,security,log_id,日志ID,Audit log identifier,string,false
+user_audit_log,用户审计日志,System audit log table for internal operations.,ops,security,event_trace_code,事件追踪编码,Trace code for audit event.,varchar,false

@@ -1,0 +1,14 @@
+statuses:
+  proposed:
+    description: Suggested but not yet accepted
+  accepted:
+    description: Accepted for governance handling
+  in_progress:
+    description: Governance action is in progress
+  blocked:
+    description: Action is blocked by dependency or unresolved issue
+  completed:
+    description: Action completed
+  dropped:
+    description: Action intentionally not pursued
+

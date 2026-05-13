@@ -1,0 +1,12 @@
+portfolio_dimensions:
+  - owner_role
+  - priority
+  - status
+  - gap_type
+  - object_type
+
+summary_policy:
+  include_readiness_distribution: true
+  include_overdue_items: true
+  include_owner_workload: true
+  include_priority_heatmap: true

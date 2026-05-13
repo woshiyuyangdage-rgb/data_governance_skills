@@ -1,0 +1,41 @@
+skills:
+  - name: metadata_completeness_check
+    version: 0.2.0
+    enabled: true
+    description: Rule-based v1 completeness checks for required metadata and description quality.
+    module: app.core.skills.metadata_completeness_check
+  - name: technical_object_identification
+    version: 0.2.0
+    enabled: true
+    description: Rule-based v1 technical object detection using configured lifecycle and keyword signals.
+    module: app.core.skills.technical_object_identification
+  - name: naming_standard_check
+    version: 0.2.0
+    enabled: true
+    description: Rule-based v1 naming standard checks with normalization suggestions.
+    module: app.core.skills.naming_standard_check
+  - name: metadata_quality_diagnosis
+    version: 0.2.0
+    enabled: true
+    description: Rule-based v1 diagnosis layer that aggregates raw issues into governance defect categories.
+    module: app.core.skills.metadata_quality_diagnosis
+  - name: governance_task_packaging
+    version: 0.2.0
+    enabled: true
+    description: Rule-based v1 task packaging for diagnosis issues and governance follow-up.
+    module: app.core.skills.governance_task_packaging
+  - name: standard_mapping_recommendation
+    version: 0.3.0
+    enabled: true
+    description: P1 rule-based standard field mapping recommendation using knowledge packs and standard field libraries.
+    module: app.core.skills.standard_mapping_recommendation
+  - name: stg_structure_suggestion
+    version: 0.4.0
+    enabled: true
+    description: P1.5 rule-based STG structure suggestion using source metadata, mapping results, naming enhancement, and lightweight transform rules.
+    module: app.core.skills.stg_structure_suggestion
+  - name: quality_rule_recommendation
+    version: 0.5.0
+    enabled: true
+    description: P2 rule-based quality rule recommendation using mapping, STG, and source metadata context.
+    module: app.core.skills.quality_rule_recommendation

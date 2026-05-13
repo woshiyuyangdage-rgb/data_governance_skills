@@ -1,0 +1,49 @@
+naming_style: snake_case
+normalize_to_lowercase: true
+replace_spaces_with_underscore: true
+compress_repeated_underscores: true
+max_recommended_name_length: 30
+disallowed_prefixes:
+  - t_
+  - tmp_
+  - test_
+  - ods_
+  - dwd_
+  - dim_
+  - fct_
+  - s_
+  - tbl_
+  - bak_
+  - log_
+disallowed_table_prefixes:
+  - t_
+  - tmp_
+  - test_
+  - ods_
+  - dwd_
+  - dim_
+  - fct_
+  - s_
+  - tbl_
+  - bak_
+  - log_
+disallowed_field_prefixes:
+  - t_
+  - tmp_
+  - test_
+  - f_
+  - c_
+  - col_
+  - fld_
+invalid_patterns:
+  - "\\s+"
+  - "__+"
+  - "[^A-Za-z0-9_]"
+suspicious_tokens:
+  - tmp
+  - test
+  - bak
+  - log
+  - ods
+  - dwd
+  - stg

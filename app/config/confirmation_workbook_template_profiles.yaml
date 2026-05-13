@@ -1,0 +1,81 @@
+profiles:
+  - template_name: standard_mapping_confirmation_template
+    enabled: true
+    workbook_type: mapping_confirmation
+    description: Standard mapping confirmation workbook exported by system
+    file_types: [xlsx, csv]
+    sheet_candidates: [mapping_confirmation, mapping, data]
+    required_target_fields:
+      - source_table_name
+      - source_field_name
+      - confirmation_status
+    optional_target_fields:
+      - recommended_standard_code
+      - recommended_standard_name
+      - recommended_standard_name_cn
+      - reviewer_note
+    mapping_spec_name: standard_mapping_confirmation_spec
+
+  - template_name: business_mapping_review_template
+    enabled: true
+    workbook_type: mapping_confirmation
+    description: Business-side simplified mapping review sheet
+    file_types: [xlsx, csv]
+    sheet_candidates: [业务确认, mapping_review, data]
+    required_target_fields:
+      - source_table_name
+      - source_field_name
+      - confirmation_status
+    optional_target_fields:
+      - recommended_standard_code
+      - reviewer_note
+    mapping_spec_name: business_mapping_review_spec
+
+  - template_name: stg_design_review_template
+    enabled: true
+    workbook_type: stg_confirmation
+    description: STG structure review sheet
+    file_types: [xlsx, csv]
+    sheet_candidates: [stg_confirmation, stg_review, data]
+    required_target_fields:
+      - source_table_name
+      - source_field_name
+      - confirmation_status
+    optional_target_fields:
+      - recommended_stg_field_name
+      - recommended_data_type
+      - reviewer_note
+    mapping_spec_name: stg_design_review_spec
+
+  - template_name: quality_rule_review_template
+    enabled: true
+    workbook_type: quality_rule_confirmation
+    description: Quality rule review sheet
+    file_types: [xlsx, csv]
+    sheet_candidates: [quality_rule_confirmation, quality_review, data]
+    required_target_fields:
+      - source_table_name
+      - rule_type
+      - confirmation_status
+    optional_target_fields:
+      - source_field_name
+      - field_group
+      - rule_expression
+      - severity
+      - reviewer_note
+    mapping_spec_name: quality_rule_review_spec
+
+  - template_name: backlog_update_template
+    enabled: true
+    workbook_type: backlog_confirmation
+    description: Governance backlog status update sheet
+    file_types: [xlsx, csv]
+    sheet_candidates: [backlog_confirmation, backlog_update, data]
+    required_target_fields:
+      - backlog_id
+      - confirmation_status
+    optional_target_fields:
+      - new_status
+      - reviewer_note
+    mapping_spec_name: backlog_update_spec
+

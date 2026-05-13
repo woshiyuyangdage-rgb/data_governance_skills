@@ -1,0 +1,53 @@
+templates:
+  mapping_confirmation:
+    include_columns:
+      - source_table_name
+      - source_field_name
+      - source_field_name_cn
+      - recommended_standard_code
+      - recommended_standard_name
+      - recommended_standard_name_cn
+      - match_score
+      - match_reason
+      - confirmation_status
+      - reviewer_note
+
+  stg_confirmation:
+    include_columns:
+      - source_table_name
+      - source_field_name
+      - recommended_stg_field_name
+      - recommended_stg_field_name_cn
+      - recommended_data_type
+      - mapping_source
+      - action
+      - confirmation_status
+      - reviewer_note
+
+  quality_rule_confirmation:
+    include_columns:
+      - source_table_name
+      - source_field_name
+      - rule_scope
+      - field_group
+      - rule_type
+      - rule_expression
+      - severity
+      - confidence
+      - review_priority
+      - confirmation_status
+      - reviewer_note
+
+  remediation_backlog_delivery:
+    include_columns:
+      - backlog_id
+      - object_type
+      - object_name
+      - gap_type
+      - action
+      - owner_role
+      - priority
+      - status
+      - completion_criteria
+      - dependency_notes
+

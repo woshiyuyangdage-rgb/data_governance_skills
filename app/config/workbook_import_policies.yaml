@@ -1,0 +1,41 @@
+import_policy:
+  strict_required_columns: true
+  allow_blank_reviewer_note: true
+  skip_empty_rows: true
+  skip_unknown_confirmation_status: false
+  default_sheet_name_fallback: true
+
+confirmation_status_mapping:
+  pending: pending
+  accept: accept
+  accepted: accept
+  reject: reject
+  rejected: reject
+  edit: edit
+  edited: edit
+  manual_review: mark_for_manual_review
+  mark_for_manual_review: mark_for_manual_review
+
+workbook_types:
+  mapping_confirmation:
+    main_sheet_candidates:
+      - mapping_confirmation
+      - mapping
+      - data
+  stg_confirmation:
+    main_sheet_candidates:
+      - stg_confirmation
+      - stg
+      - data
+  quality_rule_confirmation:
+    main_sheet_candidates:
+      - quality_rule_confirmation
+      - quality_rules
+      - data
+  backlog_confirmation:
+    main_sheet_candidates:
+      - backlog_confirmation
+      - backlog
+      - remediation_backlog
+      - data
+

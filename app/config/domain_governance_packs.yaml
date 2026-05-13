@@ -1,0 +1,73 @@
+packs:
+  - pack_name: customer_domain_pack
+    enabled: true
+    description: Governance pack for customer-related metadata objects
+    trigger_tokens: [customer, cust, client]
+    preferred_group_by: system_name
+    default_owner_roles:
+      mapping: business_data_steward
+      quality: data_quality_manager
+      remediation: governance_lead
+    mapping_hints:
+      preferred_standard_codes: [customer_id, customer_name, customer_status_code]
+    quality_rule_hints:
+      preferred_templates: [identifier, name, status]
+    cross_field_hints:
+      preferred_patterns: [id_name_pair, status_code_name_pair]
+    remediation_hints:
+      preferred_gap_types: [standard_mapping_gap, quality_rule_gap]
+
+  - pack_name: transaction_domain_pack
+    enabled: true
+    description: Governance pack for transaction/order related metadata objects
+    trigger_tokens: [transaction, txn, order, payment]
+    preferred_group_by: system_name
+    default_owner_roles:
+      mapping: business_data_steward
+      quality: data_quality_manager
+      remediation: data_architect
+    mapping_hints:
+      preferred_standard_codes: [transaction_id, transaction_amount, transaction_date, currency_code]
+    quality_rule_hints:
+      preferred_templates: [identifier, amount, date, code]
+    cross_field_hints:
+      preferred_patterns: [amount_currency_pair, transaction_date_presence]
+    remediation_hints:
+      preferred_gap_types: [quality_rule_gap, structural_standardization_gap]
+
+  - pack_name: reference_code_domain_pack
+    enabled: true
+    description: Governance pack for reference code / lookup tables
+    trigger_tokens: [code, dictionary, lookup, enum, type]
+    preferred_group_by: schema_name
+    default_owner_roles:
+      mapping: metadata_manager
+      quality: data_quality_manager
+      remediation: governance_lead
+    mapping_hints:
+      preferred_standard_codes: [status_code, status_name]
+    quality_rule_hints:
+      preferred_templates: [code, value_set, name]
+    cross_field_hints:
+      preferred_patterns: [code_name_pair]
+    remediation_hints:
+      preferred_gap_types: [metadata_completion_gap, quality_rule_gap]
+
+  - pack_name: supply_chain_finance_domain_pack
+    enabled: true
+    description: Governance pack for supply chain finance-related metadata objects
+    trigger_tokens: [finance, receivable, payable, invoice, settlement, credit, supplier, fund]
+    preferred_group_by: system_name
+    default_owner_roles:
+      mapping: business_data_steward
+      quality: data_quality_manager
+      remediation: governance_lead
+    mapping_hints:
+      preferred_standard_codes: [customer_id, account_id, transaction_amount, currency_code, settlement_date]
+    quality_rule_hints:
+      preferred_templates: [identifier, amount, date, code]
+    cross_field_hints:
+      preferred_patterns: [amount_currency_pair, created_updated_order]
+    remediation_hints:
+      preferred_gap_types: [mapping_gap, quality_rule_gap, review_backlog_gap]
+

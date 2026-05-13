@@ -1,0 +1,12 @@
+snapshot_policy:
+  include_completed_items: true
+  include_blocked_items: true
+  include_overdue_items: true
+  include_readiness_scores: true
+
+trend_fields:
+  - total_backlog_items
+  - completed_count
+  - blocked_count
+  - overdue_count
+  - avg_readiness_score

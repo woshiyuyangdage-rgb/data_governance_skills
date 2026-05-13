@@ -1,0 +1,10 @@
+standard_code,standard_name,standard_name_cn,description,data_type,business_domain,aliases
+customer_id,customer_id,客户ID,Unique identifier for a customer.,string,customer,cust_id;customer_identifier;cust identifier
+customer_name,customer_name,客户名称,Official display name of a customer.,string,customer,cust_name;customer_nm
+account_id,account_id,账户ID,Unique identifier for an account.,string,account,acct_id;account_identifier
+transaction_id,transaction_id,交易ID,Unique identifier for a business transaction.,string,transaction,txn_id;order_id;order__id;transaction_identifier
+transaction_amount,transaction_amount,交易金额,Amount captured for a transaction.,decimal,transaction,txn_amt;order_amount;amt
+created_date,created_date,创建日期,Date when the record was created.,date,shared,create_dt;created_dt;creation_date
+updated_date,updated_date,更新日期,Date when the record was last updated.,date,shared,update_dt;updated_dt;last_update_date
+status_code,status_code,状态码,Code representing the current business status.,string,shared,status;status_cd
+audit_log_id,audit_log_id,审计日志ID,Unique identifier for an audit log record.,string,audit,log_id;audit_id;audit_identifier

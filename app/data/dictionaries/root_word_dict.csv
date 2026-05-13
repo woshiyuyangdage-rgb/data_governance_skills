@@ -1,0 +1,33 @@
+token,normalized_form,category,notes
+customer,customer,business_entity,Canonical business entity token
+account,account,business_entity,Canonical business entity token
+order,order,business_event,Canonical order token
+transaction,transaction,business_event,Canonical transaction token
+amount,amount,measure,Canonical amount token
+balance,balance,measure,Canonical balance token
+date,date,time,Canonical date token
+time,time,time,Canonical time token
+status,status,business_state,Canonical status token
+detail,detail,shape,Canonical detail token
+summary,summary,shape,Canonical summary token
+log,log,technical,Canonical log token
+audit,audit,technical,Canonical audit token
+temporary,temporary,lifecycle,Canonical temporary token
+history,history,lifecycle,Canonical history token
+archive,archive,lifecycle,Canonical archive token
+identifier,identifier,identifier,Canonical identifier token
+number,number,identifier,Canonical number token
+name,name,business_label,Canonical name token
+snapshot,snapshot,time,Canonical snapshot token
+sales,sales,business_domain,Canonical sales token
+header,header,shape,Canonical header token
+user,user,business_entity,Canonical user token
+event,event,business_event,Canonical event token
+trace,trace,technical,Canonical trace token
+code,code,identifier,Canonical code token
+created,created,time,Canonical created token
+updated,updated,time,Canonical updated token
+quantity,quantity,measure,Canonical quantity token
+count,count,measure,Canonical count token
+message,message,technical,Canonical message token
+configuration,configuration,technical,Canonical configuration token

@@ -1,0 +1,41 @@
+backlog_policy:
+  generate_from_remediation_actions: true
+  default_status: proposed
+  include_dependency_notes: true
+  include_owner_hints: true
+  include_completion_criteria: true
+
+status_transition_policy:
+  allowed_transitions:
+    proposed:
+      - accepted
+      - dropped
+    accepted:
+      - in_progress
+      - blocked
+      - dropped
+    in_progress:
+      - blocked
+      - completed
+    blocked:
+      - in_progress
+      - dropped
+    completed: []
+    dropped: []
+
+priority_mapping:
+  priority_governance:
+    urgency_score: 3
+  key_tracking:
+    urgency_score: 2
+  continuous_observation:
+    urgency_score: 1
+
+owner_role_defaults:
+  metadata_completion_gap: metadata_manager
+  naming_standardization_gap: data_governance_engineer
+  standard_mapping_gap: business_data_steward
+  structural_standardization_gap: data_architect
+  quality_rule_gap: data_quality_manager
+  review_backlog_gap: governance_lead
+

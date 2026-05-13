@@ -1,0 +1,45 @@
+profiles:
+  - template_name: business_mapping_delivery_template
+    enabled: true
+    description: Delivery template for business-side mapping confirmation
+    target_artifact_type: mapping_confirmation_workbook
+    layout_spec_name: business_mapping_layout
+    include_instruction_sheet: true
+    include_summary_sheet: true
+    default_output_filename: business_mapping_confirmation.xlsx
+
+  - template_name: architecture_stg_delivery_template
+    enabled: true
+    description: Delivery template for STG structure review
+    target_artifact_type: stg_confirmation_workbook
+    layout_spec_name: architecture_stg_layout
+    include_instruction_sheet: true
+    include_summary_sheet: true
+    default_output_filename: stg_structure_review.xlsx
+
+  - template_name: quality_rule_review_delivery_template
+    enabled: true
+    description: Delivery template for quality rule review
+    target_artifact_type: quality_rule_confirmation_workbook
+    layout_spec_name: quality_rule_layout
+    include_instruction_sheet: true
+    include_summary_sheet: true
+    default_output_filename: quality_rule_review.xlsx
+
+  - template_name: governance_backlog_delivery_template
+    enabled: true
+    description: Delivery template for governance backlog handoff
+    target_artifact_type: backlog_delivery_workbook
+    layout_spec_name: backlog_layout
+    include_instruction_sheet: true
+    include_summary_sheet: true
+    default_output_filename: governance_backlog.xlsx
+
+  - template_name: full_governance_delivery_bundle_template
+    enabled: true
+    description: Full governance delivery bundle template
+    target_artifact_type: governance_delivery_package
+    layout_spec_name: delivery_bundle_layout
+    include_instruction_sheet: false
+    include_summary_sheet: false
+    default_output_filename: governance_delivery_bundle

@@ -1,0 +1,336 @@
+tools:
+  - name: run_governance_profile
+    enabled: true
+    description: Run a governance workflow profile directly
+    input_model: GovernanceTaskRequest
+    output_model: GovernanceTaskResponse
+    handler: governance_tool_executor.run_governance_profile
+    category: workflow
+
+  - name: interpret_governance_intent
+    enabled: true
+    description: Interpret a natural-language governance task into a structured request
+    input_model: IntentTextRequest
+    output_model: IntentExecutionResult
+    handler: governance_tool_executor.interpret_governance_intent
+    category: intent
+
+  - name: preview_agent_plan
+    enabled: true
+    description: Preview an execution plan without running it
+    input_model: AgentShellPlanRequest
+    output_model: AgentShellResult
+    handler: governance_tool_executor.preview_agent_plan
+    category: agent_shell
+
+  - name: run_agent_task
+    enabled: true
+    description: Interpret a task, build a plan, and run it when policy allows
+    input_model: AgentShellRunRequest
+    output_model: AgentShellResult
+    handler: governance_tool_executor.run_agent_task
+    category: agent_shell
+
+  - name: resolve_governance_context
+    enabled: true
+    description: Resolve session context and preview the resulting execution plan
+    input_model: AgentShellPlanRequest
+    output_model: AgentShellResult
+    handler: governance_tool_executor.resolve_governance_context
+    category: context
+
+  - name: export_governance_reports
+    enabled: true
+    description: Export governance reports from an existing workflow result
+    input_model: ReportExportArguments
+    output_model: dict
+    handler: governance_tool_executor.export_governance_reports
+    category: reporting
+
+  - name: export_confirmation_workbooks
+    enabled: true
+    description: Export mapping, STG, quality rule, and backlog confirmation workbooks
+    input_model: DeliveryPackageArguments
+    output_model: dict
+    handler: governance_tool_executor.export_confirmation_workbooks
+    category: delivery
+
+  - name: build_governance_delivery_package
+    enabled: true
+    description: Build a local governance delivery package with confirmation workbooks and manifest
+    input_model: DeliveryPackageArguments
+    output_model: dict
+    handler: governance_tool_executor.build_governance_delivery_package
+    category: delivery
+
+  - name: run_batch_governance
+    enabled: true
+    description: Run multi-file batch governance grouped by system, schema, or domain hint
+    input_model: BatchGovernanceArguments
+    output_model: WorkflowResult
+    handler: governance_tool_executor.run_batch_governance
+    category: batch
+
+  - name: run_incremental_rerun
+    enabled: true
+    description: Run changed-only batch governance using local fingerprint snapshots
+    input_model: BatchGovernanceArguments
+    output_model: WorkflowResult
+    handler: governance_tool_executor.run_incremental_rerun
+    category: batch
+
+  - name: compare_governance_snapshots
+    enabled: true
+    description: Compare local governance batch snapshots and return diff summary
+    input_model: BatchSnapshotCompareArguments
+    output_model: dict
+    handler: governance_tool_executor.compare_governance_snapshots
+    category: batch
+
+  - name: import_confirmation_workbook
+    enabled: true
+    description: Import a filled confirmation workbook and merge local updates
+    input_model: WorkbookImportArguments
+    output_model: WorkflowResult
+    handler: governance_tool_executor.import_confirmation_workbook
+    category: delivery
+
+  - name: import_confirmation_and_rerun
+    enabled: true
+    description: Import a confirmation workbook and prepare changed-object rerun scope
+    input_model: WorkbookImportArguments
+    output_model: WorkflowResult
+    handler: governance_tool_executor.import_confirmation_and_rerun
+    category: delivery
+
+  - name: list_domain_governance_packs
+    enabled: true
+    description: List enabled domain governance packs
+    input_model: EmptyArguments
+    output_model: dict
+    handler: governance_tool_executor.list_domain_governance_packs
+    category: template
+
+  - name: list_project_templates
+    enabled: true
+    description: List enabled project template profiles
+    input_model: EmptyArguments
+    output_model: dict
+    handler: governance_tool_executor.list_project_templates
+    category: template
+
+  - name: match_domain_governance_pack
+    enabled: true
+    description: Match a domain governance pack from metadata text
+    input_model: DomainPackMatchArguments
+    output_model: DomainPackMatchResult
+    handler: governance_tool_executor.match_domain_governance_pack
+    category: template
+
+  - name: run_project_template
+    enabled: true
+    description: Run a project template with optional domain pack override
+    input_model: ProjectTemplateRunArguments
+    output_model: WorkflowResult
+    handler: governance_tool_executor.run_project_template
+    category: template
+
+  - name: diagnose_metadata_intake_template
+    enabled: true
+    description: Diagnose a structured metadata intake template and report matching evidence
+    input_model: MetadataIntakeDiagnoseArguments
+    output_model: IntakeMatchResult
+    handler: governance_tool_executor.diagnose_metadata_intake_template
+    category: intake
+
+  - name: normalize_metadata_input
+    enabled: true
+    description: Normalize an enterprise metadata intake file into standard metadata records
+    input_model: MetadataIntakeNormalizeArguments
+    output_model: IntakeNormalizationResult
+    handler: governance_tool_executor.normalize_metadata_input
+    category: intake
+
+  - name: run_governance_with_intake_profile
+    enabled: true
+    description: Normalize metadata through an intake profile and run a governance workflow
+    input_model: GovernanceWithIntakeArguments
+    output_model: WorkflowResult
+    handler: governance_tool_executor.run_governance_with_intake_profile
+    category: intake
+
+  - name: diagnose_confirmation_template
+    enabled: true
+    description: Diagnose a confirmation workbook template and report column mapping evidence
+    input_model: ConfirmationTemplateDiagnoseArguments
+    output_model: ConfirmationTemplateMatchResult
+    handler: governance_tool_executor.diagnose_confirmation_template
+    category: delivery
+
+  - name: import_confirmation_with_template
+    enabled: true
+    description: Import a confirmation workbook using template-specific field mapping
+    input_model: ConfirmationTemplateImportArguments
+    output_model: WorkflowResult
+    handler: governance_tool_executor.import_confirmation_with_template
+    category: delivery
+
+  - name: recommend_quality_rules
+    enabled: true
+    description: Run the governance chain up to quality rule recommendation
+    input_model: QualityRuleToolRequest
+    output_model: GovernanceTaskResponse
+    handler: governance_tool_executor.recommend_quality_rules
+    category: quality
+
+  - name: recommend_quality_intelligence
+    enabled: true
+    description: Recommend field-level, domain-aware, and cross-field quality rules
+    input_model: QualityRuleToolRequest
+    output_model: GovernanceTaskResponse
+    handler: governance_tool_executor.recommend_quality_intelligence
+    category: quality
+
+  - name: review_quality_rules
+    enabled: true
+    description: Review suggested quality rules and build confirmed quality rules
+    input_model: QualityRuleReviewArguments
+    output_model: dict
+    handler: governance_tool_executor.review_quality_rules
+    category: quality
+
+  - name: batch_review_quality_rules
+    enabled: true
+    description: Build batch quality rule review records from simple filters
+    input_model: QualityBatchReviewArguments
+    output_model: dict
+    handler: governance_tool_executor.batch_review_quality_rules
+    category: quality
+
+  - name: export_confirmed_quality_rules
+    enabled: true
+    description: Export confirmed quality rules as a JSON package or dbt tests YAML
+    input_model: RuleExportArguments
+    output_model: list
+    handler: governance_tool_executor.export_confirmed_quality_rules
+    category: quality
+
+  - name: build_execution_ready_package
+    enabled: true
+    description: Build an execution-ready governance package from confirmed quality rules
+    input_model: ExecutionPackageBuildArguments
+    output_model: dict
+    handler: governance_tool_executor.build_execution_ready_package
+    category: quality
+
+  - name: export_execution_ready_package
+    enabled: true
+    description: Export an execution-ready governance package as package JSON, manifest, or dbt YAML
+    input_model: ExecutionPackageExportArguments
+    output_model: list
+    handler: governance_tool_executor.export_execution_ready_package
+    category: quality
+
+  - name: assess_governance_readiness
+    enabled: true
+    description: Assess readiness scores and classify governance gaps from workflow output
+    input_model: GovernanceReadinessAssessmentArguments
+    output_model: dict
+    handler: governance_tool_executor.assess_governance_readiness
+    category: governance
+
+  - name: build_governance_work_package
+    enabled: true
+    description: Build remediation actions and an exportable governance work package
+    input_model: GovernanceWorkPackageArguments
+    output_model: dict
+    handler: governance_tool_executor.build_governance_work_package
+    category: governance
+
+  - name: build_governance_backlog
+    enabled: true
+    description: Build local governance backlog items from remediation actions
+    input_model: GovernanceBacklogBuildArguments
+    output_model: dict
+    handler: governance_tool_executor.build_governance_backlog
+    category: governance
+
+  - name: update_governance_backlog_status
+    enabled: true
+    description: Update one persisted governance backlog item status
+    input_model: GovernanceBacklogStatusUpdateArguments
+    output_model: BacklogUpdateResult
+    handler: governance_tool_executor.update_governance_backlog_status
+    category: governance
+
+  - name: list_governance_backlog_items
+    enabled: true
+    description: List persisted governance backlog items with optional filters
+    input_model: GovernanceBacklogListArguments
+    output_model: dict
+    handler: governance_tool_executor.list_governance_backlog_items
+    category: governance
+
+  - name: assess_governance_portfolio
+    enabled: true
+    description: Assess backlog SLA status and governance portfolio summary
+    input_model: GovernancePortfolioAssessmentArguments
+    output_model: dict
+    handler: governance_tool_executor.assess_governance_portfolio
+    category: governance
+
+  - name: generate_progress_snapshot
+    enabled: true
+    description: Generate and optionally save a local governance progress snapshot
+    input_model: ProgressSnapshotArguments
+    output_model: dict
+    handler: governance_tool_executor.generate_progress_snapshot
+    category: governance
+
+  - name: list_governance_progress_snapshots
+    enabled: true
+    description: List saved local governance progress snapshots
+    input_model: dict
+    output_model: dict
+    handler: governance_tool_executor.list_governance_progress_snapshots
+    category: governance
+
+  - name: list_config_assets
+    enabled: true
+    description: List managed governance configuration assets
+    input_model: dict
+    output_model: list
+    handler: governance_tool_executor.list_config_assets
+    category: control_plane
+
+  - name: get_config_asset
+    enabled: true
+    description: Get one managed governance configuration asset and its current content
+    input_model: ConfigAssetLookupRequest
+    output_model: dict
+    handler: governance_tool_executor.get_config_asset
+    category: control_plane
+
+  - name: validate_config_asset
+    enabled: true
+    description: Validate one managed governance configuration asset
+    input_model: ConfigAssetLookupRequest
+    output_model: ValidationResult
+    handler: governance_tool_executor.validate_config_asset
+    category: control_plane
+
+  - name: save_config_asset
+    enabled: true
+    description: Save one managed governance configuration asset after validation
+    input_model: ConfigAssetSaveRequest
+    output_model: ConfigEditResult
+    handler: governance_tool_executor.save_config_asset
+    category: control_plane
+
+  - name: publish_config_asset
+    enabled: true
+    description: Publish one managed governance configuration asset
+    input_model: ConfigAssetLookupRequest
+    output_model: ConfigEditResult
+    handler: governance_tool_executor.publish_config_asset
+    category: control_plane

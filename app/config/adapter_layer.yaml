@@ -1,0 +1,16 @@
+manifest:
+  service_name: data_governance_skills
+  version: v1
+  description: Local governance tool platform
+
+schema_export:
+  include_disabled_tools: false
+  include_examples: true
+
+invocation_policy:
+  allow_local_only: true
+  record_trace: true
+
+compatibility:
+  export_openai_style_schema: true
+  export_mcp_style_manifest: true

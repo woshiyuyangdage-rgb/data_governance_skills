@@ -1,0 +1,41 @@
+mapping_specs:
+  standard_mapping_confirmation_spec:
+    source_table_name: [source_table_name, table_name, source_table]
+    source_field_name: [source_field_name, field_name, source_field]
+    recommended_standard_code: [recommended_standard_code, standard_code]
+    recommended_standard_name: [recommended_standard_name, standard_name]
+    recommended_standard_name_cn: [recommended_standard_name_cn, standard_name_cn]
+    confirmation_status: [confirmation_status, status, review_status]
+    reviewer_note: [reviewer_note, note, reviewer_comments]
+
+  business_mapping_review_spec:
+    source_table_name: [表名, source_table_name]
+    source_field_name: [字段名, source_field_name]
+    recommended_standard_code: [标准编码, recommended_standard_code]
+    confirmation_status: [确认结果, status, review_status]
+    reviewer_note: [业务备注, reviewer_note, 备注]
+
+  stg_design_review_spec:
+    source_table_name: [source_table_name, 表名]
+    source_field_name: [source_field_name, 字段名]
+    recommended_stg_field_name: [recommended_stg_field_name, stg字段名, 目标字段名]
+    recommended_data_type: [recommended_data_type, 目标类型]
+    confirmation_status: [confirmation_status, status, review_status]
+    reviewer_note: [reviewer_note, 备注]
+
+  quality_rule_review_spec:
+    source_table_name: [source_table_name, 表名]
+    source_field_name: [source_field_name, 字段名]
+    field_group: [field_group, 字段组]
+    rule_type: [rule_type, 规则类型]
+    rule_expression: [rule_expression, 规则表达式]
+    severity: [severity, 规则级别]
+    confirmation_status: [confirmation_status, status, review_status]
+    reviewer_note: [reviewer_note, 备注]
+
+  backlog_update_spec:
+    backlog_id: [backlog_id, action_id, 待办编号]
+    new_status: [new_status, target_status, 更新状态]
+    confirmation_status: [confirmation_status, status, review_status]
+    reviewer_note: [reviewer_note, 备注]
+

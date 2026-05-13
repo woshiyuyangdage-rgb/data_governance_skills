@@ -1,0 +1,30 @@
+templates:
+  metadata_completion_gap:
+    action: Complete missing metadata fields and business descriptions
+    owner_role: metadata_manager
+    expected_output: completed metadata records
+
+  naming_standardization_gap:
+    action: Standardize table and field naming conventions
+    owner_role: data_governance_engineer
+    expected_output: normalized names
+
+  standard_mapping_gap:
+    action: Review and confirm standard field mappings
+    owner_role: business_data_steward
+    expected_output: confirmed mappings
+
+  structural_standardization_gap:
+    action: Review and finalize STG structure suggestions
+    owner_role: data_architect
+    expected_output: confirmed STG structure
+
+  quality_rule_gap:
+    action: Review, confirm, and complete quality rules
+    owner_role: data_quality_manager
+    expected_output: confirmed quality rule package
+
+  review_backlog_gap:
+    action: Prioritize unresolved manual review items
+    owner_role: governance_lead
+    expected_output: cleared review backlog

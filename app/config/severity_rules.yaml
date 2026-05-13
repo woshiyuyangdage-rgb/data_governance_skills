@@ -1,0 +1,32 @@
+default_severity: low
+severity_mapping:
+  missing_table_name: high
+  missing_table_cn_name: high
+  missing_table_description: medium
+  missing_field_name: high
+  missing_field_cn_name: low
+  missing_field_description: medium
+  suspicious_short_description: medium
+  placeholder_description: medium
+  description_same_as_name: low
+  technical_object_detected: medium
+  technical_purity_risk: medium
+  naming_contains_space: low
+  naming_contains_repeated_underscore: low
+  naming_contains_uppercase: low
+  naming_contains_disallowed_prefix: medium
+  naming_not_snake_case: low
+  naming_too_long: low
+  naming_contains_ambiguous_abbreviation: low
+  naming_token_not_in_dictionary: low
+  standard_mapping_missing: medium
+  standard_mapping_low_confidence: low
+  stg_field_low_confidence: low
+  stg_field_technical_reservation: medium
+  stg_table_requires_manual_review: medium
+  quality_rule_not_recommended: low
+  quality_rule_low_confidence: low
+  technical_purity_defect: medium
+  semantic_description_defect: medium
+  business_ownership_defect: high
+  naming_standard_defect: low

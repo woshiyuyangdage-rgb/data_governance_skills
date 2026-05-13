@@ -1,0 +1,33 @@
+patterns:
+  - pattern_name: created_updated_order
+    trigger_fields:
+      - created_date
+      - updated_date
+    rule_type: temporal_order
+    expression_template: created_date <= updated_date
+    severity: medium
+
+  - pattern_name: start_end_order
+    trigger_tokens:
+      - start
+      - end
+      - date
+    rule_type: temporal_order
+    expression_template: start_date <= end_date
+    severity: medium
+
+  - pattern_name: amount_currency_pair
+    trigger_fields:
+      - amount
+      - currency
+    rule_type: paired_presence
+    expression_template: amount requires currency
+    severity: medium
+
+  - pattern_name: status_code_name_pair
+    trigger_fields:
+      - status_code
+      - status_name
+    rule_type: paired_presence
+    expression_template: status_code pairs with status_name
+    severity: low

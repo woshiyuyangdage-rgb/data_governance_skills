@@ -1,0 +1,20 @@
+fingerprint_policy:
+  include_table_fields: true
+  include_table_description: true
+  include_field_names: true
+  include_field_descriptions: true
+  include_data_types: true
+
+rerun_policy:
+  changed_only_mode_enabled: true
+  include_new_objects: true
+  include_removed_objects_in_diff: true
+  rerun_pending_review_objects: true
+
+diff_categories:
+  - new
+  - changed
+  - unchanged
+  - removed
+  - pending_review
+

@@ -1,0 +1,56 @@
+templates:
+  identifier:
+    - rule_type: not_null
+      severity: high
+      rule_expression: not_null
+    - rule_type: uniqueness
+      severity: high
+      rule_expression: uniqueness
+    - rule_type: reference_hint
+      severity: low
+      rule_expression: review reference to master identifier
+
+  code:
+    - rule_type: not_null
+      severity: medium
+      rule_expression: not_null
+    - rule_type: value_set
+      severity: medium
+      rule_expression: value in predefined set
+
+  amount:
+    - rule_type: not_null
+      severity: medium
+      rule_expression: not_null
+    - rule_type: numeric_range
+      severity: medium
+      rule_expression: value >= 0
+
+  date:
+    - rule_type: not_null
+      severity: medium
+      rule_expression: not_null
+    - rule_type: date_format
+      severity: medium
+      rule_expression: valid date format YYYY-MM-DD
+
+  status:
+    - rule_type: not_null
+      severity: medium
+      rule_expression: not_null
+    - rule_type: value_set
+      severity: medium
+      rule_expression: value in predefined set
+
+  name:
+    - rule_type: not_null
+      severity: low
+      rule_expression: not_null
+    - rule_type: length_range
+      severity: low
+      rule_expression: length between 1 and 128
+
+  contact:
+    - rule_type: regex_format
+      severity: medium
+      rule_expression: matches configured contact format

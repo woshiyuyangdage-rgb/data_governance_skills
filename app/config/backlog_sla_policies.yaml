@@ -1,0 +1,16 @@
+default_due_days_by_priority:
+  priority_governance: 7
+  key_tracking: 14
+  continuous_observation: 30
+
+overdue_policy:
+  warn_after_days: 3
+  overdue_after_days: 0
+
+owner_role_due_day_adjustments:
+  governance_lead: 0
+  metadata_manager: 2
+  business_data_steward: 3
+  data_architect: 2
+  data_quality_manager: 2
+  data_governance_engineer: 1

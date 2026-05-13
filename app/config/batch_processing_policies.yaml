@@ -1,0 +1,16 @@
+batch_policy:
+  default_group_by: system_name
+  allow_group_by_schema: true
+  allow_group_by_domain_hint: true
+  process_empty_groups: false
+
+supported_group_fields:
+  - system_name
+  - schema_name
+  - domain_hint
+
+batch_output_policy:
+  generate_group_reports: true
+  generate_batch_summary: true
+  generate_delivery_package_per_group: false
+

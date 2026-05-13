@@ -1,0 +1,328 @@
+{
+  "statuses": [
+    {
+      "asset_name": "abbreviation_dict",
+      "asset_type": "csv",
+      "file_path": "app/data/dictionaries/abbreviation_dict.csv",
+      "current_status": "published",
+      "last_validated_at": "2026-05-07T04:15:25",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "backlog_sla_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/backlog_sla_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "backlog_status_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/backlog_status_templates.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "batch_processing_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/batch_processing_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "confirmation_workbook_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "confirmation_workbook_template_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_template_profiles.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "confirmation_workbook_mapping_specs",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_mapping_specs.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "confirmation_workbook_diagnosis_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_diagnosis_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "cross_field_rule_patterns",
+      "asset_type": "yaml",
+      "file_path": "app/config/cross_field_rule_patterns.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "domain_delivery_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/domain_delivery_templates.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "domain_governance_packs",
+      "asset_type": "yaml",
+      "file_path": "app/config/domain_governance_packs.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "domain_rule_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/domain_rule_templates.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "execution_package_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/execution_package_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "governance_backlog_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_backlog_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "governance_delivery_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_delivery_templates.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "governance_gap_taxonomy",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_gap_taxonomy.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "governance_portfolio_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_portfolio_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "incremental_rerun_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/incremental_rerun_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "intake_diagnosis_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/intake_diagnosis_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "intake_field_mapping_specs",
+      "asset_type": "yaml",
+      "file_path": "app/config/intake_field_mapping_specs.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "intake_template_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/intake_template_profiles.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "intent_patterns",
+      "asset_type": "yaml",
+      "file_path": "app/config/intent_patterns.yaml",
+      "current_status": "published",
+      "last_validated_at": "2026-05-07T04:15:25",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "progress_snapshot_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/progress_snapshot_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "project_template_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/project_template_profiles.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "quality_review_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/quality_review_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "quality_rule_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/quality_rule_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": "2026-05-08T01:37:30",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "quality_rule_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/quality_rule_templates.yaml",
+      "current_status": "draft",
+      "last_validated_at": "2026-05-08T01:37:30",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "readiness_scoring_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/readiness_scoring_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "remediation_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/remediation_templates.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "root_word_dict",
+      "asset_type": "csv",
+      "file_path": "app/data/dictionaries/root_word_dict.csv",
+      "current_status": "published",
+      "last_validated_at": "2026-05-07T04:15:25",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "rule_execution_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/rule_execution_templates.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "standard_fields",
+      "asset_type": "csv",
+      "file_path": "app/data/standards/standard_fields.csv",
+      "current_status": "published",
+      "last_validated_at": "2026-05-07T04:15:25",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "tool_registry",
+      "asset_type": "yaml",
+      "file_path": "app/config/tool_registry.yaml",
+      "current_status": "published",
+      "last_validated_at": "2026-05-07T04:37:04",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "workbook_column_aliases",
+      "asset_type": "yaml",
+      "file_path": "app/config/workbook_column_aliases.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "workbook_import_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/workbook_import_policies.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "workflow_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/workflow_profiles.yaml",
+      "current_status": "published",
+      "last_validated_at": "2026-05-09T10:00:45",
+      "last_published_at": null,
+      "last_error_message": null
+    }
+  ]
+}

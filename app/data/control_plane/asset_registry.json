@@ -1,0 +1,256 @@
+{
+  "assets": [
+    {
+      "asset_name": "abbreviation_dict",
+      "asset_type": "csv",
+      "file_path": "app/data/dictionaries/abbreviation_dict.csv",
+      "description": "Abbreviation expansion dictionary for naming governance.",
+      "editable": true
+    },
+    {
+      "asset_name": "root_word_dict",
+      "asset_type": "csv",
+      "file_path": "app/data/dictionaries/root_word_dict.csv",
+      "description": "Root-word normalization dictionary for naming governance.",
+      "editable": true
+    },
+    {
+      "asset_name": "standard_fields",
+      "asset_type": "csv",
+      "file_path": "app/data/standards/standard_fields.csv",
+      "description": "Standard field library used by standard mapping.",
+      "editable": true
+    },
+    {
+      "asset_name": "workflow_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/workflow_profiles.yaml",
+      "description": "Workflow profile definitions for the governance router.",
+      "editable": true
+    },
+    {
+      "asset_name": "intent_patterns",
+      "asset_type": "yaml",
+      "file_path": "app/config/intent_patterns.yaml",
+      "description": "Intent interpreter patterns and parameter keywords.",
+      "editable": true
+    },
+    {
+      "asset_name": "tool_registry",
+      "asset_type": "yaml",
+      "file_path": "app/config/tool_registry.yaml",
+      "description": "Tool contract registry for the local governance tool layer.",
+      "editable": true
+    },
+    {
+      "asset_name": "quality_rule_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/quality_rule_templates.yaml",
+      "description": "Rule templates used by quality rule recommendation.",
+      "editable": true
+    },
+    {
+      "asset_name": "quality_rule_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/quality_rule_policies.yaml",
+      "description": "Policy mappings used by quality rule recommendation.",
+      "editable": true
+    },
+    {
+      "asset_name": "execution_package_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/execution_package_policies.yaml",
+      "description": "Policy mappings used when building execution-ready governance packages.",
+      "editable": true
+    },
+    {
+      "asset_name": "rule_execution_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/rule_execution_templates.yaml",
+      "description": "Execution semantic templates used by execution-ready package build.",
+      "editable": true
+    },
+    {
+      "asset_name": "domain_rule_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/domain_rule_templates.yaml",
+      "description": "Domain-aware quality rule templates.",
+      "editable": true
+    },
+    {
+      "asset_name": "cross_field_rule_patterns",
+      "asset_type": "yaml",
+      "file_path": "app/config/cross_field_rule_patterns.yaml",
+      "description": "Cross-field quality rule pattern definitions.",
+      "editable": true
+    },
+    {
+      "asset_name": "quality_review_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/quality_review_policies.yaml",
+      "description": "Quality rule confidence and review-priority policies.",
+      "editable": true
+    },
+    {
+      "asset_name": "readiness_scoring_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/readiness_scoring_policies.yaml",
+      "description": "Readiness scoring dimensions, thresholds, and transparent scoring rules.",
+      "editable": true
+    },
+    {
+      "asset_name": "governance_gap_taxonomy",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_gap_taxonomy.yaml",
+      "description": "Governance gap taxonomy used to classify readiness and review signals.",
+      "editable": true
+    },
+    {
+      "asset_name": "remediation_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/remediation_templates.yaml",
+      "description": "Remediation action templates used to build governance work packages.",
+      "editable": true
+    },
+    {
+      "asset_name": "governance_backlog_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_backlog_policies.yaml",
+      "description": "Backlog generation, priority, owner, and status transition policies.",
+      "editable": true
+    },
+    {
+      "asset_name": "backlog_status_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/backlog_status_templates.yaml",
+      "description": "Backlog status labels and descriptions.",
+      "editable": true
+    },
+    {
+      "asset_name": "governance_portfolio_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_portfolio_policies.yaml",
+      "description": "Portfolio dimensions and summary policy for governance dashboard outputs.",
+      "editable": true
+    },
+    {
+      "asset_name": "backlog_sla_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/backlog_sla_policies.yaml",
+      "description": "Backlog SLA due-date, aging, warning, and overdue policies.",
+      "editable": true
+    },
+    {
+      "asset_name": "progress_snapshot_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/progress_snapshot_policies.yaml",
+      "description": "Progress snapshot policy and trend-ready field configuration.",
+      "editable": true
+    },
+    {
+      "asset_name": "governance_delivery_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/governance_delivery_templates.yaml",
+      "description": "Workbook column templates for governance delivery artifacts.",
+      "editable": true
+    },
+    {
+      "asset_name": "confirmation_workbook_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_policies.yaml",
+      "description": "Confirmation workbook and local delivery package policies.",
+      "editable": true
+    },
+    {
+      "asset_name": "confirmation_workbook_template_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_template_profiles.yaml",
+      "description": "Template profiles for rule-based confirmation workbook diagnosis.",
+      "editable": true
+    },
+    {
+      "asset_name": "confirmation_workbook_mapping_specs",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_mapping_specs.yaml",
+      "description": "Column alias mapping specs for confirmation workbook templates.",
+      "editable": true
+    },
+    {
+      "asset_name": "confirmation_workbook_diagnosis_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/confirmation_workbook_diagnosis_policies.yaml",
+      "description": "Matching and validation policies for confirmation workbook template diagnosis.",
+      "editable": true
+    },
+    {
+      "asset_name": "batch_processing_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/batch_processing_policies.yaml",
+      "description": "Batch grouping and batch output policies.",
+      "editable": true
+    },
+    {
+      "asset_name": "incremental_rerun_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/incremental_rerun_policies.yaml",
+      "description": "Fingerprint and changed-only incremental rerun policies.",
+      "editable": true
+    },
+    {
+      "asset_name": "workbook_import_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/workbook_import_policies.yaml",
+      "description": "Confirmation workbook import and status mapping policies.",
+      "editable": true
+    },
+    {
+      "asset_name": "workbook_column_aliases",
+      "asset_type": "yaml",
+      "file_path": "app/config/workbook_column_aliases.yaml",
+      "description": "Column aliases for confirmation workbook import.",
+      "editable": true
+    },
+    {
+      "asset_name": "domain_governance_packs",
+      "asset_type": "yaml",
+      "file_path": "app/config/domain_governance_packs.yaml",
+      "description": "Rule-based domain governance pack definitions.",
+      "editable": true
+    },
+    {
+      "asset_name": "project_template_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/project_template_profiles.yaml",
+      "description": "Project templates that apply workflow, output, review, and domain defaults.",
+      "editable": true
+    },
+    {
+      "asset_name": "domain_delivery_templates",
+      "asset_type": "yaml",
+      "file_path": "app/config/domain_delivery_templates.yaml",
+      "description": "Domain-aware delivery output defaults.",
+      "editable": true
+    },
+    {
+      "asset_name": "intake_template_profiles",
+      "asset_type": "yaml",
+      "file_path": "app/config/intake_template_profiles.yaml",
+      "description": "Metadata intake template profile definitions.",
+      "editable": true
+    },
+    {
+      "asset_name": "intake_field_mapping_specs",
+      "asset_type": "yaml",
+      "file_path": "app/config/intake_field_mapping_specs.yaml",
+      "description": "Source-to-target field mapping specs for metadata intake.",
+      "editable": true
+    },
+    {
+      "asset_name": "intake_diagnosis_policies",
+      "asset_type": "yaml",
+      "file_path": "app/config/intake_diagnosis_policies.yaml",
+      "description": "Policies for metadata intake template diagnosis and validation.",
+      "editable": true
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+delivery_defaults:
+  customer_domain_pack:
+    include_outputs:
+      - mapping_confirmation_workbook
+      - quality_rule_confirmation_workbook
+  transaction_domain_pack:
+    include_outputs:
+      - stg_confirmation_workbook
+      - quality_rule_confirmation_workbook
+      - execution_ready_package
+  reference_code_domain_pack:
+    include_outputs:
+      - quality_rule_confirmation_workbook
+      - governance_delivery_package
+  supply_chain_finance_domain_pack:
+    include_outputs:
+      - mapping_confirmation_workbook
+      - stg_confirmation_workbook
+      - quality_rule_confirmation_workbook
+      - backlog_workbook
+      - governance_delivery_package
+

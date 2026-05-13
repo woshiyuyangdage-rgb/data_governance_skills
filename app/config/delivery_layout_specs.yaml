@@ -1,0 +1,113 @@
+layout_specs:
+  business_mapping_layout:
+    sheet_name: mapping_review
+    display_columns:
+      source_table_name: Source Table
+      source_field_name: Source Field
+      source_field_name_cn: Source Field CN
+      recommended_standard_code: Recommended Standard Code
+      recommended_standard_name: Recommended Standard Name
+      recommended_standard_name_cn: Recommended Standard Name CN
+      match_score: Match Score
+      match_reason: Match Reason
+      confirmation_status: Confirmation Status
+      reviewer_note: Reviewer Note
+    column_order:
+      - source_table_name
+      - source_field_name
+      - source_field_name_cn
+      - recommended_standard_code
+      - recommended_standard_name
+      - recommended_standard_name_cn
+      - match_score
+      - match_reason
+      - confirmation_status
+      - reviewer_note
+    extra_columns:
+      review_owner: ""
+      business_comment: ""
+
+  architecture_stg_layout:
+    sheet_name: stg_design_review
+    display_columns:
+      source_table_name: Source Table
+      source_field_name: Source Field
+      recommended_stg_field_name: Recommended STG Field
+      recommended_stg_field_name_cn: Recommended STG Field CN
+      recommended_data_type: Recommended Data Type
+      mapping_source: Mapping Source
+      action: Action
+      confirmation_status: Confirmation Status
+      reviewer_note: Reviewer Note
+    column_order:
+      - source_table_name
+      - source_field_name
+      - recommended_stg_field_name
+      - recommended_stg_field_name_cn
+      - recommended_data_type
+      - mapping_source
+      - action
+      - confirmation_status
+      - reviewer_note
+    extra_columns:
+      architect_comment: ""
+
+  quality_rule_layout:
+    sheet_name: quality_rule_review
+    display_columns:
+      source_table_name: Source Table
+      source_field_name: Source Field
+      rule_scope: Rule Scope
+      field_group: Field Group
+      rule_type: Rule Type
+      rule_expression: Rule Expression
+      severity: Severity
+      confidence: Confidence
+      review_priority: Review Priority
+      confirmation_status: Confirmation Status
+      reviewer_note: Reviewer Note
+    column_order:
+      - source_table_name
+      - source_field_name
+      - rule_scope
+      - field_group
+      - rule_type
+      - rule_expression
+      - severity
+      - confidence
+      - review_priority
+      - confirmation_status
+      - reviewer_note
+    extra_columns:
+      rule_owner: ""
+
+  backlog_layout:
+    sheet_name: governance_backlog
+    display_columns:
+      backlog_id: Backlog ID
+      object_type: Object Type
+      object_name: Object Name
+      gap_type: Gap Type
+      action: Action
+      owner_role: Owner Role
+      priority: Priority
+      status: Status
+      completion_criteria: Completion Criteria
+      dependency_notes: Dependency Notes
+    column_order:
+      - backlog_id
+      - object_type
+      - object_name
+      - gap_type
+      - action
+      - owner_role
+      - priority
+      - status
+      - completion_criteria
+      - dependency_notes
+    extra_columns:
+      due_note: ""
+
+  delivery_bundle_layout:
+    manifest_file_name: delivery_manifest.json
+    include_manifest_summary: true

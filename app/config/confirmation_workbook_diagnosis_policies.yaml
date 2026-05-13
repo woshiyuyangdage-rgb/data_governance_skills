@@ -1,0 +1,17 @@
+diagnosis_policy:
+  require_required_target_fields: true
+  allow_missing_optional_fields: true
+  infer_sheet_by_overlap_score: true
+  report_unmapped_source_columns: true
+  support_partial_templates: true
+
+matching_policy:
+  exact_header_score: 1.0
+  alias_header_score: 0.8
+  workbook_type_bonus: 0.1
+
+validation_policy:
+  fail_if_required_fields_missing: true
+  allow_unknown_extra_columns: true
+  allow_blank_reviewer_note: true
+

@@ -1,0 +1,54 @@
+token_to_template_map:
+  id: identifier
+  identifier: identifier
+  code: code
+  status: status
+  amount: amount
+  amt: amount
+  balance: amount
+  qty: amount
+  quantity: amount
+  date: date
+  dt: date
+  tm: date
+  time: date
+  created: date
+  updated: date
+  name: name
+  phone: contact
+  mobile: contact
+  email: contact
+
+standard_code_to_template_map:
+  customer_id: identifier
+  customer_name: name
+  account_id: identifier
+  transaction_id: identifier
+  transaction_amount: amount
+  created_date: date
+  updated_date: date
+  status_code: status
+  audit_log_id: identifier
+
+data_type_default_rules:
+  decimal:
+    - amount
+  numeric:
+    - amount
+  timestamp:
+    - date
+  datetime:
+    - date
+  date:
+    - date
+
+severity_default_priority_map:
+  high: P1
+  medium: P2
+  low: P3
+
+recommendation_policy:
+  prefer_confirmed_mapping: true
+  fallback_to_standard_mapping: true
+  fallback_to_stg_field_name_tokens: true
+  fallback_to_source_field_name_tokens: true

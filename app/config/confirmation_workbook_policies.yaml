@@ -1,0 +1,13 @@
+workbook_policy:
+  include_instruction_sheet: true
+  include_summary_sheet: true
+  default_confirmation_status: pending
+  allow_blank_reviewer_note: true
+
+delivery_package_policy:
+  include_manifest: true
+  include_reports: true
+  include_confirmed_assets: true
+  include_backlog: true
+  include_execution_package: true
+

@@ -1,0 +1,39 @@
+domains:
+  customer:
+    trigger_tokens:
+      - customer
+      - cust
+      - client
+    rules:
+      - rule_type: identifier_presence_group
+        required_tokens:
+          - id
+          - name
+        severity: medium
+
+  transaction:
+    trigger_tokens:
+      - transaction
+      - txn
+      - order
+    rules:
+      - rule_type: amount_currency_pair
+        required_tokens:
+          - amount
+          - currency
+        severity: medium
+      - rule_type: transaction_date_presence
+        required_tokens:
+          - date
+        severity: medium
+
+  status:
+    trigger_tokens:
+      - status
+      - state
+    rules:
+      - rule_type: code_name_pair
+        required_tokens:
+          - code
+          - name
+        severity: low

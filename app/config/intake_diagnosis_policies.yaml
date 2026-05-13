@@ -1,0 +1,18 @@
+diagnosis_policy:
+  require_minimum_target_fields: true
+  allow_partial_mapping: true
+  warn_on_missing_optional_fields: true
+  infer_sheet_by_overlap_score: true
+  normalize_boolean_nullable: true
+  trim_whitespace: true
+
+matching_policy:
+  exact_header_score: 1.0
+  alias_header_score: 0.8
+  weak_header_score: 0.5
+
+validation_policy:
+  fail_if_required_target_fields_missing: true
+  allow_unknown_extra_columns: true
+  report_unmapped_source_columns: true
+

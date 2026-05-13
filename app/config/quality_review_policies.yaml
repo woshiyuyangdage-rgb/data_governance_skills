@@ -1,0 +1,13 @@
+review_priority:
+  high_confidence_auto_accept_hint: false
+  low_confidence_threshold: 0.4
+  medium_confidence_threshold: 0.7
+  prioritize_cross_field_rules: true
+  prioritize_manual_review_for_reference_hints: true
+
+confidence_policy:
+  exact_template_match: 1.0
+  domain_token_match: 0.8
+  stg_name_match: 0.7
+  source_token_match: 0.6
+  weak_hint_match: 0.4

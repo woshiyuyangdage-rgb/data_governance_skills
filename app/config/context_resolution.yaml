@@ -1,0 +1,36 @@
+file_resolution_priority:
+  - explicit_file_path
+  - session_last_uploaded_file
+  - session_last_task_file
+  - session_last_sample_file
+
+supported_file_references:
+  - this file
+  - current file
+  - uploaded file
+  - last file
+  - previous file
+  - this metadata file
+  - 这个文件
+  - 当前文件
+  - 刚上传的文件
+  - 上一个文件
+  - 上次文件
+
+supported_result_references:
+  - last result
+  - previous result
+  - latest report
+  - last report
+  - 上一次结果
+  - 最近一次结果
+  - 最新报告
+
+autofill_policy:
+  enable_file_path_autofill: true
+  enable_output_dir_autofill: true
+  fallback_to_sample_file: false
+
+ambiguity_policy:
+  allow_single_candidate_autofill: true
+  require_confirmation_if_multiple_candidates: true

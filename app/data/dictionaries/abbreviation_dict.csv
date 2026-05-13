@@ -1,0 +1,16 @@
+abbreviation,expanded_form,category,notes
+cust,customer,business_entity,Common customer abbreviation
+acct,account,business_entity,Common account abbreviation
+amt,amount,measure,Common amount abbreviation
+dt,date,time,Common date abbreviation
+tm,time,time,Common time abbreviation
+no,number,identifier,Common number abbreviation
+id,identifier,identifier,Common identifier abbreviation
+msg,message,technical,Common message abbreviation
+txn,transaction,business_event,Common transaction abbreviation
+bal,balance,measure,Common balance abbreviation
+cnt,count,measure,Common count abbreviation
+qty,quantity,measure,Common quantity abbreviation
+cfg,configuration,technical,Common configuration abbreviation
+tmp,temporary,lifecycle,Common temporary abbreviation
+hist,history,lifecycle,Common history abbreviation

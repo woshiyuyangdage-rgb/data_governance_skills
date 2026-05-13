@@ -1,0 +1,55 @@
+templates:
+  - template_name: metadata_inventory_project
+    enabled: true
+    description: Focus on metadata diagnosis and readiness discovery
+    base_workflow_profile: metadata_diagnosis_only
+    default_outputs:
+      - diagnosis_report
+      - readiness_summary
+    default_domain_pack: null
+    default_review_mode: false
+
+  - template_name: standard_mapping_confirmation_project
+    enabled: true
+    description: Focus on mapping suggestions and mapping confirmation workbook
+    base_workflow_profile: diagnosis_plus_mapping
+    default_outputs:
+      - mapping_confirmation_workbook
+      - mapping_report
+    default_domain_pack: customer_domain_pack
+    default_review_mode: true
+
+  - template_name: stg_structure_design_project
+    enabled: true
+    description: Focus on STG structure suggestions and STG confirmation workbook
+    base_workflow_profile: diagnosis_mapping_stg
+    default_outputs:
+      - stg_confirmation_workbook
+      - stg_report
+    default_domain_pack: transaction_domain_pack
+    default_review_mode: true
+
+  - template_name: quality_rule_build_project
+    enabled: true
+    description: Focus on quality intelligence, confirmation workbook and execution-ready package
+    base_workflow_profile: diagnosis_mapping_stg_quality_package_with_review
+    default_outputs:
+      - quality_rule_confirmation_workbook
+      - execution_ready_package
+      - quality_report
+    default_domain_pack: reference_code_domain_pack
+    default_review_mode: true
+
+  - template_name: full_governance_delivery_project
+    enabled: true
+    description: Full governance workflow including delivery package
+    base_workflow_profile: governance_delivery_package_with_review
+    default_outputs:
+      - mapping_confirmation_workbook
+      - stg_confirmation_workbook
+      - quality_rule_confirmation_workbook
+      - backlog_workbook
+      - governance_delivery_package
+    default_domain_pack: supply_chain_finance_domain_pack
+    default_review_mode: true
+
