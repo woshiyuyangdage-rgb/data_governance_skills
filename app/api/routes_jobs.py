@@ -5,7 +5,6 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 
 from app.api.job_catalog import build_job_catalog
-from app.core.agent.agent_shell_service import AgentShellService
 from app.api.job_requests import (
     AgentShellPlanRequest,
     AgentShellRunRequest,
@@ -35,6 +34,12 @@ from app.api.job_requests import (
     QualityRuleReviewRequest,
     StgReviewSaveRequest,
 )
+from app.api.tool_response import (
+    call_tool_and_expand,
+    call_tool_and_wrap,
+    call_tool_or_400,
+)
+from app.core.agent.agent_shell_service import AgentShellService
 from app.core.adapters.invocation_adapter import InvocationAdapter
 from app.core.adapters.manifest_service import (
     get_capability_manifest,
@@ -824,19 +829,10 @@ def assess_governance_readiness_route(
     payload: GovernanceReadinessAssessmentRequest,
 ) -> dict[str, object]:
     """Assess governance readiness scores and classify gaps."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="assess_governance_readiness",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "assess_governance_readiness",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.post("/build-governance-work-package")
@@ -844,19 +840,10 @@ def build_governance_work_package_route(
     payload: GovernanceWorkPackageBuildRequest,
 ) -> dict[str, object]:
     """Build remediation actions and a governance work package."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="build_governance_work_package",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "build_governance_work_package",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.get("/governance-readiness-summary")
@@ -879,19 +866,10 @@ def build_governance_backlog_route(
     payload: GovernanceBacklogBuildRequest,
 ) -> dict[str, object]:
     """Build local governance backlog items."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="build_governance_backlog",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "build_governance_backlog",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.post("/export-confirmation-workbooks")
@@ -899,19 +877,10 @@ def export_confirmation_workbooks_route(
     payload: GovernanceDeliveryPackageRequest,
 ) -> dict[str, object]:
     """Export local confirmation workbooks for governance review."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="export_confirmation_workbooks",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "export_confirmation_workbooks",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.post("/build-governance-delivery-package")
@@ -919,19 +888,10 @@ def build_governance_delivery_package_route(
     payload: GovernanceDeliveryPackageRequest,
 ) -> dict[str, object]:
     """Build a local governance delivery package with manifest and workbooks."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="build_governance_delivery_package",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "build_governance_delivery_package",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.get("/governance-delivery-manifest")
@@ -953,29 +913,19 @@ def governance_delivery_manifest_route() -> dict[str, object]:
 @router.post("/run-batch-governance")
 def run_batch_governance_route(payload: BatchGovernanceRequest) -> dict[str, object]:
     """Run multi-file batch governance."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="run_batch_governance",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_wrap(
+        "run_batch_governance",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {"message": response.message, "trace_id": response.trace_id, "result": response.result}
 
 
 @router.post("/run-incremental-rerun")
 def run_incremental_rerun_route(payload: BatchGovernanceRequest) -> dict[str, object]:
     """Run changed-only batch governance."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="run_incremental_rerun",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_wrap(
+        "run_incremental_rerun",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {"message": response.message, "trace_id": response.trace_id, "result": response.result}
 
 
 @router.post("/compare-governance-snapshots")
@@ -983,15 +933,10 @@ def compare_governance_snapshots_route(
     payload: BatchSnapshotCompareRequest,
 ) -> dict[str, object]:
     """Compare local governance batch snapshots."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="compare_governance_snapshots",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "compare_governance_snapshots",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {"message": response.message, "trace_id": response.trace_id, **(response.result or {})}
 
 
 @router.get("/batch-snapshots/{batch_name}")
@@ -1022,15 +967,11 @@ def import_confirmation_workbook_route(
     payload: ConfirmationWorkbookImportRequest,
 ) -> dict[str, object]:
     """Import one filled confirmation workbook and merge local updates."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="import_confirmation_workbook",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_wrap(
+        "import_confirmation_workbook",
+        payload.model_dump(exclude_none=True),
+        success_statuses={"success", "partial_success"},
     )
-    if response.status not in {"success", "partial_success"}:
-        raise HTTPException(status_code=400, detail=response.message)
-    return {"message": response.message, "trace_id": response.trace_id, "result": response.result}
 
 
 @router.post("/import-confirmation-and-rerun")
@@ -1038,15 +979,11 @@ def import_confirmation_and_rerun_route(
     payload: ConfirmationWorkbookImportRequest,
 ) -> dict[str, object]:
     """Import one confirmation workbook and prepare changed-object rerun scope."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="import_confirmation_and_rerun",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_wrap(
+        "import_confirmation_and_rerun",
+        payload.model_dump(exclude_none=True),
+        success_statuses={"success", "partial_success"},
     )
-    if response.status not in {"success", "partial_success"}:
-        raise HTTPException(status_code=400, detail=response.message)
-    return {"message": response.message, "trace_id": response.trace_id, "result": response.result}
 
 
 @router.get("/roundtrip-changed-objects-summary")
@@ -1140,19 +1077,10 @@ def assess_governance_portfolio_route(
     payload: GovernancePortfolioAssessmentRequest,
 ) -> dict[str, object]:
     """Assess backlog SLA, portfolio summary, and progress snapshot outputs."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="assess_governance_portfolio",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "assess_governance_portfolio",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.post("/generate-progress-snapshot")
@@ -1160,50 +1088,25 @@ def generate_progress_snapshot_route(
     payload: ProgressSnapshotRequest,
 ) -> dict[str, object]:
     """Generate and optionally save a governance progress snapshot."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="generate_progress_snapshot",
-            arguments=payload.model_dump(exclude_none=True),
-        )
+    return call_tool_and_expand(
+        "generate_progress_snapshot",
+        payload.model_dump(exclude_none=True),
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.get("/governance-progress-snapshots")
 def governance_progress_snapshots_route() -> dict[str, object]:
     """List saved governance progress snapshots."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="list_governance_progress_snapshots",
-            arguments={},
-        )
+    return call_tool_and_expand(
+        "list_governance_progress_snapshots",
+        {},
     )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
-    return {
-        "message": response.message,
-        "trace_id": response.trace_id,
-        **(response.result or {}),
-    }
 
 
 @router.get("/governance-portfolio-summary")
 def governance_portfolio_summary_route() -> dict[str, object]:
     """Return portfolio summary for persisted backlog items."""
-    response = call_tool(
-        ToolCallRequest(
-            tool_name="assess_governance_portfolio",
-            arguments={},
-        )
-    )
-    if response.status != "success":
-        raise HTTPException(status_code=400, detail=response.message)
+    response = call_tool_or_400("assess_governance_portfolio", {})
     result = response.result or {}
     return {
         "message": "Governance portfolio summary was loaded successfully.",
