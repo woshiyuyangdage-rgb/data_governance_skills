@@ -46,11 +46,36 @@ Platform consistency checks
 [OK] domain delivery references
 ```
 
+## Run Quick Check
+
+Run this before small commits when you want a faster confidence pass than the full suite:
+
+```powershell
+python -m app.maintenance quick-check
+```
+
+The command runs `doctor` first, then runs a focused pytest set around configuration loading,
+the control plane, tool registration, project templates, and domain packs. If `doctor` fails,
+the test step is skipped so the first configuration problem stays visible.
+
+Use the full test suite before larger changes:
+
+```powershell
+python -m pytest -q
+```
+
+## Show Common Commands
+
+Print the daily command cheat sheet from the same maintenance entrypoint:
+
+```powershell
+python -m app.maintenance commands
+```
+
 ## Suggested Daily Loop
 
 ```powershell
-python -m app.maintenance doctor
-python -m pytest -q
+python -m app.maintenance quick-check
 git status
 ```
 

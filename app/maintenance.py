@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
+import sys
 from collections.abc import Sequence
 
 from app.core.control_plane import ControlPlaneService
@@ -13,6 +15,41 @@ from app.core.rules.config_loader import get_domain_delivery_templates_config
 from app.core.templates.project_template_loader import list_enabled_project_templates
 from app.core.tools.governance_tool_executor import GovernanceToolExecutor
 from app.core.tools.tool_loader import load_tool_registry
+
+QUICK_CHECK_TEST_TARGETS = (
+    "tests/test_maintenance.py",
+    "tests/test_control_plane_service.py",
+    "tests/test_tool_loader.py",
+    "tests/test_governance_tool_executor.py",
+    "tests/test_project_template_loader.py",
+    "tests/test_domain_pack_loader.py",
+)
+
+COMMON_COMMAND_GROUPS = (
+    (
+        "Daily checks",
+        (
+            ("Validate config", "python -m app.maintenance validate-config"),
+            ("Platform doctor", "python -m app.maintenance doctor"),
+            ("Quick check", "python -m app.maintenance quick-check"),
+            ("Full tests", "python -m pytest -q"),
+        ),
+    ),
+    (
+        "Local app",
+        (
+            ("FastAPI", "python -m uvicorn app.main:app --reload"),
+            ("Streamlit", "python -m streamlit run app/ui/streamlit_app.py"),
+        ),
+    ),
+    (
+        "Git",
+        (
+            ("Status", "git status --short --branch"),
+            ("Push", "git push"),
+        ),
+    ),
+)
 
 
 def _format_validation_result(result: ValidationResult) -> list[str]:
@@ -119,6 +156,38 @@ def run_platform_doctor() -> int:
     return 0 if validation_exit_code == 0 and failure_count == 0 else 1
 
 
+def print_common_commands() -> int:
+    """Print the commands used most often while operating the local platform."""
+    print("Common local commands", flush=True)
+    for group_name, commands in COMMON_COMMAND_GROUPS:
+        print(flush=True)
+        print(group_name, flush=True)
+        for label, command in commands:
+            print(f"  {label}: {command}", flush=True)
+    return 0
+
+
+def _run_subprocess(command: Sequence[str]) -> int:
+    print(flush=True)
+    print("$ " + " ".join(command), flush=True)
+    completed = subprocess.run(command, check=False)
+    return int(completed.returncode)
+
+
+def run_quick_check(test_targets: Sequence[str] = QUICK_CHECK_TEST_TARGETS) -> int:
+    """Run the fastest useful local confidence checks before a commit."""
+    print("Quick check", flush=True)
+    print("Runs platform doctor and focused maintenance tests.", flush=True)
+    doctor_exit_code = run_platform_doctor()
+    if doctor_exit_code != 0:
+        print(flush=True)
+        print("Quick check stopped because platform doctor failed.", flush=True)
+        return doctor_exit_code
+
+    pytest_command = [sys.executable, "-B", "-m", "pytest", "-q", *test_targets]
+    return _run_subprocess(pytest_command)
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the maintenance command parser."""
     parser = argparse.ArgumentParser(
@@ -138,6 +207,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run config validation plus platform consistency checks.",
     )
     doctor_parser.set_defaults(handler=lambda _args: run_platform_doctor())
+
+    quick_check_parser = subparsers.add_parser(
+        "quick-check",
+        help="Run platform doctor plus focused maintenance tests.",
+    )
+    quick_check_parser.set_defaults(handler=lambda _args: run_quick_check())
+
+    commands_parser = subparsers.add_parser(
+        "commands",
+        help="Print common local development and maintenance commands.",
+    )
+    commands_parser.set_defaults(handler=lambda _args: print_common_commands())
 
     return parser
 

@@ -876,7 +876,19 @@ streamlit run app/ui/streamlit_app.py
 Run tests:
 
 ```bash
-pytest
+python -m pytest -q
+```
+
+Run a faster daily maintenance check:
+
+```bash
+python -m app.maintenance quick-check
+```
+
+Show common local commands:
+
+```bash
+python -m app.maintenance commands
 ```
 
 ## Current Capability Boundary

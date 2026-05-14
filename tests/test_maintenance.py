@@ -102,6 +102,8 @@ def test_maintenance_main_without_command_prints_help(capsys) -> None:
     captured = capsys.readouterr()
     assert exit_code == 2
     assert "validate-config" in captured.out
+    assert "quick-check" in captured.out
+    assert "commands" in captured.out
 
 
 def test_tool_handler_check_reports_unregistered_enabled_handler(monkeypatch) -> None:
@@ -190,3 +192,57 @@ def test_domain_delivery_reference_check_reports_missing_pack(monkeypatch) -> No
     assert errors == [
         "domain delivery defaults reference missing domain pack 'missing_domain_pack'"
     ]
+
+
+def test_print_common_commands_lists_daily_operations(capsys) -> None:
+    exit_code = maintenance.print_common_commands()
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "Common local commands" in captured.out
+    assert "python -m app.maintenance doctor" in captured.out
+    assert "python -m app.maintenance quick-check" in captured.out
+    assert "python -m pytest -q" in captured.out
+
+
+def test_quick_check_runs_doctor_then_focused_tests(monkeypatch) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    monkeypatch.setattr(maintenance, "run_platform_doctor", lambda: 0)
+    monkeypatch.setattr(
+        maintenance,
+        "_run_subprocess",
+        lambda command: calls.append(tuple(command)) or 0,
+    )
+
+    exit_code = maintenance.run_quick_check(["tests/test_maintenance.py"])
+
+    assert exit_code == 0
+    assert calls == [
+        (
+            maintenance.sys.executable,
+            "-B",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_maintenance.py",
+        )
+    ]
+
+
+def test_quick_check_stops_when_doctor_fails(monkeypatch, capsys) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    monkeypatch.setattr(maintenance, "run_platform_doctor", lambda: 1)
+    monkeypatch.setattr(
+        maintenance,
+        "_run_subprocess",
+        lambda command: calls.append(tuple(command)) or 0,
+    )
+
+    exit_code = maintenance.run_quick_check(["tests/test_maintenance.py"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert calls == []
+    assert "platform doctor failed" in captured.out
