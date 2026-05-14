@@ -20,6 +20,7 @@ class RoundTripRerunService:
         )
         return {
             "rerun_changed_only": True,
+            "rerun_object_count": len(changed_objects),
             "changed_object_count": len(changed_objects),
             "changed_object_keys": changed_objects,
         }

@@ -13,6 +13,10 @@ from app.core.audit.trace_store import build_trace_summary, save_trace
 from app.core.control_plane.control_plane_service import ControlPlaneService
 from app.core.delivery.delivery_service import DeliveryService
 from app.core.delivery.confirmation_workbook_importer import ConfirmationWorkbookImporter
+from app.core.delivery.delivery_template_loader import (
+    list_enabled_delivery_bundle_variants,
+    list_enabled_delivery_template_profiles,
+)
 from app.core.delivery.confirmation_template_loader import (
     list_enabled_confirmation_template_profiles,
 )
@@ -672,6 +676,18 @@ class GovernanceToolExecutor:
         arguments: dict[str, object],
     ) -> ToolCallResponse:
         """Dispatch one enabled tool definition to its bound executor method."""
+        handler_map = self.get_registered_handlers()
+        handler = handler_map.get(tool_definition.handler)
+        if handler is None:
+            return self.build_unavailable_tool_response(
+                tool_definition.name,
+                arguments,
+                f"Tool handler '{tool_definition.handler}' is not registered.",
+            )
+        return handler(arguments)
+
+    def get_registered_handlers(self):
+        """Return registered tool handler bindings."""
         handler_map = {
             "governance_tool_executor.run_governance_profile": self.run_governance_profile,
             "governance_tool_executor.recommend_quality_rules": self.recommend_quality_rules,
@@ -703,6 +719,7 @@ class GovernanceToolExecutor:
             "governance_tool_executor.import_confirmation_and_rerun": self.import_confirmation_and_rerun,
             "governance_tool_executor.list_domain_governance_packs": self.list_domain_governance_packs,
             "governance_tool_executor.list_project_templates": self.list_project_templates,
+            "governance_tool_executor.list_delivery_template_profiles": self.list_delivery_template_profiles,
             "governance_tool_executor.match_domain_governance_pack": self.match_domain_governance_pack,
             "governance_tool_executor.run_project_template": self.run_project_template,
             "governance_tool_executor.diagnose_metadata_intake_template": self.diagnose_metadata_intake_template,
@@ -716,14 +733,11 @@ class GovernanceToolExecutor:
             "governance_tool_executor.save_config_asset": self.save_config_asset,
             "governance_tool_executor.publish_config_asset": self.publish_config_asset,
         }
-        handler = handler_map.get(tool_definition.handler)
-        if handler is None:
-            return self.build_unavailable_tool_response(
-                tool_definition.name,
-                arguments,
-                f"Tool handler '{tool_definition.handler}' is not registered.",
-            )
-        return handler(arguments)
+        return handler_map
+
+    def list_registered_handler_names(self) -> set[str]:
+        """Return registered tool handler names."""
+        return set(self.get_registered_handlers().keys())
 
     def run_governance_profile(self, arguments: dict[str, object]) -> ToolCallResponse:
         """Run a named governance workflow profile directly."""
@@ -1543,6 +1557,35 @@ class GovernanceToolExecutor:
             templates = [template.model_dump() for template in list_enabled_project_templates()]
             trace = self._finish_trace(trace, "success", f"Listed {len(templates)} project templates.")
             return self._build_tool_response(tool_name, "success", "Project templates listed.", {"templates": templates}, trace)
+        except Exception as exc:
+            trace = self._finish_trace(trace, "failed", str(exc))
+            return self._build_tool_response(tool_name, "failed", str(exc), None, trace)
+
+    def list_delivery_template_profiles(self, arguments: dict[str, object]) -> ToolCallResponse:
+        """List enabled enterprise delivery templates and bundle variants."""
+        tool_name = "list_delivery_template_profiles"
+        trace = self._start_trace(tool_name=tool_name, arguments=arguments)
+        try:
+            profiles = [
+                profile.model_dump()
+                for profile in list_enabled_delivery_template_profiles()
+            ]
+            variants = list_enabled_delivery_bundle_variants()
+            trace = self._finish_trace(
+                trace,
+                "success",
+                f"Listed {len(profiles)} delivery templates and {len(variants)} bundle variants.",
+            )
+            return self._build_tool_response(
+                tool_name,
+                "success",
+                "Delivery template profiles listed.",
+                {
+                    "profiles": profiles,
+                    "bundle_variants": variants,
+                },
+                trace,
+            )
         except Exception as exc:
             trace = self._finish_trace(trace, "failed", str(exc))
             return self._build_tool_response(tool_name, "failed", str(exc), None, trace)

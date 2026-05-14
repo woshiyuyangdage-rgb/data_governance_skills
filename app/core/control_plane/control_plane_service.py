@@ -267,6 +267,17 @@ class ControlPlaneService:
         )
         return validation_result
 
+    def validate_all_assets(self, *, persist_status: bool = True) -> list[ValidationResult]:
+        """Validate every managed asset, optionally persisting validation status."""
+        results: list[ValidationResult] = []
+        for asset in self.list_assets():
+            if persist_status:
+                results.append(self.validate_asset(asset.asset_name))
+                continue
+            content = read_asset_file(self._resolve_asset_path(asset))
+            results.append(validate_asset_content(asset.asset_name, content))
+        return results
+
     def validate_asset_preview(self, asset_name: str, content: Any) -> ValidationResult:
         """Validate proposed content without writing it to disk."""
         asset = self._get_asset(asset_name)

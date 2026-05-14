@@ -1,0 +1,192 @@
+"""Tests for command-line maintenance helpers."""
+
+from app import maintenance
+from app.core.models.validation_result import ValidationResult
+
+
+class _FakeControlPlaneService:
+    results: list[ValidationResult] = []
+    persist_status: bool | None = None
+
+    def validate_all_assets(self, *, persist_status: bool = True) -> list[ValidationResult]:
+        type(self).persist_status = persist_status
+        return list(self.results)
+
+
+class _FakeTool:
+    def __init__(self, name: str, handler: str, enabled: bool = True) -> None:
+        self.name = name
+        self.handler = handler
+        self.enabled = enabled
+
+
+class _FakeExecutor:
+    handler_names: set[str] = set()
+
+    def list_registered_handler_names(self) -> set[str]:
+        return set(self.handler_names)
+
+
+class _FakeProfile:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class _FakeDomainPack:
+    def __init__(self, pack_name: str) -> None:
+        self.pack_name = pack_name
+
+
+class _FakeTemplate:
+    def __init__(
+        self,
+        template_name: str,
+        base_workflow_profile: str,
+        default_domain_pack: str | None = None,
+    ) -> None:
+        self.template_name = template_name
+        self.base_workflow_profile = base_workflow_profile
+        self.default_domain_pack = default_domain_pack
+
+
+def test_validate_config_assets_returns_success_for_valid_assets(
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.setattr(maintenance, "ControlPlaneService", _FakeControlPlaneService)
+    _FakeControlPlaneService.results = [
+        ValidationResult(asset_name="workflow_profiles", is_valid=True),
+        ValidationResult(
+            asset_name="intent_patterns",
+            is_valid=True,
+            warnings=["contains a weak keyword match"],
+        ),
+    ]
+
+    exit_code = maintenance.validate_config_assets()
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert _FakeControlPlaneService.persist_status is False
+    assert "2 valid, 0 invalid, 1 warnings" in captured.out
+    assert "[OK] intent_patterns" in captured.out
+    assert "warning: contains a weak keyword match" in captured.out
+
+
+def test_validate_config_assets_returns_failure_for_invalid_assets(
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.setattr(maintenance, "ControlPlaneService", _FakeControlPlaneService)
+    _FakeControlPlaneService.results = [
+        ValidationResult(asset_name="workflow_profiles", is_valid=True),
+        ValidationResult(
+            asset_name="tool_registry",
+            is_valid=False,
+            messages=["tool names must be unique"],
+        ),
+    ]
+
+    exit_code = maintenance.validate_config_assets()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "1 valid, 1 invalid, 0 warnings" in captured.out
+    assert "[FAIL] tool_registry" in captured.out
+    assert "error: tool names must be unique" in captured.out
+
+
+def test_maintenance_main_without_command_prints_help(capsys) -> None:
+    exit_code = maintenance.main([])
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "validate-config" in captured.out
+
+
+def test_tool_handler_check_reports_unregistered_enabled_handler(monkeypatch) -> None:
+    monkeypatch.setattr(maintenance, "GovernanceToolExecutor", _FakeExecutor)
+    monkeypatch.setattr(
+        maintenance,
+        "load_tool_registry",
+        lambda: [
+            _FakeTool(
+                "known_tool",
+                "governance_tool_executor.known_tool",
+            ),
+            _FakeTool(
+                "missing_tool",
+                "governance_tool_executor.missing_tool",
+            ),
+            _FakeTool(
+                "disabled_tool",
+                "governance_tool_executor.disabled_tool",
+                enabled=False,
+            ),
+        ],
+    )
+    _FakeExecutor.handler_names = {"governance_tool_executor.known_tool"}
+
+    errors = maintenance._check_tool_handlers()
+
+    assert errors == [
+        "tool 'missing_tool' references unregistered handler "
+        "'governance_tool_executor.missing_tool'"
+    ]
+
+
+def test_project_template_reference_check_reports_missing_links(monkeypatch) -> None:
+    monkeypatch.setattr(
+        maintenance,
+        "list_enabled_profiles",
+        lambda: [_FakeProfile("metadata_diagnosis_only")],
+    )
+    monkeypatch.setattr(
+        maintenance,
+        "list_enabled_domain_packs",
+        lambda: [_FakeDomainPack("customer_domain_pack")],
+    )
+    monkeypatch.setattr(
+        maintenance,
+        "list_enabled_project_templates",
+        lambda: [
+            _FakeTemplate(
+                "broken_template",
+                "missing_profile",
+                "missing_domain_pack",
+            )
+        ],
+    )
+
+    errors = maintenance._check_project_template_references()
+
+    assert errors == [
+        "project template 'broken_template' references missing workflow profile "
+        "'missing_profile'",
+        "project template 'broken_template' references missing domain pack "
+        "'missing_domain_pack'",
+    ]
+
+
+def test_domain_delivery_reference_check_reports_missing_pack(monkeypatch) -> None:
+    monkeypatch.setattr(
+        maintenance,
+        "list_enabled_domain_packs",
+        lambda: [_FakeDomainPack("customer_domain_pack")],
+    )
+    monkeypatch.setattr(
+        maintenance,
+        "get_domain_delivery_templates_config",
+        lambda: {
+            "delivery_defaults": {
+                "customer_domain_pack": {"include_outputs": ["mapping_report"]},
+                "missing_domain_pack": {"include_outputs": ["quality_report"]},
+            }
+        },
+    )
+
+    errors = maintenance._check_domain_delivery_references()
+
+    assert errors == [
+        "domain delivery defaults reference missing domain pack 'missing_domain_pack'"
+    ]

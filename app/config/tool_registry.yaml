@@ -295,6 +295,14 @@ tools:
     handler: governance_tool_executor.list_governance_progress_snapshots
     category: governance
 
+  - name: list_delivery_template_profiles
+    enabled: true
+    description: List enabled enterprise delivery template profiles and bundle variants
+    input_model: dict
+    output_model: dict
+    handler: governance_tool_executor.list_delivery_template_profiles
+    category: delivery
+
   - name: list_config_assets
     enabled: true
     description: List managed governance configuration assets

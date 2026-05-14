@@ -379,7 +379,17 @@ class IntentInterpreter:
             preferred_result_mode = "template"
         if auto_match_template or inferred_parameters.get("intake_profile_name"):
             preferred_result_mode = "intake"
-        if inferred_parameters.get("confirmation_template_name") or inferred_parameters.get("workbook_type"):
+        if (
+            inferred_parameters.get("confirmation_template_name")
+            or inferred_parameters.get("workbook_type")
+        ) and profile_name in {
+            FALLBACK_PROFILE_NAME,
+            "import_confirmation_workbook",
+            "import_and_rerun_changed_objects",
+            "import_confirmation_with_template",
+            "import_confirmation_template_and_rerun",
+            "diagnose_confirmation_template",
+        }:
             preferred_result_mode = "import"
             if profile_name == FALLBACK_PROFILE_NAME:
                 profile_name = "import_confirmation_with_template"

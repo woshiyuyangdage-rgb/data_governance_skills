@@ -105,6 +105,23 @@ def test_control_plane_service_can_validate_assets(
     assert status_payload["statuses"][0]["current_status"] == "published"
 
 
+def test_control_plane_service_can_validate_all_assets_without_status_writes(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _setup_control_plane_runtime(tmp_path, monkeypatch)
+    before_status = control_plane_module.CONFIG_STATUS_PATH.read_text(encoding="utf-8")
+    service = ControlPlaneService()
+
+    results = service.validate_all_assets(persist_status=False)
+
+    after_status = control_plane_module.CONFIG_STATUS_PATH.read_text(encoding="utf-8")
+    assert len(results) == 1
+    assert results[0].asset_name == "workflow_profiles"
+    assert results[0].is_valid is True
+    assert after_status == before_status
+
+
 def test_control_plane_service_save_creates_backup_and_marks_draft(
     tmp_path: Path,
     monkeypatch,

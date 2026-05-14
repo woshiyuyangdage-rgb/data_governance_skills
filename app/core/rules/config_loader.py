@@ -132,6 +132,21 @@ def get_governance_delivery_templates_config() -> dict[str, Any]:
     return load_yaml_config("governance_delivery_templates.yaml")
 
 
+def get_delivery_template_profiles_config() -> dict[str, Any]:
+    """Return enterprise delivery template profile configuration."""
+    return load_yaml_config("delivery_template_profiles.yaml")
+
+
+def get_delivery_layout_specs_config() -> dict[str, Any]:
+    """Return enterprise delivery layout specification configuration."""
+    return load_yaml_config("delivery_layout_specs.yaml")
+
+
+def get_delivery_bundle_variants_config() -> dict[str, Any]:
+    """Return enterprise delivery bundle variant configuration."""
+    return load_yaml_config("delivery_bundle_variants.yaml")
+
+
 def get_confirmation_workbook_policies_config() -> dict[str, Any]:
     """Return confirmation workbook and delivery package policies."""
     return load_yaml_config("confirmation_workbook_policies.yaml")
