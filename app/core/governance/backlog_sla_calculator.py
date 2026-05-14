@@ -6,10 +6,11 @@ from typing import Any
 from app.core.models.backlog_sla_status import BacklogSlaStatus
 from app.core.models.governance_backlog_item import GovernanceBacklogItem
 from app.core.rules.config_loader import get_backlog_sla_policies_config
+from app.core.utils.time_utils import utc_today
 
 
 def _today() -> date:
-    return datetime.utcnow().date()
+    return utc_today()
 
 
 class BacklogSlaCalculator:

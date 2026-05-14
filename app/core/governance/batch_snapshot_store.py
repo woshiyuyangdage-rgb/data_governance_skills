@@ -1,19 +1,19 @@
 """Local JSON snapshot store for batch incremental rerun."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 from typing import Any
 
 from app.core.models.object_fingerprint import ObjectFingerprint
 from app.core.utils.file_utils import ensure_directory, sanitize_filename
+from app.core.utils.time_utils import utc_now_seconds
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SNAPSHOT_DIR = PROJECT_ROOT / "app" / "data" / "batch_snapshots"
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _batch_dir(batch_name: str) -> Path:

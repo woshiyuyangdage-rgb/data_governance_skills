@@ -1,12 +1,12 @@
 """Local JSON store for governance backlog tracking."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 
 from app.core.models.backlog_update_result import BacklogUpdateResult
 from app.core.models.governance_backlog_item import GovernanceBacklogItem
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_compact, utc_now_seconds
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 BACKLOG_DIR = PROJECT_ROOT / "app" / "data" / "governance_backlog"
@@ -15,14 +15,14 @@ BACKLOG_SNAPSHOTS_DIR = BACKLOG_DIR / "backlog_snapshots"
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _snapshot_existing_file() -> str | None:
     if not BACKLOG_ITEMS_PATH.exists():
         return None
     ensure_directory(BACKLOG_SNAPSHOTS_DIR)
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = utc_now_compact()
     snapshot_path = BACKLOG_SNAPSHOTS_DIR / f"{timestamp}_backlog_items.json"
     snapshot_path.write_text(
         BACKLOG_ITEMS_PATH.read_text(encoding="utf-8"),
@@ -137,4 +137,3 @@ def update_backlog_item_status(
 
 
 # TODO: replace JSON storage with project-management adapter exports after local tracking stabilizes.
-

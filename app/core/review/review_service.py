@@ -1,7 +1,6 @@
 """Helpers for building, applying, and summarizing human review results."""
 
 from collections import Counter
-from datetime import datetime
 
 from app.core.knowledge.knowledge_loader import load_standard_fields
 from app.core.models.mapping_result import MappingResult
@@ -13,10 +12,11 @@ from app.core.review.override_store import (
     build_mapping_override_lookup,
     build_stg_override_lookup,
 )
+from app.core.utils.time_utils import utc_now_seconds
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _normalize_optional_text(value: str | None) -> str | None:

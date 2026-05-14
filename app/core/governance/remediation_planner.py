@@ -1,6 +1,5 @@
 """Rule-based remediation planning."""
 
-from datetime import datetime
 from typing import Any
 
 from app.core.models.governance_gap import GovernanceGap
@@ -8,12 +7,13 @@ from app.core.models.governance_work_package import GovernanceWorkPackage
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.rules.config_loader import get_remediation_templates_config
+from app.core.utils.time_utils import utc_now_seconds
 
 SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3}
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 class RemediationPlanner:

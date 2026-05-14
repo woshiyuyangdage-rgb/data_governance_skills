@@ -1,6 +1,5 @@
 """Merge imported confirmation workbooks back into local governance stores."""
 
-from datetime import datetime
 from typing import Any
 
 from app.core.delivery.confirmation_workbook_importer import WorkbookImportPayload
@@ -15,10 +14,11 @@ from app.core.review.override_store import (
     save_stg_review_records,
 )
 from app.core.review.quality_override_store import save_quality_rule_review_records
+from app.core.utils.time_utils import utc_now_seconds
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 class ConfirmationRoundTripService:

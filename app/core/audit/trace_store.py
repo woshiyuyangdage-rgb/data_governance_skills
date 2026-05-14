@@ -1,19 +1,19 @@
 """Local execution trace storage for tool-layer audit records."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 from uuid import uuid4
 
 from app.core.models.execution_trace import ExecutionTrace
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_seconds
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TRACE_DIR = PROJECT_ROOT / "app" / "data" / "audit" / "execution_traces"
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _trace_path(trace_id: str) -> Path:

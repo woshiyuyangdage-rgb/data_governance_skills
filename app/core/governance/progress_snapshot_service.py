@@ -1,6 +1,5 @@
 """Local progress snapshot service for governance portfolio tracking."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -11,6 +10,7 @@ from app.core.models.progress_snapshot import ProgressSnapshot
 from app.core.models.readiness_score import ReadinessScore
 from app.core.rules.config_loader import get_progress_snapshot_policies_config
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_seconds
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PROGRESS_SNAPSHOT_DIR = (
@@ -19,7 +19,7 @@ PROGRESS_SNAPSHOT_DIR = (
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 class ProgressSnapshotService:

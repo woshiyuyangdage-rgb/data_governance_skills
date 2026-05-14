@@ -1,6 +1,5 @@
 """Lightweight local control plane service for managed governance assets."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 import shutil
@@ -23,6 +22,7 @@ from app.core.orchestrator import profile_loader
 from app.core.rules.config_loader import load_yaml_config
 from app.core.tools import tool_loader
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_compact, utc_now_seconds
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 CONTROL_PLANE_DIR = PROJECT_ROOT / "app" / "data" / "control_plane"
@@ -33,7 +33,7 @@ SNAPSHOT_DIR = CONTROL_PLANE_DIR / "snapshots"
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 class ControlPlaneService:
@@ -293,7 +293,7 @@ class ControlPlaneService:
 
         target_dir = BACKUP_DIR / asset.asset_name
         ensure_directory(target_dir)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = utc_now_compact()
         backup_path = target_dir / f"{timestamp}_{resolved_path.name}"
         shutil.copy2(resolved_path, backup_path)
         return str(backup_path)

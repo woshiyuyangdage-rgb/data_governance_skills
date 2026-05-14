@@ -1,6 +1,5 @@
 """Standard local executor for governance tool contracts."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 
@@ -97,6 +96,7 @@ from app.core.review.quality_review_service import (
     build_quality_rule_review_records_from_results,
     summarize_quality_rule_review_records,
 )
+from app.core.utils.time_utils import utc_now_seconds
 
 
 class GovernanceToolExecutor:
@@ -108,7 +108,7 @@ class GovernanceToolExecutor:
 
     @staticmethod
     def _utc_now() -> str:
-        return datetime.utcnow().isoformat(timespec="seconds")
+        return utc_now_seconds()
 
     @staticmethod
     def _optional_string(arguments: dict[str, object], key: str) -> str | None:

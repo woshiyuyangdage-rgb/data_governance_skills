@@ -1,7 +1,6 @@
 """Quality rule review replay and confirmed rule construction helpers."""
 
 from collections import Counter
-from datetime import datetime
 
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
@@ -11,12 +10,13 @@ from app.core.review.quality_override_store import (
     build_quality_rule_override_lookup,
 )
 from app.core.rules.config_loader import get_quality_rule_policies_config
+from app.core.utils.time_utils import utc_now_seconds
 
 REVIEW_ACTIONS = {"accept", "reject", "edit", "mark_for_manual_review"}
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _normalize_optional_text(value: str | None) -> str | None:

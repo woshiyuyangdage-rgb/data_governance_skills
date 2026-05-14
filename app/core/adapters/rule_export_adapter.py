@@ -1,7 +1,6 @@
 """Adapters for exporting confirmed rules and execution-ready rule packages."""
 
 from collections import defaultdict
-from datetime import datetime
 import json
 from pathlib import Path
 from typing import Any
@@ -15,10 +14,11 @@ from app.core.models.execution_ready_package import ExecutionReadyPackage
 from app.core.models.execution_ready_rule import ExecutionReadyRule
 from app.core.models.rule_export_result import RuleExportResult
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_seconds
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _coerce_confirmed_rule(

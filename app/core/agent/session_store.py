@@ -1,6 +1,5 @@
 """Lightweight in-memory session store for the agent shell."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -9,6 +8,7 @@ from app.core.agent.agent_loader import load_agent_shell_config
 from app.core.models.agent_session import AgentSession
 from app.core.models.execution_plan import ExecutionPlan
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_seconds
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SESSION_SNAPSHOT_DIR = PROJECT_ROOT / "outputs" / "agent_sessions"
@@ -16,7 +16,7 @@ _SESSION_STORE: dict[str, AgentSession] = {}
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _max_recent_items() -> int:

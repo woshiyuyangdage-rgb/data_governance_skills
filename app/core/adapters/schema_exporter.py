@@ -1,11 +1,10 @@
 """Export local governance tools into adapter-friendly schema formats."""
 
-from datetime import datetime
-
 from app.core.adapters.adapter_loader import load_adapter_config
 from app.core.models.capability_manifest import CapabilityManifest
 from app.core.models.exported_tool_schema import ExportedToolSchema
 from app.core.tools.tool_loader import load_tool_registry
+from app.core.utils.time_utils import utc_now_seconds
 
 MODEL_SCHEMA_MAP: dict[str, dict[str, object]] = {
     "GovernanceTaskRequest": {
@@ -710,7 +709,7 @@ TOOL_EXAMPLES: dict[str, list[dict[str, object]]] = {
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 class SchemaExporter:

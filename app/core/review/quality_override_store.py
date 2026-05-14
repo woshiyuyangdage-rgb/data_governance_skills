@@ -1,6 +1,5 @@
 """Local CSV-backed storage for quality rule review overrides."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 
@@ -8,6 +7,7 @@ import pandas as pd
 
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_compact
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 OVERRIDES_DIR = PROJECT_ROOT / "app" / "data" / "overrides"
@@ -97,7 +97,7 @@ def _merge_by_key(
 
 def _save_review_session_snapshot(records: list[dict[str, object]]) -> str:
     ensure_directory(QUALITY_RULE_SESSIONS_DIR)
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = utc_now_compact()
     session_path = QUALITY_RULE_SESSIONS_DIR / f"quality_rule_review_{timestamp}.json"
     session_path.write_text(
         json.dumps(records, ensure_ascii=False, indent=2),

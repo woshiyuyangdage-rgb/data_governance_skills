@@ -1,7 +1,6 @@
 """Build governance backlog items from remediation actions."""
 
 from collections import defaultdict
-from datetime import datetime
 from hashlib import sha1
 from typing import Any
 
@@ -11,10 +10,11 @@ from app.core.models.governance_gap import GovernanceGap
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.rules.config_loader import get_governance_backlog_policies_config
+from app.core.utils.time_utils import utc_now_seconds
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 class GovernanceBacklogBuilder:
@@ -186,4 +186,3 @@ class GovernanceBacklogBuilder:
 
 
 # TODO: extend backlog items with due dates, SLA policy, and project-management adapter metadata.
-

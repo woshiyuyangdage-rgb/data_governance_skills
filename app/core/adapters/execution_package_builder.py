@@ -1,6 +1,5 @@
 """Build execution-ready governance packages from confirmed quality rules."""
 
-from datetime import datetime
 import hashlib
 from typing import Any
 
@@ -11,10 +10,11 @@ from app.core.rules.config_loader import (
     get_execution_package_policies_config,
     get_rule_execution_templates_config,
 )
+from app.core.utils.time_utils import utc_now_seconds
 
 
 def _utc_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return utc_now_seconds()
 
 
 def _coerce_confirmed_rule(rule: ConfirmedQualityRule | dict[str, object]) -> ConfirmedQualityRule:

@@ -1,6 +1,5 @@
 """Build local governance delivery package directories and manifests."""
 
-from datetime import datetime
 import json
 from pathlib import Path
 from typing import Any
@@ -12,6 +11,7 @@ from app.core.models.governance_delivery_package_result import (
     GovernanceDeliveryPackageResult,
 )
 from app.core.utils.file_utils import ensure_directory
+from app.core.utils.time_utils import utc_now_seconds
 
 
 class GovernanceDeliveryBuilder:
@@ -22,7 +22,7 @@ class GovernanceDeliveryBuilder:
 
     @staticmethod
     def _utc_now() -> str:
-        return datetime.utcnow().isoformat(timespec="seconds")
+        return utc_now_seconds()
 
     @staticmethod
     def _serialize(value: Any) -> Any:
