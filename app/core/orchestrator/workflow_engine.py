@@ -26,6 +26,7 @@ from app.core.review.quality_review_service import (
 from app.core.review.review_service import summarize_review_records
 from app.core.orchestrator.demo_data import build_demo_tables
 from app.core.orchestrator.workflow_attachments import WorkflowAttachmentMixin
+from app.core.orchestrator.workflow_file_runners import WorkflowFileRunnerMixin
 from app.core.skills.governance_task_packaging import (
     GovernanceTaskPackagingInput,
     GovernanceTaskPackagingSkill,
@@ -60,7 +61,7 @@ from app.core.skills.technical_object_identification import (
 )
 
 
-class WorkflowEngine(WorkflowAttachmentMixin):
+class WorkflowEngine(WorkflowFileRunnerMixin, WorkflowAttachmentMixin):
     """Sequence the five rule-based P0 skills into a stable workflow."""
 
     def __init__(self) -> None:
@@ -1232,144 +1233,3 @@ class WorkflowEngine(WorkflowAttachmentMixin):
             result,
             profile_name="quality_package_only_from_confirmed",
         )
-
-    def run_p0_plus_mapping_plus_stg_plus_quality_with_review_from_file(
-        self,
-        file_path: str,
-    ) -> WorkflowResult:
-        """Load metadata from file and run the confirmed quality rule workflow."""
-        from app.core.parser.loader import load_metadata_file
-        from app.core.parser.parser_exceptions import ParserError
-
-        try:
-            tables = load_metadata_file(file_path)
-        except ParserError as exc:
-            return WorkflowResult(status="parser_error", message=str(exc))
-        except Exception as exc:
-            return WorkflowResult(
-                status="failed",
-                message=f"Unexpected error while running the pipeline: {exc}",
-            )
-        return self.run_p0_plus_mapping_plus_stg_plus_quality_with_review(tables)
-
-    def run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_from_file(
-        self,
-        file_path: str,
-    ) -> WorkflowResult:
-        """Load metadata from file and run confirmed quality rules plus package build."""
-        from app.core.parser.loader import load_metadata_file
-        from app.core.parser.parser_exceptions import ParserError
-
-        try:
-            tables = load_metadata_file(file_path)
-        except ParserError as exc:
-            return WorkflowResult(status="parser_error", message=str(exc))
-        except Exception as exc:
-            return WorkflowResult(
-                status="failed",
-                message=f"Unexpected error while running the pipeline: {exc}",
-            )
-        return self.run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package(
-            tables
-        )
-
-    def run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_and_readiness_from_file(
-        self,
-        file_path: str,
-    ) -> WorkflowResult:
-        """Load metadata and run the full readiness/remediation workflow."""
-        from app.core.parser.loader import load_metadata_file
-        from app.core.parser.parser_exceptions import ParserError
-
-        try:
-            tables = load_metadata_file(file_path)
-        except ParserError as exc:
-            return WorkflowResult(status="parser_error", message=str(exc))
-        except Exception as exc:
-            return WorkflowResult(
-                status="failed",
-                message=f"Unexpected error while running the pipeline: {exc}",
-            )
-        return self.run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_and_readiness(
-            tables
-        )
-
-    def run_full_governance_work_package_with_backlog_from_file(
-        self,
-        file_path: str,
-    ) -> WorkflowResult:
-        """Load metadata and run the full backlog workflow."""
-        from app.core.parser.loader import load_metadata_file
-        from app.core.parser.parser_exceptions import ParserError
-
-        try:
-            tables = load_metadata_file(file_path)
-        except ParserError as exc:
-            return WorkflowResult(status="parser_error", message=str(exc))
-        except Exception as exc:
-            return WorkflowResult(
-                status="failed",
-                message=f"Unexpected error while running the pipeline: {exc}",
-            )
-        return self.run_full_governance_work_package_with_backlog(tables)
-
-    def run_full_governance_backlog_with_portfolio_from_file(
-        self,
-        file_path: str,
-    ) -> WorkflowResult:
-        """Load metadata and run the full governance portfolio workflow."""
-        from app.core.parser.loader import load_metadata_file
-        from app.core.parser.parser_exceptions import ParserError
-
-        try:
-            tables = load_metadata_file(file_path)
-        except ParserError as exc:
-            return WorkflowResult(status="parser_error", message=str(exc))
-        except Exception as exc:
-            return WorkflowResult(
-                status="failed",
-                message=f"Unexpected error while running the pipeline: {exc}",
-            )
-        return self.run_full_governance_backlog_with_portfolio(tables)
-
-    def run_full_governance_delivery_package_from_file(
-        self,
-        file_path: str,
-        apply_review: bool = True,
-    ) -> WorkflowResult:
-        """Load metadata and run the full delivery package workflow."""
-        from app.core.parser.loader import load_metadata_file
-        from app.core.parser.parser_exceptions import ParserError
-
-        try:
-            tables = load_metadata_file(file_path)
-        except ParserError as exc:
-            return WorkflowResult(status="parser_error", message=str(exc))
-        except Exception as exc:
-            return WorkflowResult(
-                status="failed",
-                message=f"Unexpected error while running the pipeline: {exc}",
-            )
-        return self.run_full_governance_delivery_package(
-            tables,
-            apply_review=apply_review,
-        )
-
-    def run_confirmation_workbook_only_from_file(
-        self,
-        file_path: str,
-    ) -> WorkflowResult:
-        """Load metadata and export confirmation workbooks without package manifest."""
-        from app.core.parser.loader import load_metadata_file
-        from app.core.parser.parser_exceptions import ParserError
-
-        try:
-            tables = load_metadata_file(file_path)
-        except ParserError as exc:
-            return WorkflowResult(status="parser_error", message=str(exc))
-        except Exception as exc:
-            return WorkflowResult(
-                status="failed",
-                message=f"Unexpected error while running the pipeline: {exc}",
-            )
-        return self.run_confirmation_workbook_only(tables)
