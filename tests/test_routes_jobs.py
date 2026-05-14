@@ -1,6 +1,5 @@
 """Lightweight tests for jobs route helpers."""
 
-import json
 from pathlib import Path
 
 from app.api.routes_jobs import (
@@ -66,7 +65,6 @@ from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 from app.core.models.cross_field_quality_rule import CrossFieldQualityRule
 from app.core.agent import session_store
 from app.core.audit import trace_store
-from app.core.control_plane import control_plane_service as control_plane_module
 from app.core.models.governance_task_request import GovernanceTaskRequest
 from app.core.models.issue import Issue
 from app.core.models.tool_call_request import ToolCallRequest
@@ -76,68 +74,6 @@ from app.core.governance import progress_snapshot_service
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "samples" / "sample_metadata.csv"
-
-
-def _setup_control_plane_runtime(tmp_path: Path, monkeypatch) -> None:
-    asset_file = tmp_path / "workflow_profiles.yaml"
-    asset_file.write_text(
-        "\n".join(
-            [
-                "profiles:",
-                "  - name: metadata_diagnosis_only",
-                "    enabled: true",
-                "    description: Run metadata diagnosis only",
-                "    stages:",
-                "      - diagnosis",
-            ]
-        ),
-        encoding="utf-8",
-    )
-    asset_registry_path = tmp_path / "asset_registry.json"
-    asset_registry_path.write_text(
-        json.dumps(
-            {
-                "assets": [
-                    {
-                        "asset_name": "workflow_profiles",
-                        "asset_type": "yaml",
-                        "file_path": str(asset_file),
-                        "description": "Workflow profile config",
-                        "editable": True,
-                    }
-                ]
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-    config_status_path = tmp_path / "config_status.json"
-    config_status_path.write_text(
-        json.dumps(
-            {
-                "statuses": [
-                    {
-                        "asset_name": "workflow_profiles",
-                        "asset_type": "yaml",
-                        "file_path": str(asset_file),
-                        "current_status": "published",
-                        "last_validated_at": None,
-                        "last_published_at": None,
-                        "last_error_message": None,
-                    }
-                ]
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(control_plane_module, "CONTROL_PLANE_DIR", tmp_path)
-    monkeypatch.setattr(control_plane_module, "ASSET_REGISTRY_PATH", asset_registry_path)
-    monkeypatch.setattr(control_plane_module, "CONFIG_STATUS_PATH", config_status_path)
-    monkeypatch.setattr(control_plane_module, "BACKUP_DIR", tmp_path / "backups")
-    monkeypatch.setattr(control_plane_module, "SNAPSHOT_DIR", tmp_path / "snapshots")
 
 
 def test_jobs_catalog_lists_unified_task_routes() -> None:
@@ -353,6 +289,7 @@ def test_adapter_manifest_routes_return_expected_payloads() -> None:
 def test_adapter_invoke_routes_return_traceable_results(
     tmp_path: Path,
     monkeypatch,
+    isolated_control_plane_runtime: Path,
 ) -> None:
     monkeypatch.setattr(trace_store, "TRACE_DIR", tmp_path / "execution_traces")
     monkeypatch.setattr(session_store, "SESSION_SNAPSHOT_DIR", tmp_path / "agent_sessions")
@@ -380,11 +317,8 @@ def test_adapter_invoke_routes_return_traceable_results(
 
 
 def test_config_asset_routes_can_list_get_and_validate_assets(
-    tmp_path: Path,
-    monkeypatch,
+    isolated_control_plane_runtime: Path,
 ) -> None:
-    _setup_control_plane_runtime(tmp_path, monkeypatch)
-
     assets = list_config_assets_route()
     payload = get_config_asset_route("workflow_profiles")
     validation = validate_config_asset_route("workflow_profiles")
@@ -396,11 +330,8 @@ def test_config_asset_routes_can_list_get_and_validate_assets(
 
 
 def test_config_asset_routes_can_save_and_publish_assets(
-    tmp_path: Path,
-    monkeypatch,
+    isolated_control_plane_runtime: Path,
 ) -> None:
-    _setup_control_plane_runtime(tmp_path, monkeypatch)
-
     save_result = save_config_asset_route(
         "workflow_profiles",
         ConfigAssetSaveRequest(

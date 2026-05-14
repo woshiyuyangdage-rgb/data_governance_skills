@@ -231,6 +231,7 @@ def test_executor_can_list_config_assets_and_record_trace(
 def test_executor_can_validate_config_asset_and_record_trace(
     tmp_path: Path,
     monkeypatch,
+    isolated_control_plane_runtime: Path,
 ) -> None:
     _patch_runtime_dirs(tmp_path, monkeypatch)
     executor = GovernanceToolExecutor()

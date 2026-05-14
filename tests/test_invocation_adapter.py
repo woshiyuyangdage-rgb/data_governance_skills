@@ -38,6 +38,7 @@ def test_invocation_adapter_can_invoke_native_tool(
 def test_invocation_adapter_can_invoke_openai_style_tool(
     tmp_path: Path,
     monkeypatch,
+    isolated_control_plane_runtime: Path,
 ) -> None:
     _patch_runtime_dirs(tmp_path, monkeypatch)
     adapter = InvocationAdapter()
