@@ -336,7 +336,7 @@ def export_workflow_result_to_excel(
         )
         execution_package_export_results_df.to_excel(
             writer,
-            sheet_name="execution_package_export_results",
+            sheet_name="execution_package_exports",
             index=False,
         )
         readiness_scores_df.to_excel(

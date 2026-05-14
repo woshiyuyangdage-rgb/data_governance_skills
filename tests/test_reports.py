@@ -411,7 +411,7 @@ def test_reports_include_execution_package_outputs(tmp_path: Path) -> None:
     workbook = load_workbook(excel_path)
     assert "execution_ready_rules" in workbook.sheetnames
     assert "execution_package_summary" in workbook.sheetnames
-    assert "execution_package_export_results" in workbook.sheetnames
+    assert "execution_package_exports" in workbook.sheetnames
 
 
 def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> None:
