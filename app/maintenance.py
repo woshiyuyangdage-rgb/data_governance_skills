@@ -3,18 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
-
-from app.core.control_plane import ControlPlaneService
-from app.core.domain.domain_pack_loader import list_enabled_domain_packs
-from app.core.models.validation_result import ValidationResult
-from app.core.orchestrator.profile_loader import list_enabled_profiles
-from app.core.rules.config_loader import get_domain_delivery_templates_config
-from app.core.templates.project_template_loader import list_enabled_project_templates
-from app.core.tools.governance_tool_executor import GovernanceToolExecutor
-from app.core.tools.tool_loader import load_tool_registry
+from pathlib import Path
+from typing import Any
 
 QUICK_CHECK_TEST_TARGETS = (
     "tests/test_maintenance.py",
@@ -25,6 +19,10 @@ QUICK_CHECK_TEST_TARGETS = (
     "tests/test_domain_pack_loader.py",
 )
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+CLEAN_ARTIFACT_NAMES = {"__pycache__", ".pytest_cache"}
+CLEAN_ARTIFACT_PREFIXES = ("pytest-cache-files-", ".pytest_runtime")
+
 COMMON_COMMAND_GROUPS = (
     (
         "Daily checks",
@@ -32,6 +30,7 @@ COMMON_COMMAND_GROUPS = (
             ("Validate config", "python -m app.maintenance validate-config"),
             ("Platform doctor", "python -m app.maintenance doctor"),
             ("Quick check", "python -m app.maintenance quick-check"),
+            ("Clean local artifacts", "python -m app.maintenance clean-local-artifacts"),
             ("Full tests", "python -m pytest -q"),
         ),
     ),
@@ -52,7 +51,7 @@ COMMON_COMMAND_GROUPS = (
 )
 
 
-def _format_validation_result(result: ValidationResult) -> list[str]:
+def _format_validation_result(result: Any) -> list[str]:
     status = "OK" if result.is_valid else "FAIL"
     lines = [f"[{status}] {result.asset_name}"]
     for message in result.messages:
@@ -64,7 +63,7 @@ def _format_validation_result(result: ValidationResult) -> list[str]:
 
 def validate_config_assets() -> int:
     """Validate all managed governance configuration assets."""
-    service = ControlPlaneService()
+    service = _build_control_plane_service()
     results = service.validate_all_assets(persist_status=False)
     valid_count = sum(1 for result in results if result.is_valid)
     warning_count = sum(len(result.warnings) for result in results)
@@ -85,10 +84,10 @@ def validate_config_assets() -> int:
 
 
 def _check_tool_handlers() -> list[str]:
-    executor = GovernanceToolExecutor()
+    executor = _build_governance_tool_executor()
     registered_handlers = executor.list_registered_handler_names()
     errors: list[str] = []
-    for tool in load_tool_registry():
+    for tool in _load_tool_registry():
         if tool.enabled and tool.handler not in registered_handlers:
             errors.append(
                 f"tool '{tool.name}' references unregistered handler '{tool.handler}'"
@@ -97,10 +96,10 @@ def _check_tool_handlers() -> list[str]:
 
 
 def _check_project_template_references() -> list[str]:
-    profile_names = {profile.name for profile in list_enabled_profiles()}
-    domain_pack_names = {pack.pack_name for pack in list_enabled_domain_packs()}
+    profile_names = {profile.name for profile in _list_enabled_profiles()}
+    domain_pack_names = {pack.pack_name for pack in _list_enabled_domain_packs()}
     errors: list[str] = []
-    for template in list_enabled_project_templates():
+    for template in _list_enabled_project_templates():
         if template.base_workflow_profile not in profile_names:
             errors.append(
                 f"project template '{template.template_name}' references missing "
@@ -118,8 +117,8 @@ def _check_project_template_references() -> list[str]:
 
 
 def _check_domain_delivery_references() -> list[str]:
-    domain_pack_names = {pack.pack_name for pack in list_enabled_domain_packs()}
-    defaults = get_domain_delivery_templates_config().get("delivery_defaults", {})
+    domain_pack_names = {pack.pack_name for pack in _list_enabled_domain_packs()}
+    defaults = _get_domain_delivery_templates_config().get("delivery_defaults", {})
     errors: list[str] = []
     if not isinstance(defaults, dict):
         return ["domain delivery defaults must be a mapping"]
@@ -130,6 +129,48 @@ def _check_domain_delivery_references() -> list[str]:
                 f"'{domain_pack_name}'"
             )
     return errors
+
+
+def _build_control_plane_service() -> Any:
+    from app.core.control_plane import ControlPlaneService
+
+    return ControlPlaneService()
+
+
+def _build_governance_tool_executor() -> Any:
+    from app.core.tools.governance_tool_executor import GovernanceToolExecutor
+
+    return GovernanceToolExecutor()
+
+
+def _load_tool_registry() -> list[Any]:
+    from app.core.tools.tool_loader import load_tool_registry
+
+    return load_tool_registry()
+
+
+def _list_enabled_profiles() -> list[Any]:
+    from app.core.orchestrator.profile_loader import list_enabled_profiles
+
+    return list_enabled_profiles()
+
+
+def _list_enabled_domain_packs() -> list[Any]:
+    from app.core.domain.domain_pack_loader import list_enabled_domain_packs
+
+    return list_enabled_domain_packs()
+
+
+def _list_enabled_project_templates() -> list[Any]:
+    from app.core.templates.project_template_loader import list_enabled_project_templates
+
+    return list_enabled_project_templates()
+
+
+def _get_domain_delivery_templates_config() -> dict[str, Any]:
+    from app.core.rules.config_loader import get_domain_delivery_templates_config
+
+    return get_domain_delivery_templates_config()
 
 
 def run_platform_doctor() -> int:
@@ -188,6 +229,38 @@ def run_quick_check(test_targets: Sequence[str] = QUICK_CHECK_TEST_TARGETS) -> i
     return _run_subprocess(pytest_command)
 
 
+def _is_cleanable_artifact(path: Path) -> bool:
+    name = path.name
+    return name in CLEAN_ARTIFACT_NAMES or any(
+        name.startswith(prefix) for prefix in CLEAN_ARTIFACT_PREFIXES
+    )
+
+
+def clean_local_artifacts() -> int:
+    """Remove local Python and pytest cache artifacts from the project tree."""
+    removed: list[Path] = []
+    paths = sorted(
+        PROJECT_ROOT.rglob("*"),
+        key=lambda item: len(item.parts),
+        reverse=True,
+    )
+    for path in paths:
+        if not path.is_dir() or not _is_cleanable_artifact(path):
+            continue
+        shutil.rmtree(path)
+        removed.append(path.relative_to(PROJECT_ROOT))
+
+    print("Local artifact cleanup")
+    if not removed:
+        print("No local cache artifacts found.")
+        return 0
+
+    print(f"Removed {len(removed)} directories:")
+    for path in removed:
+        print(f"  {path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the maintenance command parser."""
     parser = argparse.ArgumentParser(
@@ -213,6 +286,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run platform doctor plus focused maintenance tests.",
     )
     quick_check_parser.set_defaults(handler=lambda _args: run_quick_check())
+
+    clean_parser = subparsers.add_parser(
+        "clean-local-artifacts",
+        help="Remove local __pycache__, .pytest_cache, and pytest temporary cache directories.",
+    )
+    clean_parser.set_defaults(handler=lambda _args: clean_local_artifacts())
 
     commands_parser = subparsers.add_parser(
         "commands",

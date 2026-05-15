@@ -1,0 +1,22 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+extend-exclude = [
+    "outputs",
+    "pytest-cache-files-*",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B",
+]
+ignore = [
+    "E501",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]

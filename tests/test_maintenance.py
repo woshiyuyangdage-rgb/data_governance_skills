@@ -53,7 +53,11 @@ def test_validate_config_assets_returns_success_for_valid_assets(
     monkeypatch,
     capsys,
 ) -> None:
-    monkeypatch.setattr(maintenance, "ControlPlaneService", _FakeControlPlaneService)
+    monkeypatch.setattr(
+        maintenance,
+        "_build_control_plane_service",
+        lambda: _FakeControlPlaneService(),
+    )
     _FakeControlPlaneService.results = [
         ValidationResult(asset_name="workflow_profiles", is_valid=True),
         ValidationResult(
@@ -77,7 +81,11 @@ def test_validate_config_assets_returns_failure_for_invalid_assets(
     monkeypatch,
     capsys,
 ) -> None:
-    monkeypatch.setattr(maintenance, "ControlPlaneService", _FakeControlPlaneService)
+    monkeypatch.setattr(
+        maintenance,
+        "_build_control_plane_service",
+        lambda: _FakeControlPlaneService(),
+    )
     _FakeControlPlaneService.results = [
         ValidationResult(asset_name="workflow_profiles", is_valid=True),
         ValidationResult(
@@ -107,10 +115,14 @@ def test_maintenance_main_without_command_prints_help(capsys) -> None:
 
 
 def test_tool_handler_check_reports_unregistered_enabled_handler(monkeypatch) -> None:
-    monkeypatch.setattr(maintenance, "GovernanceToolExecutor", _FakeExecutor)
     monkeypatch.setattr(
         maintenance,
-        "load_tool_registry",
+        "_build_governance_tool_executor",
+        lambda: _FakeExecutor(),
+    )
+    monkeypatch.setattr(
+        maintenance,
+        "_load_tool_registry",
         lambda: [
             _FakeTool(
                 "known_tool",
@@ -140,17 +152,17 @@ def test_tool_handler_check_reports_unregistered_enabled_handler(monkeypatch) ->
 def test_project_template_reference_check_reports_missing_links(monkeypatch) -> None:
     monkeypatch.setattr(
         maintenance,
-        "list_enabled_profiles",
+        "_list_enabled_profiles",
         lambda: [_FakeProfile("metadata_diagnosis_only")],
     )
     monkeypatch.setattr(
         maintenance,
-        "list_enabled_domain_packs",
+        "_list_enabled_domain_packs",
         lambda: [_FakeDomainPack("customer_domain_pack")],
     )
     monkeypatch.setattr(
         maintenance,
-        "list_enabled_project_templates",
+        "_list_enabled_project_templates",
         lambda: [
             _FakeTemplate(
                 "broken_template",
@@ -173,12 +185,12 @@ def test_project_template_reference_check_reports_missing_links(monkeypatch) -> 
 def test_domain_delivery_reference_check_reports_missing_pack(monkeypatch) -> None:
     monkeypatch.setattr(
         maintenance,
-        "list_enabled_domain_packs",
+        "_list_enabled_domain_packs",
         lambda: [_FakeDomainPack("customer_domain_pack")],
     )
     monkeypatch.setattr(
         maintenance,
-        "get_domain_delivery_templates_config",
+        "_get_domain_delivery_templates_config",
         lambda: {
             "delivery_defaults": {
                 "customer_domain_pack": {"include_outputs": ["mapping_report"]},

@@ -1,715 +1,282 @@
-"""Service helpers for running the P0 pipeline from local files."""
+"""Service helpers for running governance workflows from local files."""
 
+from __future__ import annotations
+
+from collections.abc import Callable
+
+from app.core.models.table_meta import TableMeta
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.workflow_engine import WorkflowEngine
 from app.core.parser.loader import load_metadata_file
 from app.core.parser.parser_exceptions import ParserError
 
+WorkflowRunner = Callable[[WorkflowEngine, list[TableMeta]], WorkflowResult]
 
-def run_p0_pipeline_from_file(file_path: str) -> WorkflowResult:
-    """Load metadata from file and execute the existing P0 pipeline."""
+
+def _run_loaded_workflow(
+    file_path: str,
+    runner: WorkflowRunner,
+    *,
+    unexpected_error_prefix: str = "Unexpected error while running the pipeline",
+) -> WorkflowResult:
+    """Load metadata from a local file, then run the supplied workflow."""
     engine = WorkflowEngine()
-
     try:
         tables = load_metadata_file(file_path)
     except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
+        return WorkflowResult(status="parser_error", message=str(exc))
     except Exception as exc:
         return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            skill_outputs={},
             status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
+            message=f"{unexpected_error_prefix}: {exc}",
         )
 
-    return engine.run_p0_pipeline(tables)
+    return runner(engine, tables)
+
+
+def run_p0_pipeline_from_file(file_path: str) -> WorkflowResult:
+    """Load metadata from file and execute the existing P0 pipeline."""
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_pipeline(tables),
+    )
 
 
 def run_p0_plus_mapping_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute the P0 plus mapping workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping(tables),
+    )
 
 
 def run_p0_plus_mapping_plus_stg_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute the P0 plus mapping plus STG workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_plus_stg(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_plus_stg(tables),
+    )
 
 
 def run_p0_plus_mapping_plus_stg_plus_quality_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute diagnosis, mapping, STG, and quality recommendation."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_plus_stg_plus_quality(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_plus_stg_plus_quality(tables),
+    )
 
 
 def run_p0_plus_mapping_with_review_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute the P0 plus mapping workflow with overrides."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_with_review(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_with_review(tables),
+    )
 
 
 def run_p0_plus_mapping_plus_stg_with_review_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute the P0 plus mapping plus STG workflow with overrides."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            confirmed_stg_suggestions=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            confirmed_stg_suggestions=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_plus_stg_with_review(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_plus_stg_with_review(tables),
+    )
 
 
 def run_p0_plus_mapping_plus_stg_plus_quality_with_review_from_file(
     file_path: str,
 ) -> WorkflowResult:
     """Load metadata from file and execute diagnosis, mapping, STG, and quality recommendation with overrides."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            confirmed_stg_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            confirmed_stg_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_plus_stg_plus_quality_with_review(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_plus_stg_plus_quality_with_review(
+            tables
+        ),
+    )
 
 
 def run_mapping_only_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute the mapping-only workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_standard_mapping(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_standard_mapping(tables),
+    )
 
 
 def run_stg_only_from_mapping_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute the mapping plus STG workflow without diagnosis."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_stg_only_from_mapping(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_stg_only_from_mapping(tables),
+    )
 
 
 def run_quality_only_from_stg_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute mapping, STG, and quality recommendation."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_quality_only_from_stg(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_quality_only_from_stg(tables),
+    )
 
 
 def run_quality_only_from_stg_with_review_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and execute mapping, STG, quality, and review replay."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            confirmed_stg_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            confirmed_quality_rules=[],
-            quality_rule_review_summary={},
-            skill_outputs={},
-            status="parser_error",
-            message=str(exc),
-        )
-    except Exception as exc:
-        return WorkflowResult(
-            input_table_count=0,
-            issue_count=0,
-            task_count=0,
-            issues=[],
-            tasks=[],
-            mapping_results=[],
-            confirmed_mapping_results=[],
-            unmapped_fields=[],
-            stg_suggestions=[],
-            stg_field_suggestions=[],
-            confirmed_stg_suggestions=[],
-            quality_rule_suggestions=[],
-            quality_rule_packages=[],
-            confirmed_quality_rules=[],
-            quality_rule_review_summary={},
-            skill_outputs={},
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_quality_only_from_stg_with_review(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_quality_only_from_stg_with_review(tables),
+    )
 
 
 def run_p0_plus_mapping_plus_stg_plus_quality_with_package_from_file(
     file_path: str,
 ) -> WorkflowResult:
     """Load metadata from file and build an execution package from confirmed rules if present."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_plus_stg_plus_quality_with_package(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_plus_stg_plus_quality_with_package(
+            tables
+        ),
+    )
 
 
 def run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_from_file(
     file_path: str,
 ) -> WorkflowResult:
     """Load metadata from file and execute quality review replay plus package build."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package(
+            tables
+        ),
+    )
 
 
 def run_quality_package_only_from_confirmed_from_file(file_path: str) -> WorkflowResult:
     """Load metadata from file and build a package using the lightweight quality review chain."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_quality_package_only_from_confirmed(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_quality_package_only_from_confirmed(tables),
+    )
 
 
 def run_governance_readiness_assessment_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and run readiness assessment without quality review replay."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_governance_readiness_assessment(tables, apply_review=False)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_governance_readiness_assessment(
+            tables,
+            apply_review=False,
+        ),
+    )
 
 
 def run_governance_readiness_assessment_with_review_from_file(
     file_path: str,
 ) -> WorkflowResult:
     """Load metadata and run readiness assessment with review replay."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_governance_readiness_assessment(tables, apply_review=True)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_governance_readiness_assessment(
+            tables,
+            apply_review=True,
+        ),
+    )
 
 
 def run_full_governance_work_package_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and run the full readiness/remediation work-package workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_and_readiness(
-        tables
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_and_readiness(
+            tables
+        ),
     )
 
 
 def run_governance_backlog_build_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and run backlog build without review replay."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_governance_backlog_build(tables, apply_review=False)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_governance_backlog_build(
+            tables,
+            apply_review=False,
+        ),
+    )
 
 
 def run_governance_backlog_build_with_review_from_file(
     file_path: str,
 ) -> WorkflowResult:
     """Load metadata and run backlog build with review replay."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_governance_backlog_build(tables, apply_review=True)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_governance_backlog_build(
+            tables,
+            apply_review=True,
+        ),
+    )
 
 
 def run_full_governance_backlog_package_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and run the full backlog package workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_full_governance_work_package_with_backlog(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_full_governance_work_package_with_backlog(
+            tables
+        ),
+    )
 
 
 def run_governance_portfolio_assessment_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and run backlog SLA plus portfolio assessment."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_governance_portfolio_assessment(tables, apply_review=False)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_governance_portfolio_assessment(
+            tables,
+            apply_review=False,
+        ),
+    )
 
 
 def run_full_governance_portfolio_package_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and run the full governance portfolio package workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_full_governance_backlog_with_portfolio(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_full_governance_backlog_with_portfolio(
+            tables
+        ),
+    )
 
 
 def run_full_governance_delivery_package_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and run the full governance delivery package workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_full_governance_delivery_package(tables, apply_review=False)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_full_governance_delivery_package(
+            tables,
+            apply_review=False,
+        ),
+    )
 
 
 def run_full_governance_delivery_package_with_review_from_file(
     file_path: str,
 ) -> WorkflowResult:
     """Load metadata and run the reviewed governance delivery package workflow."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_full_governance_delivery_package(tables, apply_review=True)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_full_governance_delivery_package(
+            tables,
+            apply_review=True,
+        ),
+    )
 
 
 def run_confirmation_workbook_only_from_file(file_path: str) -> WorkflowResult:
     """Load metadata and export confirmation workbooks."""
-    engine = WorkflowEngine()
-
-    try:
-        tables = load_metadata_file(file_path)
-    except ParserError as exc:
-        return WorkflowResult(status="parser_error", message=str(exc))
-    except Exception as exc:
-        return WorkflowResult(
-            status="failed",
-            message=f"Unexpected error while running the pipeline: {exc}",
-        )
-
-    return engine.run_confirmation_workbook_only(tables)
+    return _run_loaded_workflow(
+        file_path,
+        lambda engine, tables: engine.run_confirmation_workbook_only(tables),
+    )
 
 
 def run_batch_governance_workflow_from_files(

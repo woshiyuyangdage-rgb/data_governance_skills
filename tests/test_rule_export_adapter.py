@@ -9,8 +9,11 @@ from app.core.adapters.rule_export_adapter import RuleExportAdapter
 from app.core.adapters.execution_package_builder import ExecutionPackageBuilder
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-OUTPUT_DIR = PROJECT_ROOT / "outputs" / "test_rule_export_adapter"
+OUTPUT_DIR = (
+    Path(__file__).resolve().parents[1]
+    / ".pytest_runtime"
+    / "test_rule_export_adapter"
+)
 
 
 def _output_path(filename: str) -> Path:
