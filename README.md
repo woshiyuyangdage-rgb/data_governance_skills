@@ -1,106 +1,110 @@
 # Data Governance Skills
 
-`data_governance_skills` is a local single-user MVP for rule-based metadata governance. It keeps the core P0 diagnosis path stable while adding standard mapping, STG structure suggestions, quality rule recommendation, human review replay, execution-ready packages, readiness assessment, backlog/portfolio summaries, local delivery assets, a Streamlit workbench, FastAPI routes, and a local tool/adapter surface.
+`data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换成可诊断、可评审、可交付的治理资产，覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、整改待办、组合视图和本地交付物导出。
 
-The project is intentionally local and rule-based. It creates decision-support and export assets; it does not execute database quality checks, call LLMs, create tickets, or integrate with external workflow systems.
+项目当前定位是“治理决策支持与交付资产生成工具”，不是线上执行平台。它不直接连接数据库执行质量检查，不调用 LLM，不创建外部工单，也不集成企业流程系统。
 
-## Quick Start
+## 一句话说明
 
-Use Python 3.10 or newer.
+这个项目把分散在元数据表、治理规则、人工评审记录和交付文档里的工作，收敛成一套本地可运行、可测试、可导出的规则化数据治理流程。
+
+## 新手入口
+
+### 这个项目解决什么问题
+
+数据治理工作通常从 Excel/CSV 元数据开始，但后续会很快变成一串分散动作：检查字段是否完整、判断命名是否规范、对齐标准字段、设计 STG、补质量规则、找业务确认、整理整改清单、导出交付材料。手工做这些事容易重复、口径不稳、过程不可追踪。
+
+本项目把这些动作产品化为本地流程：
+
+- 统一读取和规范化元数据文件。
+- 自动诊断表和字段层面的元数据质量问题。
+- 推荐标准字段映射、STG 结构和质量规则。
+- 保存人工评审结果，并在后续流程中回放。
+- 生成确认质量规则、执行准备包、治理工作包和交付包。
+- 评估治理就绪度，生成整改动作、待办、SLA 状态、进度快照和组合汇总。
+
+### 适合的使用场景
+
+- 需要快速评估一批表的元数据质量。
+- 需要把字段映射到本地标准字段体系。
+- 需要为贴源层或 STG 层生成结构建议。
+- 需要根据字段和领域规则产出质量规则初稿。
+- 需要把人工确认结果固化下来，避免重复评审。
+- 需要给治理项目输出可交付的报告、确认工作簿、执行包和整改待办。
+
+### 不适合的使用场景
+
+- 直接连接生产数据库执行质量检查。
+- 替代 dbt、Great Expectations、Soda 等执行引擎。
+- 多用户审批、权限管理、流程流转或工单创建。
+- 调用 LLM、向量检索、语义召回或外部企业系统。
+
+### 快速开始
+
+使用 Python 3.10 或更新版本。
 
 ```bash
 python --version
 python -m pip install -r requirements.txt
 ```
 
-Install local development tools:
-
-```bash
-python -m pip install -r requirements-dev.txt
-```
-
-Run the FastAPI app:
+启动 FastAPI：
 
 ```bash
 python -m uvicorn app.main:app --reload
 ```
 
-Run the Streamlit workbench:
+启动 Streamlit 工作台：
 
 ```bash
 python -m streamlit run app/ui/streamlit_app.py
 ```
 
-Run checks:
+运行基础检查：
 
 ```bash
 python -m pytest -q
 python -m app.maintenance doctor
-python -m app.maintenance quick-check
-python -m ruff check app tests
 ```
 
-Clean local cache artifacts:
+### 输入文件
 
-```bash
-python -m app.maintenance clean-local-artifacts
-```
+支持 `.csv` 和 `.xlsx`。
 
-## Core Flow
+推荐输入字段：
 
-The normal local workflow is:
+- `table_name`：必填，表名。
+- `field_name`：推荐填写，用于字段级治理。
+- `table_name_cn`、`table_description`、`schema_name`、`system_name`：可选，补充表级上下文。
+- `field_name_cn`、`field_description`、`data_type`、`nullable`：可选，补充字段级上下文。
 
-`upload metadata -> parse -> diagnose -> map standards -> suggest STG -> recommend quality rules -> review -> replay overrides -> build confirmed rules -> build execution package -> assess readiness -> plan remediation -> build backlog -> assess portfolio -> export reports/assets`
-
-Common workflow profiles include:
-
-- `metadata_diagnosis_only`
-- `diagnosis_plus_mapping`
-- `diagnosis_mapping_stg`
-- `diagnosis_mapping_stg_with_review`
-- `diagnosis_mapping_stg_quality`
-- `diagnosis_mapping_stg_quality_with_review`
-- `diagnosis_mapping_stg_quality_package_with_review`
-- `governance_readiness_assessment_with_review`
-- `full_governance_work_package`
-- `governance_backlog_build`
-- `full_governance_backlog_package`
-- `governance_portfolio_assessment`
-- `full_governance_portfolio_package`
-- `mapping_only`
-- `stg_only_from_mapping`
-- `quality_only_from_stg`
-- `quality_only_from_stg_with_review`
-
-Use `python -m app.maintenance commands` to list the most common local commands.
-
-## Input Template
-
-Supported input files are `.csv` and `.xlsx`.
-
-Required and recommended columns:
-
-- `table_name` is required.
-- `field_name` is recommended for field-level input.
-- Optional columns include `table_name_cn`, `table_description`, `schema_name`, `system_name`, `field_name_cn`, `field_description`, `data_type`, and `nullable`.
-
-Reference files:
+参考文件：
 
 - `docs/input_template_spec.md`
 - `app/data/samples/sample_metadata.csv`
 
-## Interfaces
+文件型接口请求示例：
 
-Main local interfaces:
+```json
+{
+  "file_path": "D:/Projects/data_governance_skills/app/data/samples/sample_metadata.csv"
+}
+```
 
-- Streamlit workbench: `app/ui/streamlit_app.py`
-- FastAPI app: `app/main.py`
-- Job routes: `app/api/routes_jobs.py`
-- Reports routes: `app/api/routes_reports.py`
-- Skill routes: `app/api/routes_skills.py`
-- Maintenance CLI: `app/maintenance.py`
+### 常规治理流程
 
-Useful FastAPI endpoints:
+`上传元数据 -> 解析与规范化 -> 质量诊断 -> 标准映射 -> STG 结构建议 -> 质量规则推荐 -> 人工评审 -> 评审结果回放 -> 确认规则 -> 执行准备包 -> 治理就绪度 -> 整改计划 -> 待办 -> 组合评估 -> 报告和交付资产`
+
+### 主要入口
+
+- Streamlit 工作台：`app/ui/streamlit_app.py`
+- FastAPI 应用：`app/main.py`
+- 任务接口：`app/api/routes_jobs.py`
+- 报告接口：`app/api/routes_reports.py`
+- 技能接口：`app/api/routes_skills.py`
+- 维护命令：`app/maintenance.py`
+
+常用 FastAPI 端点：
 
 - `GET /health`
 - `GET /jobs/`
@@ -116,31 +120,82 @@ Useful FastAPI endpoints:
 - `POST /jobs/build-governance-backlog`
 - `POST /jobs/assess-governance-portfolio`
 
-Example request body for file-based routes:
+## 维护者入口
 
-```json
-{
-  "file_path": "D:/Projects/data_governance_skills/app/data/samples/sample_metadata.csv"
-}
-```
-
-## Project Layout
+### 架构分层
 
 ```text
 app/
-  api/        FastAPI route modules and request models
-  config/     YAML configuration assets
-  core/       parsers, workflow, skills, governance logic, adapters, reports, models
-  data/       sample inputs, dictionaries, standards, local overrides, audit state
-  ui/         Streamlit workbench
-docs/         specifications and design notes
-outputs/      local runtime exports
-tests/        pytest coverage for local MVP flows
+  api/        FastAPI 路由、请求模型和工具响应封装
+  config/     YAML 配置资产
+  core/       解析、规则、技能、编排、治理逻辑、适配器、报告和模型
+  data/       示例输入、词典、标准字段、本地覆盖记录、审计状态
+  ui/         Streamlit 本地工作台
+docs/         规格说明和设计文档
+outputs/      本地运行导出的报告和交付资产
+tests/        pytest 自动化测试
 ```
 
-## Documentation Index
+### 核心模块
 
-Core specs:
+| 模块 | 位置 | 功能 |
+| --- | --- | --- |
+| API 接口层 | `app/api/` | 暴露 FastAPI 路由、请求模型、任务接口、报告接口和工具响应封装。`routes_jobs.py` 是聚合入口，具体任务路由按领域拆分到 `routes_jobs_core.py`、`routes_jobs_templates.py`、`routes_jobs_tools.py`、`routes_jobs_quality.py`、`routes_jobs_delivery.py`、`routes_jobs_backlog.py`。 |
+| UI 工作台 | `app/ui/` | Streamlit 多页面工作台，覆盖上传、诊断、报告、评审、Agent Shell、工具控制台、配置面板、质量规则、执行包、就绪度、待办、组合视图、交付包、批处理、确认导入、领域模板和元数据接入。 |
+| 编排引擎 | `app/core/orchestrator/` | 将解析、技能、评审、执行包、就绪度、待办和组合评估串成 workflow profile，并支持文件运行、批处理、增量重跑和任务路由。 |
+| 元数据解析 | `app/core/parser/` | 读取 CSV、Excel 和批量输入，转换为内部表字段模型，并处理解析异常。 |
+| 输入适配 | `app/core/intake/` | 诊断企业元数据模板，匹配列别名，选择最佳 sheet，规范化输入文件。 |
+| 领域与项目模板 | `app/core/domain/`、`app/core/templates/` | 加载领域治理包和项目模板，根据文本或表结构匹配领域提示，并把模板默认值应用到运行请求。 |
+| 治理技能 | `app/core/skills/` | 提供完整性检查、命名标准检查、技术对象识别、标准映射推荐、STG 结构建议、质量规则推荐和治理任务打包。 |
+| 规则与词典 | `app/core/rules/`、`app/core/normalize/`、`app/data/` | 管理命名规则、技术关键字、标准字段、缩写词典、根词词典和文本清洗拆词逻辑。 |
+| 评审与回放 | `app/core/review/` | 保存映射、STG 和质量规则评审记录，管理人工覆盖结果，并在后续流程中回放确认意见。 |
+| 质量与执行包 | `app/core/adapters/`、`app/core/tools/quality_tools.py` | 生成确认质量规则、执行准备包、规则导出结果和工具化调用响应。 |
+| 治理度量 | `app/core/governance/` | 评估治理就绪度，分类治理缺口，生成整改动作、工作包、待办、SLA 状态、进度快照、批次快照、增量差异和组合汇总。 |
+| 交付包 | `app/core/delivery/` | 导出确认工作簿，导入确认结果，构建治理交付 manifest 和本地交付包，并支持 roundtrip 变更重跑。 |
+| 意图、上下文与 Agent Shell | `app/core/intent/`、`app/core/context/`、`app/core/agent/` | 将自然语言意图解析为治理任务，解析运行上下文，生成执行计划并保存本地会话。当前为规则化本地能力，不调用 LLM。 |
+| 工具注册与适配 | `app/core/tools/`、`app/core/adapters/` | 暴露本地工具注册表、工具调用、OpenAI/MCP/native schema 导出和适配器调用封装。 |
+| 配置控制面 | `app/core/control_plane/`、`app/config/` | 管理 YAML 配置资产、校验、保存、发布和本地状态记录。 |
+| 审计与报告 | `app/core/audit/`、`app/core/reports/` | 记录工具执行 trace，导出 JSON、Markdown、Excel 报告。 |
+| 数据模型 | `app/core/models/` | 定义表字段、诊断问题、映射、STG、质量规则、工作流结果、待办、就绪度、交付包等 Pydantic 模型。 |
+| 维护工具 | `app/maintenance.py` | 提供 doctor、quick-check、命令清单、本地缓存清理等维护入口。 |
+
+### Workflow Profiles
+
+常用 profile：
+
+- `metadata_diagnosis_only`：只做元数据诊断。
+- `diagnosis_plus_mapping`：诊断 + 标准映射。
+- `diagnosis_mapping_stg`：诊断 + 映射 + STG 建议。
+- `diagnosis_mapping_stg_with_review`：映射和 STG 后引入人工评审。
+- `diagnosis_mapping_stg_quality`：进一步推荐质量规则。
+- `diagnosis_mapping_stg_quality_with_review`：质量规则推荐后支持评审。
+- `diagnosis_mapping_stg_quality_package_with_review`：生成确认规则和执行准备包。
+- `governance_readiness_assessment_with_review`：评估治理就绪度。
+- `full_governance_work_package`：构建治理工作包。
+- `governance_backlog_build`：构建治理整改待办。
+- `full_governance_backlog_package`：生成完整待办包。
+- `governance_portfolio_assessment`：做治理组合评估。
+- `full_governance_portfolio_package`：生成组合评估交付包。
+- `mapping_only`：只做标准映射。
+- `stg_only_from_mapping`：基于映射结果只做 STG 建议。
+- `quality_only_from_stg`：基于 STG 结果只做质量规则推荐。
+- `quality_only_from_stg_with_review`：质量规则推荐并纳入评审。
+
+### 本地维护命令
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python -m app.maintenance doctor
+python -m app.maintenance quick-check
+python -m app.maintenance commands
+python -m app.maintenance clean-local-artifacts
+python -m ruff check app tests
+```
+
+### 文档索引
+
+核心规格：
 
 - `docs/input_template_spec.md`
 - `docs/knowledge_pack_spec.md`
@@ -152,7 +207,7 @@ Core specs:
 - `docs/control_plane_spec.md`
 - `docs/adapter_layer_spec.md`
 
-Governance capability specs:
+治理能力规格：
 
 - `docs/stg_structure_spec.md`
 - `docs/quality_rule_recommendation_spec.md`
@@ -165,20 +220,24 @@ Governance capability specs:
 - `docs/governance_delivery_package_spec.md`
 - `docs/batch_processing_and_incremental_rerun_spec.md`
 - `docs/workbook_import_and_roundtrip_spec.md`
+- `docs/domain_governance_packs_and_project_templates_spec.md`
+- `docs/enterprise_metadata_intake_adapters_spec.md`
+- `docs/enterprise_delivery_adapters_spec.md`
 
-Maintenance:
+维护：
 
 - `docs/maintenance_commands.md`
 
-## Current Boundaries
+### 当前边界
 
-This project currently does not provide:
+项目当前不提供：
 
-- LLM reasoning, embeddings, vector search, or semantic retrieval.
-- Database execution, schedulers, queues, Docker, or CI wiring.
-- Runtime execution for dbt, Great Expectations, Soda, or custom SQL engines.
-- Multi-user approval workflow, permissions, or database-backed state.
-- External Jira, Feishu, DingTalk, TAPD, email, SharePoint, or BI integration.
-- Automatic owner assignment, reminder delivery, or ticket creation.
+- LLM 推理、向量检索、语义召回或 embeddings。
+- 数据库质量检查的真实执行。
+- 调度器、队列、Docker 或 CI 编排。
+- dbt、Great Expectations、Soda 或自定义 SQL 引擎的运行时执行。
+- 多用户审批、权限体系或数据库持久化状态。
+- Jira、飞书、钉钉、TAPD、邮件、SharePoint、BI 等外部系统集成。
+- 自动负责人分派、提醒发送或工单创建。
 
-The exported artifacts are local JSON, Markdown, Excel, and YAML files intended for review, handoff, and later adapter integration.
+当前导出的资产主要是本地 JSON、Markdown、Excel 和 YAML 文件，用于评审、交付、归档，以及未来接入企业适配器。
