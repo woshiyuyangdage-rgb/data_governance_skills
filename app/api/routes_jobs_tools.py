@@ -1,11 +1,10 @@
-"""Agent shell, tool contract, trace, and control-plane job routes."""
+"""Agent shell, tool contract, adapter, and trace job routes."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.api.job_requests import (
     AgentShellPlanRequest,
     AgentShellRunRequest,
-    ConfigAssetSaveRequest,
     NativeToolInvokeRequest,
     OpenAIToolInvokeRequest,
 )
@@ -19,22 +18,18 @@ from app.core.adapters.manifest_service import (
 from app.core.agent.agent_shell_service import AgentShellService
 from app.core.agent.session_store import get_session
 from app.core.audit.trace_store import get_trace, list_recent_traces
-from app.core.control_plane.control_plane_service import ControlPlaneService
 from app.core.models.adapter_invocation_result import AdapterInvocationResult
 from app.core.models.agent_session import AgentSession
 from app.core.models.agent_shell_result import AgentShellResult
 from app.core.models.capability_manifest import CapabilityManifest
-from app.core.models.config_edit_result import ConfigEditResult
 from app.core.models.execution_trace import ExecutionTrace
 from app.core.models.exported_tool_schema import ExportedToolSchema
 from app.core.models.tool_call_request import ToolCallRequest
 from app.core.models.tool_call_response import ToolCallResponse
 from app.core.models.tool_definition import ToolDefinition
-from app.core.models.validation_result import ValidationResult
 from app.core.tools.tool_service import call_tool, list_tools
 
 router = APIRouter()
-control_plane_service = ControlPlaneService()
 invocation_adapter = InvocationAdapter()
 
 
@@ -146,57 +141,3 @@ def get_trace_route(trace_id: str) -> ExecutionTrace | None:
 def list_recent_traces_route(limit: int = 20) -> list[ExecutionTrace]:
     """Return recent execution traces from local audit storage."""
     return list_recent_traces(limit=limit)
-
-
-@router.get("/config-assets", response_model=list[dict[str, object]])
-def list_config_assets_route() -> list[dict[str, object]]:
-    """Return managed control-plane assets with their current status."""
-    return control_plane_service.list_assets_with_status()
-
-
-@router.get("/config-assets/{asset_name}", response_model=dict[str, object])
-def get_config_asset_route(asset_name: str) -> dict[str, object]:
-    """Return one managed config asset with current content and status."""
-    try:
-        return control_plane_service.get_asset_content(asset_name)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@router.post(
-    "/config-assets/{asset_name}/validate",
-    response_model=ValidationResult,
-)
-def validate_config_asset_route(asset_name: str) -> ValidationResult:
-    """Validate one managed config asset."""
-    try:
-        return control_plane_service.validate_asset(asset_name)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@router.post(
-    "/config-assets/{asset_name}/save",
-    response_model=ConfigEditResult,
-)
-def save_config_asset_route(
-    asset_name: str,
-    payload: ConfigAssetSaveRequest,
-) -> ConfigEditResult:
-    """Save one managed config asset after validation."""
-    try:
-        return control_plane_service.save_asset(asset_name, payload.content)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@router.post(
-    "/config-assets/{asset_name}/publish",
-    response_model=ConfigEditResult,
-)
-def publish_config_asset_route(asset_name: str) -> ConfigEditResult:
-    """Publish one managed config asset after validation."""
-    try:
-        return control_plane_service.publish_asset(asset_name)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc

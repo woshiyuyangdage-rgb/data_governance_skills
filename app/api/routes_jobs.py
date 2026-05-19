@@ -65,6 +65,14 @@ from app.api.routes_jobs_core import (
     run_quality_only_from_stg_with_review,
     run_stg_only_from_mapping,
 )
+from app.api.routes_jobs_control_plane import (
+    get_config_asset_route,
+    list_config_assets_route,
+    publish_config_asset_route,
+    router as control_plane_router,
+    save_config_asset_route,
+    validate_config_asset_route,
+)
 from app.api.routes_jobs_delivery import (
     assess_governance_readiness_route,
     batch_snapshots_route,
@@ -94,7 +102,7 @@ from app.api.routes_jobs_quality import (
     save_mapping_review,
     save_stg_review,
 )
-from app.api.routes_jobs_templates import (
+from app.api.routes_jobs_intake import (
     diagnose_confirmation_template,
     diagnose_metadata_intake_template,
     get_domain_governance_packs,
@@ -103,9 +111,9 @@ from app.api.routes_jobs_templates import (
     import_confirmation_with_template,
     match_domain_governance_pack,
     normalize_metadata_input,
-    router as templates_router,
     run_governance_with_intake_profile,
     run_project_template,
+    router as intake_router,
 )
 from app.api.routes_jobs_tools import (
     agent_shell_plan,
@@ -114,26 +122,22 @@ from app.api.routes_jobs_tools import (
     agent_shell_session,
     capability_manifest_route,
     call_tool_route,
-    get_config_asset_route,
     get_trace_route,
     invoke_native_tool_route,
     invoke_openai_tool_route,
-    list_config_assets_route,
     list_recent_traces_route,
     list_tools_route,
     mcp_tool_manifest_route,
     native_tool_schemas_route,
     openai_tool_schemas_route,
-    publish_config_asset_route,
     router as tools_router,
-    save_config_asset_route,
-    validate_config_asset_route,
 )
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
-router.include_router(templates_router)
+router.include_router(intake_router)
 router.include_router(core_router)
 router.include_router(tools_router)
+router.include_router(control_plane_router)
 router.include_router(quality_router)
 router.include_router(delivery_router)
 router.include_router(backlog_router)
