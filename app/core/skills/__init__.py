@@ -6,6 +6,7 @@ from app.core.skills.metadata_completeness_check import MetadataCompletenessChec
 from app.core.skills.metadata_quality_diagnosis import MetadataQualityDiagnosisSkill
 from app.core.skills.naming_standard_check import NamingStandardCheckSkill
 from app.core.skills.quality_rule_recommendation import QualityRuleRecommendationSkill
+from app.core.skills.skill_catalog import list_enabled_skills, load_skill_catalog
 from app.core.skills.standard_mapping_recommendation import (
     StandardMappingRecommendationSkill,
 )
@@ -24,4 +25,6 @@ __all__ = [
     "StandardMappingRecommendationSkill",
     "StgStructureSuggestionSkill",
     "QualityRuleRecommendationSkill",
+    "load_skill_catalog",
+    "list_enabled_skills",
 ]

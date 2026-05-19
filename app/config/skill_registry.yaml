@@ -1,41 +1,199 @@
 skills:
-  - name: metadata_completeness_check
-    version: 0.2.0
+  - name: metadata-diagnosis-skill
+    version: 1.0.0
     enabled: true
-    description: Rule-based v1 completeness checks for required metadata and description quality.
-    module: app.core.skills.metadata_completeness_check
-  - name: technical_object_identification
-    version: 0.2.0
+    description: Diagnose metadata completeness, technical-object risk, naming quality, and governance follow-up tasks.
+    purpose: Turn raw table and field metadata into issue, diagnosis, and task outputs that downstream governance skills can reuse.
+    primary_profiles:
+      - metadata_diagnosis_only
+    tools:
+      - run_governance_profile
+    core_modules:
+      - app.core.skills.metadata_completeness_check
+      - app.core.skills.technical_object_identification
+      - app.core.skills.naming_standard_check
+      - app.core.skills.metadata_quality_diagnosis
+      - app.core.skills.governance_task_packaging
+    config_assets:
+      - naming_rules.yaml
+      - technical_keywords.yaml
+      - lifecycle_keywords.yaml
+      - severity_rules.yaml
+    outputs:
+      - completeness_output
+      - technical_output
+      - naming_output
+      - diagnosis_output
+      - task_output
+
+  - name: data-standard-mapping-skill
+    version: 1.0.0
     enabled: true
-    description: Rule-based v1 technical object detection using configured lifecycle and keyword signals.
-    module: app.core.skills.technical_object_identification
-  - name: naming_standard_check
-    version: 0.2.0
+    description: Recommend standard-field mappings and support review replay for confirmed mappings.
+    purpose: Convert source metadata fields into standard mapping candidates, unmapped-field lists, and mapping summaries.
+    primary_profiles:
+      - mapping_only
+      - diagnosis_plus_mapping
+      - diagnosis_plus_mapping_with_review
+    tools:
+      - run_governance_profile
+      - review_mapping_results
+      - batch_review_mapping_results
+    core_modules:
+      - app.core.skills.standard_mapping_recommendation
+      - app.core.review.review_service
+      - app.core.review.override_store
+    config_assets:
+      - adapter_layer.yaml
+      - domain_governance_packs.yaml
+      - domain_rule_templates.yaml
+    outputs:
+      - standard_mapping_output
+      - mapping_results
+      - confirmed_mapping_results
+      - unmapped_fields
+      - mapping_summary
+
+  - name: stg-standardization-skill
+    version: 1.0.0
     enabled: true
-    description: Rule-based v1 naming standard checks with normalization suggestions.
-    module: app.core.skills.naming_standard_check
-  - name: metadata_quality_diagnosis
-    version: 0.2.0
+    description: Suggest STG table and field structures from metadata, mappings, naming signals, and transform rules.
+    purpose: Standardize source-layer structures into STG design recommendations with reviewable table and field suggestions.
+    primary_profiles:
+      - stg_only_from_mapping
+      - diagnosis_mapping_stg
+      - diagnosis_mapping_stg_with_review
+    tools:
+      - run_governance_profile
+      - review_stg_suggestions
+      - batch_review_stg_suggestions
+    core_modules:
+      - app.core.skills.stg_structure_suggestion
+      - app.core.skills.naming_standard_check
+      - app.core.review.review_service
+      - app.core.review.override_store
+    config_assets:
+      - stg_rules.yaml
+      - field_transform_rules.yaml
+      - naming_rules.yaml
+    outputs:
+      - stg_structure_output
+      - stg_suggestions
+      - stg_field_suggestions
+      - confirmed_stg_suggestions
+      - stg_summary
+
+  - name: data-quality-rule-skill
+    version: 1.0.0
     enabled: true
-    description: Rule-based v1 diagnosis layer that aggregates raw issues into governance defect categories.
-    module: app.core.skills.metadata_quality_diagnosis
-  - name: governance_task_packaging
-    version: 0.2.0
+    description: Recommend, review, and confirm field-level, domain-aware, and cross-field data quality rules.
+    purpose: Turn mapping and STG context into reviewable quality rules and confirmed governance rule assets.
+    primary_profiles:
+      - quality_only_from_stg
+      - quality_only_from_stg_with_review
+      - diagnosis_mapping_stg_quality
+      - diagnosis_mapping_stg_quality_with_review
+    tools:
+      - recommend_quality_rules
+      - recommend_quality_intelligence
+      - review_quality_rules
+      - batch_review_quality_rules
+      - export_confirmed_quality_rules
+    core_modules:
+      - app.core.skills.quality_rule_recommendation
+      - app.core.skills.quality_rule_cross_field
+      - app.core.review.quality_review_service
+      - app.core.review.quality_batch_review_service
+      - app.core.review.quality_override_store
+    config_assets:
+      - quality_rule_templates.yaml
+      - quality_rule_policies.yaml
+      - domain_rule_templates.yaml
+      - cross_field_rule_patterns.yaml
+      - quality_review_policies.yaml
+    outputs:
+      - quality_rule_output
+      - quality_rule_review_output
+      - quality_rule_suggestions
+      - cross_field_quality_rules
+      - confirmed_quality_rules
+      - quality_rule_summary
+
+  - name: dbt-governance-skill
+    version: 1.0.0
     enabled: true
-    description: Rule-based v1 task packaging for diagnosis issues and governance follow-up.
-    module: app.core.skills.governance_task_packaging
-  - name: standard_mapping_recommendation
-    version: 0.3.0
+    description: Build and export execution-ready governance packages, including dbt-compatible YAML outputs.
+    purpose: Package confirmed quality rules into executable governance artifacts and dbt test YAML for downstream platforms.
+    primary_profiles:
+      - diagnosis_mapping_stg_quality_package
+      - diagnosis_mapping_stg_quality_package_with_review
+      - quality_package_only_from_confirmed
+    tools:
+      - build_execution_ready_package
+      - export_execution_ready_package
+      - export_confirmed_quality_rules
+    core_modules:
+      - app.core.adapters.execution_package_builder
+      - app.core.adapters.rule_export_adapter
+      - app.core.tools.quality_package_tools
+    config_assets:
+      - execution_package_policies.yaml
+      - rule_execution_templates.yaml
+    outputs:
+      - execution_package_output
+      - execution_ready_package
+      - execution_package_summary
+      - execution_package_export_results
+      - dbt_yaml
+
+  - name: governance-report-skill
+    version: 1.0.0
     enabled: true
-    description: P1 rule-based standard field mapping recommendation using knowledge packs and standard field libraries.
-    module: app.core.skills.standard_mapping_recommendation
-  - name: stg_structure_suggestion
-    version: 0.4.0
-    enabled: true
-    description: P1.5 rule-based STG structure suggestion using source metadata, mapping results, naming enhancement, and lightweight transform rules.
-    module: app.core.skills.stg_structure_suggestion
-  - name: quality_rule_recommendation
-    version: 0.5.0
-    enabled: true
-    description: P2 rule-based quality rule recommendation using mapping, STG, and source metadata context.
-    module: app.core.skills.quality_rule_recommendation
+    description: Export governance reports, confirmation workbooks, delivery packages, readiness outputs, backlog, and portfolio snapshots.
+    purpose: Turn workflow results into local JSON, Markdown, Excel, workbook, backlog, portfolio, and delivery package assets.
+    primary_profiles:
+      - governance_readiness_assessment
+      - full_governance_work_package
+      - governance_backlog_build
+      - full_governance_backlog_package
+      - governance_portfolio_assessment
+      - full_governance_portfolio_package
+      - governance_delivery_package
+      - confirmation_workbook_only
+    tools:
+      - export_governance_reports
+      - export_confirmation_workbooks
+      - build_governance_delivery_package
+      - assess_governance_readiness
+      - build_governance_work_package
+      - build_governance_backlog
+      - assess_governance_portfolio
+      - generate_progress_snapshot
+    core_modules:
+      - app.core.reports.report_service
+      - app.core.reports.markdown_reporter
+      - app.core.reports.excel_reporter
+      - app.core.delivery.delivery_service
+      - app.core.governance
+      - app.core.tools.delivery_tools
+      - app.core.tools.governance_lifecycle_tools
+    config_assets:
+      - readiness_scoring_policies.yaml
+      - governance_gap_taxonomy.yaml
+      - remediation_templates.yaml
+      - governance_backlog_policies.yaml
+      - backlog_sla_policies.yaml
+      - governance_portfolio_policies.yaml
+      - progress_snapshot_policies.yaml
+      - governance_delivery_templates.yaml
+      - confirmation_workbook_policies.yaml
+    outputs:
+      - exported_files
+      - readiness_scores
+      - governance_gaps
+      - remediation_actions
+      - governance_backlog_items
+      - backlog_sla_statuses
+      - governance_portfolio_summary
+      - progress_snapshot
+      - governance_delivery_manifest
