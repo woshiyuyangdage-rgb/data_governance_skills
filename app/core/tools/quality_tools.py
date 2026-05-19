@@ -37,6 +37,14 @@ from app.core.review.quality_review_service import (
     build_quality_rule_review_records_from_results,
     summarize_quality_rule_review_records,
 )
+from app.core.tools.quality_tool_payloads import (
+    coerce_confirmed_quality_rules,
+    coerce_cross_field_quality_rules,
+    coerce_execution_ready_package,
+    coerce_quality_review_records,
+    coerce_quality_rule_suggestions,
+    cross_field_rules_as_suggestions,
+)
 from app.core.utils.time_utils import utc_now_compact
 
 
@@ -47,82 +55,35 @@ class QualityToolMixin:
     def _coerce_quality_rule_suggestions(
         payload: object,
     ) -> list[QualityRuleSuggestion]:
-        if payload is None:
-            return []
-        if not isinstance(payload, list):
-            raise ValueError("quality_rule_suggestions must be a list.")
-        return [
-            item
-            if isinstance(item, QualityRuleSuggestion)
-            else QualityRuleSuggestion.model_validate(item)
-            for item in payload
-        ]
+        return coerce_quality_rule_suggestions(payload)
 
     @staticmethod
     def _coerce_cross_field_quality_rules(
         payload: object,
     ) -> list[CrossFieldQualityRule]:
-        if payload is None:
-            return []
-        if not isinstance(payload, list):
-            raise ValueError("cross_field_quality_rules must be a list.")
-        return [
-            item
-            if isinstance(item, CrossFieldQualityRule)
-            else CrossFieldQualityRule.model_validate(item)
-            for item in payload
-        ]
+        return coerce_cross_field_quality_rules(payload)
 
     @staticmethod
     def _cross_field_rules_as_suggestions(
         rules: list[CrossFieldQualityRule],
     ) -> list[QualityRuleSuggestion]:
-        from app.core.skills.quality_rule_recommendation import (
-            QualityRuleRecommendationSkill,
-        )
-
-        return [
-            QualityRuleRecommendationSkill.cross_field_rule_to_suggestion(rule)
-            for rule in rules
-        ]
+        return cross_field_rules_as_suggestions(rules)
 
     @staticmethod
-    def _coerce_quality_review_records(payload: object) -> list[QualityRuleReviewRecord]:
-        if payload is None:
-            return []
-        if not isinstance(payload, list):
-            raise ValueError("records must be a list.")
-        return [
-            item
-            if isinstance(item, QualityRuleReviewRecord)
-            else QualityRuleReviewRecord.model_validate(item)
-            for item in payload
-        ]
+    def _coerce_quality_review_records(
+        payload: object,
+    ) -> list[QualityRuleReviewRecord]:
+        return coerce_quality_review_records(payload)
 
     @staticmethod
     def _coerce_confirmed_quality_rules(
         payload: object,
     ) -> list[ConfirmedQualityRule]:
-        if payload is None:
-            return []
-        if not isinstance(payload, list):
-            raise ValueError("confirmed_quality_rules must be a list.")
-        return [
-            item
-            if isinstance(item, ConfirmedQualityRule)
-            else ConfirmedQualityRule.model_validate(item)
-            for item in payload
-        ]
+        return coerce_confirmed_quality_rules(payload)
 
     @staticmethod
     def _coerce_execution_ready_package(payload: object) -> ExecutionReadyPackage | None:
-        if payload is None:
-            return None
-        if isinstance(payload, ExecutionReadyPackage):
-            return payload
-        if isinstance(payload, dict):
-            return ExecutionReadyPackage.model_validate(payload)
-        raise ValueError("execution_ready_package must be an object.")
+        return coerce_execution_ready_package(payload)
 
     def recommend_quality_rules(self, arguments: dict[str, object]) -> ToolCallResponse:
         """Run the workflow chain up to quality rule recommendation."""
