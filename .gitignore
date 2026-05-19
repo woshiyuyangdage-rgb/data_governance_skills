@@ -4,6 +4,8 @@ __pycache__/
 venv/
 .pytest_cache/
 .pytest_runtime/
+.codex-test/
+.codex_tmp_asar_extract/
 .streamlit/
 .vscode/
 .DS_Store
