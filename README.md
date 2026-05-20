@@ -1,8 +1,8 @@
 # Data Governance Skills
 
-`data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换成可诊断、可评审、可交付的治理资产，覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、整改待办、组合视图和本地交付物导出。
+`data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换为可诊断、可评审、可交付的治理资产，覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、整改待办、组合视图和本地交付物导出。
 
-项目当前定位是“治理决策支持与交付资产生成工具”，不是线上执行平台。它不直接连接数据库执行质量检查，不调用 LLM，不创建外部工单，也不集成企业流程系统。
+项目当前定位是“治理决策支持与交付资产生成工具”，不是线上执行平台。它不直接连接生产数据库执行质量检查，不调用 LLM，不创建外部工单，也不集成企业流程系统。
 
 ## 一句话说明
 
@@ -10,7 +10,7 @@
 
 ## 新手入口
 
-### 这个项目解决什么问题
+### 解决什么问题
 
 数据治理工作通常从 Excel/CSV 元数据开始，但后续会很快变成一串分散动作：检查字段是否完整、判断命名是否规范、对齐标准字段、设计 STG、补质量规则、找业务确认、整理整改清单、导出交付材料。手工做这些事容易重复、口径不稳、过程不可追踪。
 
@@ -23,30 +23,34 @@
 - 生成确认质量规则、执行准备包、治理工作包和交付包。
 - 评估治理就绪度，生成整改动作、待办、SLA 状态、进度快照和组合汇总。
 
-### 适合的使用场景
+### 适合的场景
 
-- 需要快速评估一批表的元数据质量。
-- 需要把字段映射到本地标准字段体系。
-- 需要为贴源层或 STG 层生成结构建议。
-- 需要根据字段和领域规则产出质量规则初稿。
-- 需要把人工确认结果固化下来，避免重复评审。
-- 需要给治理项目输出可交付的报告、确认工作簿、执行包和整改待办。
+- 快速评估一批表的元数据质量。
+- 将源字段映射到本地标准字段体系。
+- 为贴源层或 STG 层生成结构建议。
+- 根据字段、映射、STG 和领域规则生成质量规则草案。
+- 固化人工确认结果，避免重复评审。
+- 输出治理报告、确认工作簿、执行包和整改待办。
 
-### 不适合的使用场景
+### 不适合的场景
 
 - 直接连接生产数据库执行质量检查。
 - 替代 dbt、Great Expectations、Soda 等执行引擎。
 - 多用户审批、权限管理、流程流转或工单创建。
 - 调用 LLM、向量检索、语义召回或外部企业系统。
 
-### 快速开始
+### 环境要求
 
-使用 Python 3.10 或更新版本。
+项目代码使用 Python 3.10+ 语法，建议使用 Python 3.13 作为本地开发和测试解释器。不要使用 Python 3.9 运行测试或应用。
 
 ```bash
 python --version
 python -m pip install -r requirements.txt
 ```
+
+如果你的系统默认 `python` 不是 3.10+，请显式使用满足版本要求的解释器运行命令。
+
+### 快速开始
 
 启动 FastAPI：
 
@@ -73,10 +77,12 @@ python -m app.maintenance doctor
 
 推荐输入字段：
 
-- `table_name`：必填，表名。
-- `field_name`：推荐填写，用于字段级治理。
-- `table_name_cn`、`table_description`、`schema_name`、`system_name`：可选，补充表级上下文。
-- `field_name_cn`、`field_description`、`data_type`、`nullable`：可选，补充字段级上下文。
+| 字段 | 说明 |
+| --- | --- |
+| `table_name` | 必填，表名 |
+| `field_name` | 推荐填写，用于字段级治理 |
+| `table_name_cn`、`table_description`、`schema_name`、`system_name` | 可选，补充表级上下文 |
+| `field_name_cn`、`field_description`、`data_type`、`nullable` | 可选，补充字段级上下文 |
 
 参考文件：
 
@@ -93,7 +99,9 @@ python -m app.maintenance doctor
 
 ### 常规治理流程
 
-`上传元数据 -> 解析与规范化 -> 质量诊断 -> 标准映射 -> STG 结构建议 -> 质量规则推荐 -> 人工评审 -> 评审结果回放 -> 确认规则 -> 执行准备包 -> 治理就绪度 -> 整改计划 -> 待办 -> 组合评估 -> 报告和交付资产`
+```text
+上传元数据 -> 解析与规范化 -> 质量诊断 -> 标准映射 -> STG 结构建议 -> 质量规则推荐 -> 人工评审 -> 评审结果回放 -> 确认规则 -> 执行准备包 -> 治理就绪度 -> 整改计划 -> 待办 -> 组合评估 -> 报告和交付资产
+```
 
 ### 主要入口
 
@@ -108,6 +116,7 @@ python -m app.maintenance doctor
 
 - `GET /health`
 - `GET /jobs/`
+- `GET /skills/`
 - `POST /jobs/run-governance-task`
 - `POST /jobs/interpret-governance-task`
 - `POST /jobs/agent-shell/plan`
@@ -120,6 +129,19 @@ python -m app.maintenance doctor
 - `POST /jobs/build-governance-backlog`
 - `POST /jobs/assess-governance-portfolio`
 
+## 六个产品级 Skills
+
+| Skill | 目的 | 主要输出 |
+| --- | --- | --- |
+| `metadata-diagnosis-skill` | 将原始表字段元数据转换成完整性、技术对象、命名质量、诊断和任务输出 | `completeness_output`、`technical_output`、`naming_output`、`diagnosis_output`、`task_output` |
+| `data-standard-mapping-skill` | 推荐源字段到标准字段的映射，并支持评审结果回放 | `mapping_results`、`confirmed_mapping_results`、`unmapped_fields`、`mapping_summary` |
+| `stg-standardization-skill` | 基于元数据、映射、命名信号和转换规则推荐 STG 表字段结构 | `stg_suggestions`、`stg_field_suggestions`、`confirmed_stg_suggestions`、`stg_summary` |
+| `data-quality-rule-skill` | 推荐字段级、领域感知和跨字段质量规则，并支持确认 | `quality_rule_suggestions`、`cross_field_quality_rules`、`confirmed_quality_rules`、`quality_rule_summary` |
+| `dbt-governance-skill` | 将确认规则打包为执行准备资产和 dbt 兼容 YAML | `execution_ready_package`、`execution_package_export_results`、`dbt_yaml` |
+| `governance-report-skill` | 导出报告、确认工作簿、交付包、待办、组合视图和进度快照 | `exported_files`、`readiness_scores`、`governance_backlog_items`、`progress_snapshot`、`governance_delivery_manifest` |
+
+技能清单由 `app/config/skill_registry.yaml` 配置，读取入口在 `app/core/skills/skill_catalog.py`。
+
 ## 维护者入口
 
 ### 架构分层
@@ -129,7 +151,7 @@ app/
   api/        FastAPI 路由、请求模型和工具响应封装
   config/     YAML 配置资产
   core/       解析、规则、技能、编排、治理逻辑、适配器、报告和模型
-  data/       示例输入、词典、标准字段、本地覆盖记录、审计状态
+  data/       示例输入、词典、标准字段、本地覆盖记录和本地状态
   ui/         Streamlit 本地工作台
 docs/         规格说明和设计文档
 outputs/      本地运行导出的报告和交付资产
@@ -140,43 +162,50 @@ tests/        pytest 自动化测试
 
 | 模块 | 位置 | 功能 |
 | --- | --- | --- |
-| API 接口层 | `app/api/` | 暴露 FastAPI 路由、请求模型、任务接口、报告接口和工具响应封装。`routes_jobs.py` 是聚合入口，具体任务路由按领域拆分到 `routes_jobs_core.py`、`routes_jobs_templates.py`、`routes_jobs_tools.py`、`routes_jobs_quality.py`、`routes_jobs_delivery.py`、`routes_jobs_backlog.py`。 |
-| UI 工作台 | `app/ui/` | Streamlit 多页面工作台，覆盖上传、诊断、报告、评审、Agent Shell、工具控制台、配置面板、质量规则、执行包、就绪度、待办、组合视图、交付包、批处理、确认导入、领域模板和元数据接入。 |
-| 编排引擎 | `app/core/orchestrator/` | 将解析、技能、评审、执行包、就绪度、待办和组合评估串成 workflow profile，并支持文件运行、批处理、增量重跑和任务路由。 |
+| API 接口层 | `app/api/` | 暴露 FastAPI 路由、请求模型、任务接口、报告接口和工具响应封装。`routes_jobs.py` 是聚合入口，具体任务路由按领域拆分。 |
+| UI 工作台 | `app/ui/` | Streamlit 多页面工作台，覆盖上传、诊断、报告、评审、Agent Shell、工具控制台、配置面板、质量规则、执行包、就绪度、待办、组合视图和交付包。 |
+| 编排引擎 | `app/core/orchestrator/` | 将解析、技能、评审、执行包、就绪度、待办和组合评估串成 workflow profile。 |
 | 元数据解析 | `app/core/parser/` | 读取 CSV、Excel 和批量输入，转换为内部表字段模型，并处理解析异常。 |
-| 输入适配 | `app/core/intake/` | 诊断企业元数据模板，匹配列别名，选择最佳 sheet，规范化输入文件。 |
-| 领域与项目模板 | `app/core/domain/`、`app/core/templates/` | 加载领域治理包和项目模板，根据文本或表结构匹配领域提示，并把模板默认值应用到运行请求。 |
-| 治理技能 | `app/core/skills/` | 提供完整性检查、命名标准检查、技术对象识别、标准映射推荐、STG 结构建议、质量规则推荐和治理任务打包。 |
-| 规则与词典 | `app/core/rules/`、`app/core/normalize/`、`app/data/` | 管理命名规则、技术关键字、标准字段、缩写词典、根词词典和文本清洗拆词逻辑。 |
+| 输入适配 | `app/core/intake/` | 诊断企业元数据模板、匹配列别名、选择最佳 sheet，并规范化输入文件。 |
+| 领域与模板 | `app/core/domain/`、`app/core/templates/` | 加载领域治理包和项目模板，根据文本或表结构匹配领域提示，并应用模板默认值。 |
+| 治理技能 | `app/core/skills/` | 按产品级 skill 拆分元数据诊断、标准映射、STG 标准化、质量规则、dbt 治理和治理报告能力。 |
+| 规则与词典 | `app/core/rules/`、`app/core/normalize/`、`app/data/` | 管理命名规则、技术关键词、标准字段、缩写词典、根词词典和文本清洗拆词逻辑。 |
 | 评审与回放 | `app/core/review/` | 保存映射、STG 和质量规则评审记录，管理人工覆盖结果，并在后续流程中回放确认意见。 |
-| 质量与执行包 | `app/core/adapters/`、`app/core/tools/quality_tools.py` | 生成确认质量规则、执行准备包、规则导出结果和工具化调用响应。 |
-| 治理度量 | `app/core/governance/` | 评估治理就绪度，分类治理缺口，生成整改动作、工作包、待办、SLA 状态、进度快照、批次快照、增量差异和组合汇总。 |
-| 交付包 | `app/core/delivery/` | 导出确认工作簿，导入确认结果，构建治理交付 manifest 和本地交付包，并支持 roundtrip 变更重跑。 |
+| 质量与执行包 | `app/core/adapters/`、`app/core/tools/` | 生成确认质量规则、执行准备包、规则导出结果和工具化调用响应。 |
+| 治理度量 | `app/core/governance/` | 评估治理就绪度，分类治理缺口，生成整改动作、工作包、待办、SLA 状态、进度快照和组合汇总。 |
+| 交付包 | `app/core/delivery/` | 导出确认工作簿，导入确认结果，构建治理交付 manifest 和本地交付包。 |
 | 意图、上下文与 Agent Shell | `app/core/intent/`、`app/core/context/`、`app/core/agent/` | 将自然语言意图解析为治理任务，解析运行上下文，生成执行计划并保存本地会话。当前为规则化本地能力，不调用 LLM。 |
 | 工具注册与适配 | `app/core/tools/`、`app/core/adapters/` | 暴露本地工具注册表、工具调用、OpenAI/MCP/native schema 导出和适配器调用封装。 |
 | 配置控制面 | `app/core/control_plane/`、`app/config/` | 管理 YAML 配置资产、校验、保存、发布和本地状态记录。 |
 | 审计与报告 | `app/core/audit/`、`app/core/reports/` | 记录工具执行 trace，导出 JSON、Markdown、Excel 报告。 |
-| 数据模型 | `app/core/models/` | 定义表字段、诊断问题、映射、STG、质量规则、工作流结果、待办、就绪度、交付包等 Pydantic 模型。 |
+| 数据模型 | `app/core/models/` | 定义表字段、诊断问题、映射、STG、质量规则、工作流结果、待办、就绪度和交付包等 Pydantic 模型。 |
 | 维护工具 | `app/maintenance.py` | 提供 doctor、quick-check、命令清单、本地缓存清理等维护入口。 |
+
+### 代码边界
+
+- 新代码应优先引用产品级 skill 包，例如 `app.core.skills.data_quality_rule_skill`。
+- `app.core.skills.quality_rule_recommendation` 等旧扁平路径仅作为兼容 wrapper 保留。
+- 配置资产集中放在 `app/config/`。
+- 本地运行产物应放在 `outputs/` 或被 `.gitignore` 忽略的 `app/data/` 子目录中。
 
 ### Workflow Profiles
 
 常用 profile：
 
 - `metadata_diagnosis_only`：只做元数据诊断。
+- `mapping_only`：只做标准映射。
 - `diagnosis_plus_mapping`：诊断 + 标准映射。
 - `diagnosis_mapping_stg`：诊断 + 映射 + STG 建议。
 - `diagnosis_mapping_stg_with_review`：映射和 STG 后引入人工评审。
 - `diagnosis_mapping_stg_quality`：进一步推荐质量规则。
 - `diagnosis_mapping_stg_quality_with_review`：质量规则推荐后支持评审。
 - `diagnosis_mapping_stg_quality_package_with_review`：生成确认规则和执行准备包。
-- `governance_readiness_assessment_with_review`：评估治理就绪度。
+- `governance_readiness_assessment`：评估治理就绪度。
 - `full_governance_work_package`：构建治理工作包。
 - `governance_backlog_build`：构建治理整改待办。
 - `full_governance_backlog_package`：生成完整待办包。
 - `governance_portfolio_assessment`：做治理组合评估。
 - `full_governance_portfolio_package`：生成组合评估交付包。
-- `mapping_only`：只做标准映射。
 - `stg_only_from_mapping`：基于映射结果只做 STG 建议。
 - `quality_only_from_stg`：基于 STG 结果只做质量规则推荐。
 - `quality_only_from_stg_with_review`：质量规则推荐并纳入评审。
@@ -224,7 +253,7 @@ python -m ruff check app tests
 - `docs/enterprise_metadata_intake_adapters_spec.md`
 - `docs/enterprise_delivery_adapters_spec.md`
 
-维护：
+维护文档：
 
 - `docs/maintenance_commands.md`
 

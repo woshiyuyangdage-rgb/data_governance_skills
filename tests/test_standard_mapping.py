@@ -6,7 +6,7 @@ from app.core.models.field_meta import FieldMeta
 from app.core.models.table_meta import TableMeta
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.orchestrator.pipeline_service import run_p0_plus_mapping_from_file
-from app.core.skills.standard_mapping_recommendation import (
+from app.core.skills.data_standard_mapping_skill import (
     StandardMappingInput,
     StandardMappingRecommendationSkill,
 )

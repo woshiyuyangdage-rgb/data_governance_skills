@@ -5,7 +5,7 @@ from app.core.models.mapping_result import MappingResult
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.table_meta import TableMeta
-from app.core.skills.quality_rule_recommendation import (
+from app.core.skills.data_quality_rule_skill import (
     QualityRuleRecommendationInput,
     QualityRuleRecommendationSkill,
 )

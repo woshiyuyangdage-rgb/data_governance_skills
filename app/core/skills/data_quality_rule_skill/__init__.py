@@ -8,9 +8,11 @@ from app.core.skills.data_quality_rule_skill.quality_rule_cross_field import (
     detect_domain_rule_candidates,
     find_field_by_tokens,
 )
-from app.core.skills.data_quality_rule_skill.quality_rule_recommendation import (
+from app.core.skills.data_quality_rule_skill.quality_rule_io import (
     QualityRuleRecommendationInput,
     QualityRuleRecommendationOutput,
+)
+from app.core.skills.data_quality_rule_skill.quality_rule_recommendation import (
     QualityRuleRecommendationSkill,
 )
 

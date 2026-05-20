@@ -14,7 +14,7 @@ from app.core.orchestrator.pipeline_service import (
 )
 from app.core.review.quality_override_store import load_quality_rule_overrides
 from app.core.review.quality_review_service import build_confirmed_quality_rules
-from app.core.skills.quality_rule_recommendation import QualityRuleRecommendationSkill
+from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
 
 router = APIRouter()
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

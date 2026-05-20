@@ -15,6 +15,24 @@ app/data/audit/execution_traces/*
 !app/data/audit/execution_traces/.gitkeep
 app/data/delivery_packages/*
 !app/data/delivery_packages/.gitkeep
+app/data/governance_backlog/*
+!app/data/governance_backlog/.gitkeep
+!app/data/governance_backlog/backlog_snapshots/
+app/data/governance_backlog/backlog_snapshots/*
+!app/data/governance_backlog/backlog_snapshots/.gitkeep
+app/data/review_history/*
+!app/data/review_history/.gitkeep
+!app/data/review_history/quality_rule_sessions/
+app/data/review_history/quality_rule_sessions/*
+!app/data/review_history/quality_rule_sessions/.gitkeep
+!app/data/review_history/review_sessions/
+app/data/review_history/review_sessions/*
+!app/data/review_history/review_sessions/.gitkeep
+app/data/control_plane/backups/*
+!app/data/control_plane/backups/.gitkeep
+app/data/control_plane/snapshots/*
+!app/data/control_plane/snapshots/.gitkeep
+app/data/pytest_tmp*/
 
 outputs/*
 !outputs/logs/

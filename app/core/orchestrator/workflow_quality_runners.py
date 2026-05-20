@@ -11,13 +11,13 @@ from app.core.review.quality_review_service import (
     summarize_quality_rule_review_records,
 )
 from app.core.review.review_service import summarize_review_records
-from app.core.skills.naming_standard_check import NamingStandardCheckInput
-from app.core.skills.quality_rule_recommendation import (
+from app.core.skills.data_quality_rule_skill import (
     QualityRuleRecommendationInput,
     QualityRuleRecommendationSkill,
 )
-from app.core.skills.standard_mapping_recommendation import StandardMappingInput
-from app.core.skills.stg_structure_suggestion import StgStructureSuggestionInput
+from app.core.skills.data_standard_mapping_skill import StandardMappingInput
+from app.core.skills.metadata_diagnosis_skill import NamingStandardCheckInput
+from app.core.skills.stg_standardization_skill import StgStructureSuggestionInput
 
 
 class WorkflowQualityRunnerMixin:

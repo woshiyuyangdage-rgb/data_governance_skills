@@ -22,7 +22,7 @@ from app.core.review.quality_review_service import (
     summarize_quality_rule_review_records,
 )
 from app.core.review.review_service import summarize_review_records
-from app.core.skills.quality_rule_recommendation import QualityRuleRecommendationSkill
+from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
 
 router = APIRouter()
 

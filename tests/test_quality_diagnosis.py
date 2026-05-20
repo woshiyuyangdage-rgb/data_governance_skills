@@ -1,7 +1,7 @@
 """Smoke tests for diagnosis aggregation."""
 
 from app.core.models.issue import Issue
-from app.core.skills.metadata_quality_diagnosis import (
+from app.core.skills.metadata_diagnosis_skill import (
     MetadataQualityDiagnosisInput,
     MetadataQualityDiagnosisSkill,
 )

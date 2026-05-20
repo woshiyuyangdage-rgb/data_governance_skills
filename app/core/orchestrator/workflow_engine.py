@@ -17,35 +17,23 @@ from app.core.orchestrator.workflow_quality_runners import WorkflowQualityRunner
 from app.core.orchestrator.workflow_template_intake_runners import (
     WorkflowTemplateIntakeRunnerMixin,
 )
-from app.core.skills.governance_task_packaging import (
-    GovernanceTaskPackagingInput,
-    GovernanceTaskPackagingSkill,
-)
-from app.core.skills.metadata_completeness_check import (
-    MetadataCompletenessCheckSkill,
-    MetadataCompletenessInput,
-)
-from app.core.skills.metadata_quality_diagnosis import (
-    MetadataQualityDiagnosisInput,
-    MetadataQualityDiagnosisSkill,
-)
-from app.core.skills.naming_standard_check import (
-    NamingStandardCheckInput,
-    NamingStandardCheckSkill,
-)
-from app.core.skills.quality_rule_recommendation import (
-    QualityRuleRecommendationSkill,
-)
-from app.core.skills.standard_mapping_recommendation import (
+from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
+from app.core.skills.data_standard_mapping_skill import (
     StandardMappingRecommendationSkill,
 )
-from app.core.skills.stg_structure_suggestion import (
-    StgStructureSuggestionSkill,
-)
-from app.core.skills.technical_object_identification import (
+from app.core.skills.metadata_diagnosis_skill import (
+    GovernanceTaskPackagingInput,
+    GovernanceTaskPackagingSkill,
+    MetadataCompletenessCheckSkill,
+    MetadataCompletenessInput,
+    MetadataQualityDiagnosisInput,
+    MetadataQualityDiagnosisSkill,
+    NamingStandardCheckInput,
+    NamingStandardCheckSkill,
     TechnicalObjectIdentificationInput,
     TechnicalObjectIdentificationSkill,
 )
+from app.core.skills.stg_standardization_skill import StgStructureSuggestionSkill
 
 
 class WorkflowEngine(

@@ -40,7 +40,7 @@ from app.core.review.quality_review_service import (
     build_quality_rule_review_records_from_results,
     summarize_quality_rule_review_records,
 )
-from app.core.skills.quality_rule_recommendation import QualityRuleRecommendationSkill
+from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
 from app.core.utils.result_utils import (
     confirmed_quality_rules_to_dataframe,
     cross_field_quality_rules_to_dataframe,

@@ -4,9 +4,9 @@ from app.core.models.table_meta import TableMeta
 from app.core.models.workflow_result import WorkflowResult
 from app.core.review.override_store import load_mapping_overrides, load_stg_overrides
 from app.core.review.review_service import summarize_review_records
-from app.core.skills.naming_standard_check import NamingStandardCheckInput
-from app.core.skills.standard_mapping_recommendation import StandardMappingInput
-from app.core.skills.stg_structure_suggestion import StgStructureSuggestionInput
+from app.core.skills.data_standard_mapping_skill import StandardMappingInput
+from app.core.skills.metadata_diagnosis_skill import NamingStandardCheckInput
+from app.core.skills.stg_standardization_skill import StgStructureSuggestionInput
 
 
 class WorkflowMappingStgRunnerMixin:

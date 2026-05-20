@@ -5,7 +5,7 @@ from app.core.models.cross_field_quality_rule import CrossFieldQualityRule
 from app.core.models.execution_ready_package import ExecutionReadyPackage
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
-from app.core.skills.quality_rule_recommendation import QualityRuleRecommendationSkill
+from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
 
 
 def coerce_quality_rule_suggestions(

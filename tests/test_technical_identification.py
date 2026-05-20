@@ -2,7 +2,7 @@
 
 from app.core.models.field_meta import FieldMeta
 from app.core.models.table_meta import TableMeta
-from app.core.skills.technical_object_identification import (
+from app.core.skills.metadata_diagnosis_skill import (
     TechnicalObjectIdentificationInput,
     TechnicalObjectIdentificationSkill,
 )

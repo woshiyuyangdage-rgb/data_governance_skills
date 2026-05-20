@@ -4,7 +4,7 @@ from app.core.models.field_meta import FieldMeta
 from app.core.models.mapping_result import MappingResult
 from app.core.models.stg_review_record import StgReviewRecord
 from app.core.models.table_meta import TableMeta
-from app.core.skills.stg_structure_suggestion import (
+from app.core.skills.stg_standardization_skill import (
     StgStructureSuggestionInput,
     StgStructureSuggestionSkill,
 )
