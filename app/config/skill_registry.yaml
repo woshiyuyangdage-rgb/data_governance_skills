@@ -9,11 +9,11 @@ skills:
     tools:
       - run_governance_profile
     core_modules:
-      - app.core.skills.metadata_completeness_check
-      - app.core.skills.technical_object_identification
-      - app.core.skills.naming_standard_check
-      - app.core.skills.metadata_quality_diagnosis
-      - app.core.skills.governance_task_packaging
+      - app.core.skills.metadata_diagnosis_skill.metadata_completeness_check
+      - app.core.skills.metadata_diagnosis_skill.technical_object_identification
+      - app.core.skills.metadata_diagnosis_skill.naming_standard_check
+      - app.core.skills.metadata_diagnosis_skill.metadata_quality_diagnosis
+      - app.core.skills.metadata_diagnosis_skill.governance_task_packaging
     config_assets:
       - naming_rules.yaml
       - technical_keywords.yaml
@@ -40,7 +40,7 @@ skills:
       - review_mapping_results
       - batch_review_mapping_results
     core_modules:
-      - app.core.skills.standard_mapping_recommendation
+      - app.core.skills.data_standard_mapping_skill.standard_mapping_recommendation
       - app.core.review.review_service
       - app.core.review.override_store
     config_assets:
@@ -68,8 +68,8 @@ skills:
       - review_stg_suggestions
       - batch_review_stg_suggestions
     core_modules:
-      - app.core.skills.stg_structure_suggestion
-      - app.core.skills.naming_standard_check
+      - app.core.skills.stg_standardization_skill.stg_structure_suggestion
+      - app.core.skills.metadata_diagnosis_skill.naming_standard_check
       - app.core.review.review_service
       - app.core.review.override_store
     config_assets:
@@ -100,8 +100,8 @@ skills:
       - batch_review_quality_rules
       - export_confirmed_quality_rules
     core_modules:
-      - app.core.skills.quality_rule_recommendation
-      - app.core.skills.quality_rule_cross_field
+      - app.core.skills.data_quality_rule_skill.quality_rule_recommendation
+      - app.core.skills.data_quality_rule_skill.quality_rule_cross_field
       - app.core.review.quality_review_service
       - app.core.review.quality_batch_review_service
       - app.core.review.quality_override_store
