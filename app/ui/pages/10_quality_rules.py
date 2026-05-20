@@ -31,7 +31,6 @@ from app.core.review.quality_batch_review_service import (
 from app.core.review.quality_override_store import (
     build_quality_rule_key,
     build_quality_rule_override_lookup,
-    load_quality_rule_overrides,
     save_quality_rule_review_records,
 )
 from app.core.review.quality_review_service import (
@@ -41,9 +40,11 @@ from app.core.review.quality_review_service import (
     summarize_quality_rule_review_records,
 )
 from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
-from app.core.utils.result_utils import (
+from app.ui.workbench_cache import (
     confirmed_quality_rules_to_dataframe,
     cross_field_quality_rules_to_dataframe,
+    clear_review_override_caches,
+    load_quality_rule_overrides_cached,
     quality_review_queue_summary_to_dataframe,
     quality_rule_review_summary_to_dataframe,
     quality_rules_to_dataframe,
@@ -111,7 +112,9 @@ def _persist_review_records(
     review_queue: list[QualityRuleSuggestion],
 ) -> tuple[dict[str, str | int], dict[str, object]]:
     save_result = save_quality_rule_review_records(records)
-    all_records = load_quality_rule_overrides()
+    all_records = load_quality_rule_overrides_cached(
+        st.session_state.get("uploaded_file_signature")
+    )
     reviewed_suggestions, _, replay_summary = apply_quality_rule_overrides_to_results(
         review_queue,
         all_records,
@@ -142,7 +145,9 @@ else:
     cross_field_rules = list(result.cross_field_quality_rules)
     review_queue = _reviewable_suggestions(result)
     confirmed_rules = result.confirmed_quality_rules
-    stored_overrides = load_quality_rule_overrides()
+    stored_overrides = load_quality_rule_overrides_cached(
+        st.session_state.get("uploaded_file_signature")
+    )
     override_lookup = build_quality_rule_override_lookup(stored_overrides)
 
     metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
@@ -231,6 +236,7 @@ else:
             else:
                 try:
                     save_result, _ = _persist_review_records(records, result, review_queue)
+                    clear_review_override_caches()
                     st.success(
                         f"Saved {save_result['saved_count']} batch accept review records."
                     )
@@ -255,6 +261,7 @@ else:
             else:
                 try:
                     save_result, _ = _persist_review_records(records, result, review_queue)
+                    clear_review_override_caches()
                     st.success(
                         f"Saved {save_result['saved_count']} manual review records."
                     )
@@ -355,6 +362,7 @@ else:
             )
             try:
                 save_result, _ = _persist_review_records(records, result, review_queue)
+                clear_review_override_caches()
                 st.success(
                     f"Saved {save_result['saved_count']} quality rule review records."
                 )

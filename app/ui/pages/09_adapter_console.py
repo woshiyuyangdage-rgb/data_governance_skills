@@ -15,94 +15,29 @@ from app.ui.page_utils import ensure_project_root_on_path, initialize_session_st
 ensure_project_root_on_path()
 
 from app.core.adapters.invocation_adapter import InvocationAdapter
-from app.core.adapters.manifest_service import (
-    get_capability_manifest,
-    get_mcp_style_manifest,
-    get_native_tool_schemas,
-    get_openai_tool_schemas,
+from app.ui.workbench_cache import (
+    adapter_schema_cache_key,
+    adapter_schema_bundle_cached,
+    build_adapter_console_default_arguments,
 )
 
 initialize_session_state()
 
 adapter = InvocationAdapter()
-manifest = get_capability_manifest()
-native_schemas = get_native_tool_schemas()
-openai_schemas = get_openai_tool_schemas()
-mcp_manifest = get_mcp_style_manifest()
+schema_cache_key = adapter_schema_cache_key()
+schema_bundle = adapter_schema_bundle_cached(schema_cache_key)
+manifest = schema_bundle["manifest"]
+native_schemas = schema_bundle["native_schemas"]
+openai_schemas = schema_bundle["openai_schemas"]
+mcp_manifest = schema_bundle["mcp_manifest"]
 
 native_schema_lookup = {schema.tool_name: schema for schema in native_schemas}
 tool_names = list(native_schema_lookup.keys())
 
-DEFAULT_ARGUMENTS = {
-    "run_governance_profile": {
-        "file_path": st.session_state.get("uploaded_file_path") or "",
-        "profile_name": "metadata_diagnosis_only",
-    },
-    "validate_config_asset": {"asset_name": "workflow_profiles"},
-    "list_config_assets": {},
-    "run_agent_task": {
-        "text": "Help me inspect this file",
-        "file_path": st.session_state.get("uploaded_file_path") or "",
-        "force_run": True,
-    },
-    "review_quality_rules": {
-        "workflow_result": (
-            st.session_state.get("workflow_result").model_dump()
-            if hasattr(st.session_state.get("workflow_result"), "model_dump")
-            else {}
-        ),
-        "review_inputs": {},
-        "save_overrides": False,
-    },
-    "recommend_quality_intelligence": {
-        "file_path": st.session_state.get("uploaded_file_path") or "",
-        "profile_name": "diagnosis_mapping_stg_quality",
-        "apply_review_replay": False,
-    },
-    "batch_review_quality_rules": {
-        "workflow_result": (
-            st.session_state.get("workflow_result").model_dump()
-            if hasattr(st.session_state.get("workflow_result"), "model_dump")
-            else {}
-        ),
-        "action": "mark_low_confidence_manual_review",
-        "confidence_threshold": 0.4,
-        "save_overrides": False,
-    },
-    "export_confirmed_quality_rules": {
-        "export_format": "json",
-        "workflow_result": (
-            st.session_state.get("workflow_result").model_dump()
-            if hasattr(st.session_state.get("workflow_result"), "model_dump")
-            else {}
-        ),
-        "output_dir": str(PROJECT_ROOT / "outputs" / "rule_exports"),
-        "base_filename": "adapter_console_quality_rules",
-        "apply_review_replay": True,
-    },
-    "build_execution_ready_package": {
-        "workflow_result": (
-            st.session_state.get("workflow_result").model_dump()
-            if hasattr(st.session_state.get("workflow_result"), "model_dump")
-            else {}
-        ),
-        "file_path": st.session_state.get("uploaded_file_path") or "",
-        "apply_review_replay": True,
-        "profile_name": "diagnosis_mapping_stg_quality_package_with_review",
-    },
-    "export_execution_ready_package": {
-        "export_format": "manifest",
-        "workflow_result": (
-            st.session_state.get("workflow_result").model_dump()
-            if hasattr(st.session_state.get("workflow_result"), "model_dump")
-            else {}
-        ),
-        "file_path": st.session_state.get("uploaded_file_path") or "",
-        "output_dir": str(PROJECT_ROOT / "outputs" / "execution_packages"),
-        "base_filename": "adapter_console_execution_package",
-        "apply_review_replay": True,
-    },
-}
+default_arguments = build_adapter_console_default_arguments(
+    st.session_state.get("uploaded_file_path"),
+    st.session_state.get("workflow_result"),
+)
 
 st.title("Adapter Console")
 st.write(
@@ -146,7 +81,7 @@ st.caption(
 )
 
 default_arguments_json = json.dumps(
-    DEFAULT_ARGUMENTS.get(selected_tool_name, {}),
+    default_arguments.get(selected_tool_name, {}),
     ensure_ascii=False,
     indent=2,
 )

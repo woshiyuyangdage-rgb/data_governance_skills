@@ -19,7 +19,7 @@ import app.core.governance.backlog_store as backlog_store
 from app.core.governance.backlog_tracking_service import GovernanceBacklogTrackingService
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import run_full_governance_backlog_package_from_file
-from app.core.utils.result_utils import (
+from app.ui.workbench_cache import (
     backlog_summary_to_dataframe,
     governance_backlog_items_to_dataframe,
 )
@@ -152,4 +152,3 @@ if display_items:
             st.error(result_update.message)
 else:
     st.info("Persist backlog items before updating status.")
-

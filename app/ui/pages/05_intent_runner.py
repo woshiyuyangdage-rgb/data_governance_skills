@@ -17,7 +17,7 @@ from app.core.intent.intent_task_service import (
     interpret_and_build_request,
     interpret_and_run_task,
 )
-from app.core.utils.result_utils import review_summary_to_dataframe
+from app.ui.workbench_cache import review_summary_to_dataframe
 
 initialize_session_state()
 

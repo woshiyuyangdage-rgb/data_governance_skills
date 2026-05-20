@@ -22,7 +22,7 @@ from app.core.orchestrator.pipeline_service import (
     run_full_governance_portfolio_package_from_file,
 )
 from app.core.reports.report_service import export_all_reports
-from app.core.utils.result_utils import (
+from app.ui.workbench_cache import (
     backlog_sla_statuses_to_dataframe,
     governance_backlog_items_to_dataframe,
     governance_portfolio_summary_to_dataframe,

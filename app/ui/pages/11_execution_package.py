@@ -21,7 +21,7 @@ from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import (
     run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_from_file,
 )
-from app.core.utils.result_utils import (
+from app.ui.workbench_cache import (
     execution_package_export_results_to_dataframe,
     execution_package_summary_to_dataframe,
     execution_ready_rules_to_dataframe,

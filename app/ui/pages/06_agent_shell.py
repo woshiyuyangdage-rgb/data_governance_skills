@@ -16,7 +16,10 @@ ensure_project_root_on_path()
 
 from app.core.agent.agent_shell_service import AgentShellService
 from app.core.agent.session_store import get_session, set_last_uploaded_file
-from app.core.utils.result_utils import quality_rules_to_dataframe, review_summary_to_dataframe
+from app.ui.workbench_cache import (
+    quality_rules_to_dataframe,
+    review_summary_to_dataframe,
+)
 
 initialize_session_state()
 

@@ -28,11 +28,13 @@ from app.core.review.review_service import (
     build_stg_review_records_from_results,
     summarize_review_records,
 )
-from app.core.review.override_store import (
-    save_mapping_review_records,
-    save_stg_review_records,
+from app.core.review.override_store import save_mapping_review_records, save_stg_review_records
+from app.ui.workbench_cache import (
+    clear_review_override_caches,
+    load_mapping_overrides_cached,
+    load_stg_overrides_cached,
+    review_summary_to_dataframe,
 )
-from app.core.utils.result_utils import review_summary_to_dataframe
 
 initialize_session_state()
 
@@ -48,8 +50,14 @@ if result is None:
 else:
     mapping_results = result.mapping_results
     stg_suggestions = result.stg_field_suggestions
-    mapping_override_lookup = build_mapping_override_lookup(load_mapping_overrides())
-    stg_override_lookup = build_stg_override_lookup(load_stg_overrides())
+    mapping_overrides = load_mapping_overrides_cached(
+        st.session_state.get("uploaded_file_signature")
+    )
+    stg_overrides = load_stg_overrides_cached(
+        st.session_state.get("uploaded_file_signature")
+    )
+    mapping_override_lookup = build_mapping_override_lookup(mapping_overrides)
+    stg_override_lookup = build_stg_override_lookup(stg_overrides)
 
     if not mapping_results and not stg_suggestions:
         st.warning("Current result does not include mapping or STG suggestions to review.")
@@ -221,6 +229,7 @@ else:
                     save_mapping_review_records(mapping_records)
                 if stg_records:
                     save_stg_review_records(stg_records)
+                clear_review_override_caches()
             except Exception as exc:
                 st.error(f"Failed to save review records: {exc}")
             else:
@@ -230,8 +239,8 @@ else:
 
         st.subheader("Stored Review Summary")
         stored_review_summary = summarize_review_records(
-            load_mapping_overrides(),
-            load_stg_overrides(),
+            mapping_overrides,
+            stg_overrides,
         )
         stored_summary_df = review_summary_to_dataframe(stored_review_summary)
         if not stored_summary_df.empty:

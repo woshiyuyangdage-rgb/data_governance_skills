@@ -19,7 +19,7 @@ ensure_project_root_on_path()
 from app.core.governance import GapClassifier, ReadinessAssessor, RemediationPlanner
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import run_full_governance_work_package_from_file
-from app.core.utils.result_utils import (
+from app.ui.workbench_cache import (
     governance_gaps_to_dataframe,
     governance_work_package_summary_to_dataframe,
     readiness_scores_to_dataframe,
@@ -170,4 +170,3 @@ else:
         st.dataframe(actions_df, use_container_width=True)
     else:
         st.info("No remediation actions are available.")
-

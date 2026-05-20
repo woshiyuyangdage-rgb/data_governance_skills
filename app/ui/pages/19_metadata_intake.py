@@ -2,8 +2,12 @@
 
 import streamlit as st
 
-from app.core.intake.intake_adapter_service import IntakeAdapterService
 from app.core.intake.intake_profile_loader import list_enabled_intake_template_profiles
+from app.ui.workbench_cache import (
+    file_cache_key,
+    diagnose_intake_template_cached,
+    normalize_metadata_input_cached,
+)
 
 
 st.title("Enterprise Metadata Intake")
@@ -20,13 +24,15 @@ file_path = st.text_input("Metadata file path")
 sheet_name = st.text_input("Sheet name (optional)")
 selected_profile = st.selectbox("Intake profile", profile_options)
 
-service = IntakeAdapterService()
-
 if st.button("Diagnose Template"):
     if not file_path:
         st.warning("Please provide a metadata file path first.")
     else:
-        result = service.diagnose_intake_template(file_path, sheet_name=sheet_name or None)
+        result = diagnose_intake_template_cached(
+            file_path,
+            sheet_name=sheet_name or None,
+            file_signature=file_cache_key(file_path),
+        )
         st.json(result.model_dump())
 
 if st.button("Normalize Input"):
@@ -34,10 +40,11 @@ if st.button("Normalize Input"):
         st.warning("Please provide a metadata file path first.")
     else:
         profile_name = None if selected_profile == "auto_match" else selected_profile
-        result = service.normalize_metadata_input(
+        result = normalize_metadata_input_cached(
             file_path,
             profile_name=profile_name,
             sheet_name=sheet_name or None,
+            file_signature=file_cache_key(file_path),
         )
         st.json(result.model_dump())
         if result.status == "success":

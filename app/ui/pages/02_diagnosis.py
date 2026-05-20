@@ -22,7 +22,7 @@ from app.core.agent.session_store import (
 from app.core.models.governance_task_request import GovernanceTaskRequest
 from app.core.orchestrator.profile_loader import list_enabled_profiles
 from app.core.orchestrator.task_service import run_governance_task
-from app.core.utils.result_utils import (
+from app.ui.workbench_cache import (
     issues_to_dataframe,
     mapping_results_to_dataframe,
     quality_rules_to_dataframe,

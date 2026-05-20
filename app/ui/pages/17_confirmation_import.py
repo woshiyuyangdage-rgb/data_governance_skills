@@ -19,6 +19,11 @@ from app.core.delivery.confirmation_template_loader import (
 )
 from app.core.orchestrator.workflow_engine import WorkflowEngine
 from app.core.utils.file_utils import save_uploaded_file
+from app.ui.workbench_cache import (
+    diagnose_confirmation_template_cached,
+    file_cache_key,
+    validate_confirmation_workbook_cached,
+)
 
 initialize_session_state()
 
@@ -55,7 +60,11 @@ with col_validate:
         if not file_path:
             st.warning("Upload a confirmation workbook first.")
         else:
-            validation = importer.validate_workbook(file_path, workbook_type)
+            validation = validate_confirmation_workbook_cached(
+                file_path,
+                workbook_type,
+                file_cache_key(file_path),
+            )
             st.session_state["confirmation_validation_result"] = validation.model_dump()
 
 with col_diagnose:
@@ -63,7 +72,11 @@ with col_diagnose:
         if not file_path:
             st.warning("Upload a confirmation workbook first.")
         else:
-            diagnosis = importer.diagnose_confirmation_template(file_path, workbook_type)
+            diagnosis = diagnose_confirmation_template_cached(
+                file_path,
+                workbook_type,
+                file_cache_key(file_path),
+            )
             st.session_state["confirmation_template_diagnosis"] = diagnosis.model_dump()
 
 with col_import:

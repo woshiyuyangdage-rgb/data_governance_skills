@@ -3,9 +3,9 @@
 import streamlit as st
 
 from app.core.domain.domain_pack_loader import list_enabled_domain_packs
-from app.core.domain.domain_pack_matcher import DomainPackMatcher
 from app.core.templates.project_template_loader import list_enabled_project_templates
 from app.core.templates.project_template_service import ProjectTemplateService
+from app.ui.workbench_cache import file_cache_key, match_domain_pack_from_file_cached
 
 
 st.title("Domain Governance Packs & Project Templates")
@@ -34,9 +34,7 @@ if st.button("Auto Match Domain Pack"):
     if not file_path:
         st.warning("Please provide a metadata file path first.")
     else:
-        from app.core.parser.loader import load_metadata_file
-
-        match = DomainPackMatcher().match_domain_pack_from_tables(load_metadata_file(file_path))
+        match = match_domain_pack_from_file_cached(file_path, file_cache_key(file_path))
         st.json(match.model_dump())
 
 if st.button("Run Project Template"):
