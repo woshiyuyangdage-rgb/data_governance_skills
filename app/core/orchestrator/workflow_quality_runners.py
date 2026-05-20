@@ -2,18 +2,17 @@
 
 from app.core.models.table_meta import TableMeta
 from app.core.models.workflow_result import WorkflowResult
-from app.core.review.override_store import load_mapping_overrides, load_stg_overrides
-from app.core.review.quality_batch_review_service import summarize_review_queue
-from app.core.review.quality_override_store import load_quality_rule_overrides
-from app.core.review.quality_review_service import (
-    apply_quality_rule_overrides_to_results,
-    build_confirmed_quality_rules,
-    summarize_quality_rule_review_records,
+from app.core.orchestrator.workflow_quality_runners_helpers import (
+    append_quality_message,
+    build_quality_review_queue_summary,
+    build_quality_review_replay_artifacts,
+    build_quality_reviewable_rules,
+    build_quality_workflow_result_kwargs,
 )
+from app.core.review.override_store import load_mapping_overrides, load_stg_overrides
 from app.core.review.review_service import summarize_review_records
 from app.core.skills.data_quality_rule_skill import (
     QualityRuleRecommendationInput,
-    QualityRuleRecommendationSkill,
 )
 from app.core.skills.data_standard_mapping_skill import StandardMappingInput
 from app.core.skills.metadata_diagnosis_skill import NamingStandardCheckInput
@@ -33,44 +32,27 @@ class WorkflowQualityRunnerMixin:
                 stg_suggestions=stg_result.stg_field_suggestions,
             )
         )
-
         merged_skill_outputs = dict(stg_result.skill_outputs)
         merged_skill_outputs["quality_rule_output"] = self._serialize_model(
             quality_output
         )
-        review_queue_summary = summarize_review_queue(
-            list(quality_output.quality_rule_suggestions)
-            + [
-                QualityRuleRecommendationSkill.cross_field_rule_to_suggestion(rule)
-                for rule in quality_output.cross_field_quality_rules
-            ]
+        message = append_quality_message(
+            stg_result.message,
+            stg_result.status,
+            tables,
+            " Quality rule recommendations were also generated.",
         )
-        message = stg_result.message
-        if tables and stg_result.status == "success":
-            message += " Quality rule recommendations were also generated."
-
         return WorkflowResult(
-            input_table_count=stg_result.input_table_count,
-            issue_count=stg_result.issue_count + len(quality_output.issues),
-            task_count=stg_result.task_count,
-            issues=stg_result.issues + quality_output.issues,
-            tasks=stg_result.tasks,
-            mapping_results=stg_result.mapping_results,
-            confirmed_mapping_results=stg_result.confirmed_mapping_results,
-            unmapped_fields=stg_result.unmapped_fields,
-            mapping_summary=stg_result.mapping_summary,
-            stg_suggestions=stg_result.stg_suggestions,
-            stg_field_suggestions=stg_result.stg_field_suggestions,
-            confirmed_stg_suggestions=stg_result.confirmed_stg_suggestions,
-            stg_summary=stg_result.stg_summary,
-            quality_rule_suggestions=quality_output.quality_rule_suggestions,
-            cross_field_quality_rules=quality_output.cross_field_quality_rules,
-            quality_rule_packages=quality_output.quality_rule_packages,
-            quality_rule_summary=quality_output.summary,
-            quality_review_queue_summary=review_queue_summary,
-            skill_outputs=merged_skill_outputs,
-            status=stg_result.status,
-            message=message,
+            **build_quality_workflow_result_kwargs(
+                stg_result,
+                quality_output,
+                quality_rule_suggestions=quality_output.quality_rule_suggestions,
+                quality_review_queue_summary=build_quality_review_queue_summary(
+                    quality_output
+                ),
+                skill_outputs=merged_skill_outputs,
+                message=message,
+            )
         )
 
     def run_p0_plus_mapping_plus_stg_plus_quality(
@@ -86,44 +68,27 @@ class WorkflowQualityRunnerMixin:
                 stg_suggestions=stg_result.stg_field_suggestions,
             )
         )
-
         merged_skill_outputs = dict(stg_result.skill_outputs)
         merged_skill_outputs["quality_rule_output"] = self._serialize_model(
             quality_output
         )
-        review_queue_summary = summarize_review_queue(
-            list(quality_output.quality_rule_suggestions)
-            + [
-                QualityRuleRecommendationSkill.cross_field_rule_to_suggestion(rule)
-                for rule in quality_output.cross_field_quality_rules
-            ]
+        message = append_quality_message(
+            stg_result.message,
+            stg_result.status,
+            tables,
+            " Quality rule recommendations were also generated.",
         )
-        message = stg_result.message
-        if tables and stg_result.status == "success":
-            message += " Quality rule recommendations were also generated."
-
         return WorkflowResult(
-            input_table_count=stg_result.input_table_count,
-            issue_count=stg_result.issue_count + len(quality_output.issues),
-            task_count=stg_result.task_count,
-            issues=stg_result.issues + quality_output.issues,
-            tasks=stg_result.tasks,
-            mapping_results=stg_result.mapping_results,
-            confirmed_mapping_results=stg_result.confirmed_mapping_results,
-            unmapped_fields=stg_result.unmapped_fields,
-            mapping_summary=stg_result.mapping_summary,
-            stg_suggestions=stg_result.stg_suggestions,
-            stg_field_suggestions=stg_result.stg_field_suggestions,
-            confirmed_stg_suggestions=stg_result.confirmed_stg_suggestions,
-            stg_summary=stg_result.stg_summary,
-            quality_rule_suggestions=quality_output.quality_rule_suggestions,
-            cross_field_quality_rules=quality_output.cross_field_quality_rules,
-            quality_rule_packages=quality_output.quality_rule_packages,
-            quality_rule_summary=quality_output.summary,
-            quality_review_queue_summary=review_queue_summary,
-            skill_outputs=merged_skill_outputs,
-            status=stg_result.status,
-            message=message,
+            **build_quality_workflow_result_kwargs(
+                stg_result,
+                quality_output,
+                quality_rule_suggestions=quality_output.quality_rule_suggestions,
+                quality_review_queue_summary=build_quality_review_queue_summary(
+                    quality_output
+                ),
+                skill_outputs=merged_skill_outputs,
+                message=message,
+            )
         )
 
     def run_p0_plus_mapping_plus_stg_plus_quality_with_review(
@@ -148,71 +113,41 @@ class WorkflowQualityRunnerMixin:
                 stg_suggestions=effective_stg_suggestions,
             )
         )
-        reviewable_quality_rules = list(quality_output.quality_rule_suggestions) + [
-            QualityRuleRecommendationSkill.cross_field_rule_to_suggestion(rule)
-            for rule in quality_output.cross_field_quality_rules
-        ]
-        quality_overrides = load_quality_rule_overrides()
-        reviewed_quality_suggestions, applied_quality_count, quality_review_summary = (
-            apply_quality_rule_overrides_to_results(
-                reviewable_quality_rules,
-                quality_overrides,
-            )
+        reviewable_quality_rules = build_quality_reviewable_rules(quality_output)
+        replay_artifacts = build_quality_review_replay_artifacts(
+            reviewable_quality_rules
         )
-        confirmed_quality_rules = build_confirmed_quality_rules(
-            reviewable_quality_rules,
-            quality_overrides,
-        )
-        quality_review_summary = summarize_quality_rule_review_records(
-            quality_overrides,
-            confirmed_count=len(confirmed_quality_rules),
-        )
-
         merged_skill_outputs = dict(reviewed_result.skill_outputs)
         merged_skill_outputs["quality_rule_output"] = self._serialize_model(
             quality_output
         )
         merged_skill_outputs["quality_rule_review_output"] = {
-            "applied_quality_review_count": applied_quality_count,
-            "quality_rule_review_summary": quality_review_summary,
+            "applied_quality_review_count": replay_artifacts.applied_quality_count,
+            "quality_rule_review_summary": replay_artifacts.quality_review_summary,
             "confirmed_quality_rules": [
-                self._serialize_model(rule) for rule in confirmed_quality_rules
+                self._serialize_model(rule)
+                for rule in replay_artifacts.confirmed_quality_rules
             ],
         }
-        field_reviewed_quality_suggestions = [
-            rule for rule in reviewed_quality_suggestions if rule.rule_scope == "field"
-        ]
-        message = reviewed_result.message
-        if tables and reviewed_result.status == "success":
-            message += " Quality rule recommendations and review replay were also applied."
+        message = append_quality_message(
+            reviewed_result.message,
+            reviewed_result.status,
+            tables,
+            " Quality rule recommendations and review replay were also applied.",
+        )
 
         return WorkflowResult(
-            input_table_count=reviewed_result.input_table_count,
-            issue_count=reviewed_result.issue_count + len(quality_output.issues),
-            task_count=reviewed_result.task_count,
-            issues=reviewed_result.issues + quality_output.issues,
-            tasks=reviewed_result.tasks,
-            mapping_results=reviewed_result.mapping_results,
-            confirmed_mapping_results=reviewed_result.confirmed_mapping_results,
-            unmapped_fields=reviewed_result.unmapped_fields,
-            mapping_summary=reviewed_result.mapping_summary,
-            stg_suggestions=reviewed_result.stg_suggestions,
-            stg_field_suggestions=reviewed_result.stg_field_suggestions,
-            confirmed_stg_suggestions=reviewed_result.confirmed_stg_suggestions,
-            stg_summary=reviewed_result.stg_summary,
-            quality_rule_suggestions=field_reviewed_quality_suggestions,
-            cross_field_quality_rules=quality_output.cross_field_quality_rules,
-            quality_rule_packages=quality_output.quality_rule_packages,
-            quality_rule_summary=quality_output.summary,
-            confirmed_quality_rules=confirmed_quality_rules,
-            quality_rule_review_summary=quality_review_summary,
-            quality_review_queue_summary=summarize_review_queue(
-                reviewed_quality_suggestions
-            ),
-            review_summary=reviewed_result.review_summary,
-            skill_outputs=merged_skill_outputs,
-            status=reviewed_result.status,
-            message=message,
+            **build_quality_workflow_result_kwargs(
+                reviewed_result,
+                quality_output,
+                quality_rule_suggestions=replay_artifacts.field_reviewed_quality_suggestions,
+                skill_outputs=merged_skill_outputs,
+                message=message,
+                confirmed_quality_rules=replay_artifacts.confirmed_quality_rules,
+                quality_rule_review_summary=replay_artifacts.quality_review_summary,
+                quality_review_queue_summary=replay_artifacts.quality_review_queue_summary,
+                review_summary=reviewed_result.review_summary,
+            )
         )
 
     def run_p0_plus_mapping_plus_stg_plus_quality_with_package(
@@ -311,30 +246,11 @@ class WorkflowQualityRunnerMixin:
                 stg_suggestions=effective_stg_suggestions,
             )
         )
-        reviewable_quality_rules = list(quality_output.quality_rule_suggestions) + [
-            QualityRuleRecommendationSkill.cross_field_rule_to_suggestion(rule)
-            for rule in quality_output.cross_field_quality_rules
-        ]
-        quality_overrides = load_quality_rule_overrides()
-        reviewed_quality_suggestions, applied_quality_count, quality_review_summary = (
-            apply_quality_rule_overrides_to_results(
-                reviewable_quality_rules,
-                quality_overrides,
-            )
-        )
-        confirmed_quality_rules = build_confirmed_quality_rules(
-            reviewable_quality_rules,
-            quality_overrides,
-        )
-        quality_review_summary = summarize_quality_rule_review_records(
-            quality_overrides,
-            confirmed_count=len(confirmed_quality_rules),
+        reviewable_quality_rules = build_quality_reviewable_rules(quality_output)
+        replay_artifacts = build_quality_review_replay_artifacts(
+            reviewable_quality_rules
         )
         review_summary = summarize_review_records(mapping_overrides, stg_overrides)
-        field_reviewed_quality_suggestions = [
-            rule for rule in reviewed_quality_suggestions if rule.rule_scope == "field"
-        ]
-
         return WorkflowResult(
             input_table_count=len(tables),
             issue_count=(
@@ -353,15 +269,13 @@ class WorkflowQualityRunnerMixin:
             stg_field_suggestions=stg_output.field_suggestions_flat,
             confirmed_stg_suggestions=stg_output.confirmed_stg_suggestions,
             stg_summary=stg_output.summary,
-            quality_rule_suggestions=field_reviewed_quality_suggestions,
+            quality_rule_suggestions=replay_artifacts.field_reviewed_quality_suggestions,
             cross_field_quality_rules=quality_output.cross_field_quality_rules,
             quality_rule_packages=quality_output.quality_rule_packages,
             quality_rule_summary=quality_output.summary,
-            confirmed_quality_rules=confirmed_quality_rules,
-            quality_rule_review_summary=quality_review_summary,
-            quality_review_queue_summary=summarize_review_queue(
-                reviewed_quality_suggestions
-            ),
+            confirmed_quality_rules=replay_artifacts.confirmed_quality_rules,
+            quality_rule_review_summary=replay_artifacts.quality_review_summary,
+            quality_review_queue_summary=replay_artifacts.quality_review_queue_summary,
             review_summary=review_summary,
             skill_outputs={
                 "naming_output": self._serialize_model(naming_output),
@@ -369,10 +283,11 @@ class WorkflowQualityRunnerMixin:
                 "stg_structure_output": self._serialize_model(stg_output),
                 "quality_rule_output": self._serialize_model(quality_output),
                 "quality_rule_review_output": {
-                    "applied_quality_review_count": applied_quality_count,
-                    "quality_rule_review_summary": quality_review_summary,
+                    "applied_quality_review_count": replay_artifacts.applied_quality_count,
+                    "quality_rule_review_summary": replay_artifacts.quality_review_summary,
                     "confirmed_quality_rules": [
-                        self._serialize_model(rule) for rule in confirmed_quality_rules
+                        self._serialize_model(rule)
+                        for rule in replay_artifacts.confirmed_quality_rules
                     ],
                 },
             },
