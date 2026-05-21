@@ -21,6 +21,8 @@ from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import (
     run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_from_file,
 )
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.workbench_cache import (
     execution_package_export_results_to_dataframe,
     execution_package_summary_to_dataframe,
@@ -43,6 +45,14 @@ uploaded_file_path = st.session_state.get("workflow_result_file_path") or st.ses
 if result is None:
     st.warning("No workflow result is available yet. Run a quality workflow first.")
 else:
+    render_result_overview(
+        build_workflow_overview(
+            result,
+            title="执行包总览",
+            next_step="先确认质量规则，再构建或导出执行包。",
+        )
+    )
+
     confirmed_rules = result.confirmed_quality_rules
     package = result.execution_ready_package
 

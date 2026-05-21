@@ -22,6 +22,8 @@ from app.core.orchestrator.pipeline_service import (
     run_full_governance_portfolio_package_from_file,
 )
 from app.core.reports.report_service import export_all_reports
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.workbench_cache import (
     backlog_sla_statuses_to_dataframe,
     governance_backlog_items_to_dataframe,
@@ -114,6 +116,14 @@ current_result = st.session_state.get("workflow_result")
 if current_result is None:
     st.info("Run a portfolio assessment to populate this page.")
     st.stop()
+
+render_result_overview(
+    build_workflow_overview(
+        current_result,
+        title="治理组合总览",
+        next_step="先看 SLA 和进展，再导出报告。",
+    )
+)
 
 summary = current_result.governance_portfolio_summary
 snapshot = current_result.progress_snapshot

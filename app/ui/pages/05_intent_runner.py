@@ -18,6 +18,8 @@ from app.core.intent.intent_task_service import (
     interpret_and_run_task,
 )
 from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_intent_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.workbench_cache import review_summary_to_dataframe
 
 initialize_session_state()
@@ -83,6 +85,12 @@ if st.button("Execute Intent", type="primary"):
 
 execution_result = st.session_state.get("latest_intent_execution_result")
 if execution_result is not None:
+    render_result_overview(
+        build_intent_overview(execution_result)
+    )
+    st.subheader("任务请求")
+    st.json(execution_result.task_request.model_dump())
+
     interpreted_intent = execution_result.interpreted_intent
     render_explanation_block(
         "意图解释",
@@ -99,9 +107,6 @@ if execution_result is not None:
         next_step="如果结果可用，可以直接运行；如果不对，回到上传页或诊断页补充文件上下文。",
     )
     st.json(interpreted_intent.inferred_parameters)
-
-    st.subheader("任务请求")
-    st.json(execution_result.task_request.model_dump())
 
     if execution_result.task_response is not None:
         task_response = execution_result.task_response

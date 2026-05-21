@@ -17,6 +17,8 @@ ensure_project_root_on_path()
 from app.core.agent.agent_shell_service import AgentShellService
 from app.core.agent.session_store import get_session, set_last_uploaded_file
 from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_agent_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.workbench_cache import (
     quality_rules_to_dataframe,
     review_summary_to_dataframe,
@@ -116,6 +118,8 @@ if run_clicked:
 
 shell_result = st.session_state.get("latest_agent_shell_result")
 if shell_result is not None:
+    render_result_overview(build_agent_overview(shell_result))
+
     plan = shell_result.execution_plan
     interpreted_intent = shell_result.interpreted_intent
     render_explanation_block(

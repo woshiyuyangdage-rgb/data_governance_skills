@@ -18,6 +18,8 @@ from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import (
     run_full_governance_delivery_package_with_review_from_file,
 )
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 
 initialize_session_state()
 
@@ -87,6 +89,14 @@ result: WorkflowResult | None = st.session_state.get("workflow_result")
 if result is None:
     st.info("Build a delivery package to see generated artifact paths.")
     st.stop()
+
+render_result_overview(
+    build_workflow_overview(
+        result,
+        title="交付总览",
+        next_step="先看交付物，再下载 workbook 或 manifest。",
+    )
+)
 
 st.subheader("Generated Workbooks")
 if result.confirmation_workbook_results:

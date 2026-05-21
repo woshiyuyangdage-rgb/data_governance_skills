@@ -41,6 +41,8 @@ from app.core.review.quality_review_service import (
 )
 from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
 from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.performance_helpers import render_lazy_dataframe_section
 from app.ui.workbench_cache import (
     confirmed_quality_rules_to_dataframe,
@@ -143,6 +145,14 @@ uploaded_file_path = st.session_state.get("workflow_result_file_path") or st.ses
 if result is None:
     st.warning("No workflow result is available yet. Run a quality rule workflow first.")
 else:
+    render_result_overview(
+        build_workflow_overview(
+            result,
+            title="质量规则总览",
+            next_step="先确认规则，再导出或构建执行包。",
+        )
+    )
+
     field_suggestions = list(result.quality_rule_suggestions)
     cross_field_rules = list(result.cross_field_quality_rules)
     review_queue = _reviewable_suggestions(result)

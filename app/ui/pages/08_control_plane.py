@@ -14,6 +14,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_overview import build_config_edit_overview, build_validation_overview
+from app.ui.result_overview import render_result_overview
 
 ensure_project_root_on_path()
 
@@ -186,30 +188,17 @@ else:
 
     latest_result = st.session_state.get("latest_control_plane_result")
     if latest_result is not None:
-        st.subheader("最近结果")
-        if hasattr(latest_result, "model_dump"):
-            st.json(latest_result.model_dump())
-        else:
-            st.write(latest_result)
-
-        validation_payload = None
         if hasattr(latest_result, "validation_result") and latest_result.validation_result is not None:
-            validation_payload = latest_result.validation_result
+            render_result_overview(build_config_edit_overview(latest_result))
+            render_result_overview(build_validation_overview(latest_result.validation_result))
         elif hasattr(latest_result, "is_valid"):
-            validation_payload = latest_result
-
-        if validation_payload is not None:
-            st.subheader("校验信息")
-            messages = list(getattr(validation_payload, "messages", []))
-            warnings = list(getattr(validation_payload, "warnings", []))
-            if messages:
-                for message in messages:
-                    st.error(message)
-            if warnings:
-                for warning in warnings:
-                    st.warning(warning)
-            if not messages and not warnings:
-                st.success("没有返回校验错误或警告。")
+            render_result_overview(build_validation_overview(latest_result))
+        else:
+            st.subheader("最近结果")
+            if hasattr(latest_result, "model_dump"):
+                st.json(latest_result.model_dump())
+            else:
+                st.write(latest_result)
 
     st.subheader("最近备份")
     if not backups:

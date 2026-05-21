@@ -12,6 +12,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
 from app.ui.page_utils import ensure_agent_shell_session_id
 from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.performance_helpers import (
     ensure_large_file_runtime_ready,
     render_lazy_dataframe_section,
@@ -156,36 +158,15 @@ else:
 task_response = st.session_state.get("governance_task_response")
 result = st.session_state.get("workflow_result")
 if result is not None:
-    if task_response is not None:
-        render_explanation_block(
-            "运行概览",
-            summary=task_response.message,
-            details=[
-                ("方案", task_response.profile_name),
-                ("执行阶段", task_response.stages_executed),
-                ("状态", task_response.status),
-            ],
+    render_result_overview(
+        build_workflow_overview(
+            result,
+            title="诊断结果总览",
             next_step="先看映射、STG 和质量规则建议，再去 Review 页面处理人工确认。",
         )
-        if task_response.exported_files:
-            st.info("Reports were exported during the run and are available on the Reports page.")
-    else:
-        render_explanation_block(
-            "运行概览",
-            summary=result.message,
-            details=[
-                ("状态", result.status),
-            ],
-        )
-
-    metric_status, metric_table, metric_issue, metric_task, metric_mapping, metric_stg, metric_quality = st.columns(7)
-    metric_status.metric("Status", result.status)
-    metric_table.metric("Input Tables", result.input_table_count)
-    metric_issue.metric("Issue Count", result.issue_count)
-    metric_task.metric("Task Count", result.task_count)
-    metric_mapping.metric("Mapping Count", len(result.mapping_results))
-    metric_stg.metric("STG Count", len(result.stg_field_suggestions))
-    metric_quality.metric("Quality Rules", len(result.quality_rule_suggestions))
+    )
+    if task_response is not None and task_response.exported_files:
+        st.info("Reports were exported during the run and are available on the Reports page.")
 
     with st.expander("Skill Summaries", expanded=False):
         skill_df = skill_outputs_to_dataframe(result.skill_outputs)

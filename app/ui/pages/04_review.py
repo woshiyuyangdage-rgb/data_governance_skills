@@ -11,6 +11,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
 from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.performance_helpers import render_lazy_dataframe_section
 
 ensure_project_root_on_path()
@@ -61,17 +63,12 @@ else:
     mapping_override_lookup = build_mapping_override_lookup(mapping_overrides)
     stg_override_lookup = build_stg_override_lookup(stg_overrides)
 
-    render_explanation_block(
-        "评审概览",
-        summary="先看当前建议，再决定是否保存本地覆盖。",
-        details=[
-            ("输入文件", uploaded_file_path or "N/A"),
-            ("映射建议", len(mapping_results)),
-            ("STG 建议", len(stg_suggestions)),
-            ("已有映射覆盖", len(mapping_overrides)),
-            ("已有 STG 覆盖", len(stg_overrides)),
-        ],
-        next_step="保存后可以在本页重新运行，验证覆盖是否生效。",
+    render_result_overview(
+        build_workflow_overview(
+            result,
+            title="评审总览",
+            next_step="保存后可以在本页重新运行，验证覆盖是否生效。",
+        )
     )
 
     if not mapping_results and not stg_suggestions:

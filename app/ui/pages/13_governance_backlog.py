@@ -19,6 +19,8 @@ import app.core.governance.backlog_store as backlog_store
 from app.core.governance.backlog_tracking_service import GovernanceBacklogTrackingService
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import run_full_governance_backlog_package_from_file
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.workbench_cache import (
     backlog_summary_to_dataframe,
     governance_backlog_items_to_dataframe,
@@ -108,6 +110,15 @@ current_items = (
 )
 display_items = persisted_items or current_items
 summary = service.summarize_backlog(display_items)
+
+if result is not None:
+    render_result_overview(
+        build_workflow_overview(
+            result,
+            title="治理待办总览",
+            next_step="先确认待办，再做持久化或状态更新。",
+        )
+    )
 
 metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 metric_col1.metric("Backlog Items", summary.total_items)

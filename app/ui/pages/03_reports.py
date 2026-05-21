@@ -17,6 +17,8 @@ from app.ui.page_utils import (
     initialize_session_state,
 )
 from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 
 ensure_project_root_on_path()
 
@@ -33,19 +35,12 @@ if result is None:
     st.warning("当前没有可导出的工作流结果，请先完成诊断。")
 else:
     current_file = st.session_state.get("workflow_result_file_path") or "unknown_input"
-    render_explanation_block(
-        "导出总览",
-        summary="先确认结果，再导出本地文件。",
-        details=[
-            ("来源文件", current_file),
-            ("映射建议", len(result.mapping_results)),
-            ("STG 建议", len(result.stg_field_suggestions)),
-            ("质量规则", len(result.quality_rule_suggestions)),
-            ("确认映射", len(result.confirmed_mapping_results)),
-            ("确认 STG", len(result.confirmed_stg_suggestions)),
-            ("确认质量规则", len(result.confirmed_quality_rules)),
-        ],
-        next_step="导出后可以直接下载，或回到评审页继续固化覆盖。",
+    render_result_overview(
+        build_workflow_overview(
+            result,
+            title="导出总览",
+            next_step="导出后可以直接下载，或回到评审页继续固化覆盖。",
+        )
     )
 
     export_col1, export_col2 = st.columns([1, 2])

@@ -19,6 +19,8 @@ ensure_project_root_on_path()
 from app.core.governance import GapClassifier, ReadinessAssessor, RemediationPlanner
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import run_full_governance_work_package_from_file
+from app.ui.page_overview import build_workflow_overview
+from app.ui.result_overview import render_result_overview
 from app.ui.workbench_cache import (
     governance_gaps_to_dataframe,
     governance_work_package_summary_to_dataframe,
@@ -121,6 +123,14 @@ result = st.session_state.get("workflow_result")
 if result is None:
     st.info("No workflow result is available yet.")
 else:
+    render_result_overview(
+        build_workflow_overview(
+            result,
+            title="治理就绪总览",
+            next_step="先确认缺口和整改动作，再导出工作包。",
+        )
+    )
+
     metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
     metric_col1.metric("Readiness Scores", len(result.readiness_scores))
     metric_col2.metric("Governance Gaps", len(result.governance_gaps))
