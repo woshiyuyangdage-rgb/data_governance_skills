@@ -16,6 +16,7 @@ from app.ui.page_utils import (
     ensure_project_root_on_path,
     initialize_session_state,
 )
+from app.ui.explanation_blocks import render_explanation_block
 
 ensure_project_root_on_path()
 
@@ -24,65 +25,77 @@ from app.core.reports.report_service import export_all_reports
 
 initialize_session_state()
 
-st.title("Reports")
-st.write(
-    "Export the latest workflow result to local JSON, Markdown, and Excel files, "
-    "including confirmed outputs when review overrides are available."
-)
+st.title("导出报告")
+st.write("把当前工作流结果整理成 JSON、Markdown、Excel 三类交付物。")
 
 result = st.session_state.get("workflow_result")
 if result is None:
-    st.warning("No workflow result is available yet. Please run diagnosis first.")
+    st.warning("当前没有可导出的工作流结果，请先完成诊断。")
 else:
     current_file = st.session_state.get("workflow_result_file_path") or "unknown_input"
-    st.caption(f"Current result source: {current_file}")
-    if result.mapping_results:
-        st.info("Current result includes standard mapping recommendations and extended report content.")
-    if result.stg_suggestions:
-        st.info("Current result also includes STG table and field structure suggestions.")
-    if result.confirmed_mapping_results or result.confirmed_stg_suggestions:
-        st.info("Current result includes confirmed review outputs and can export confirmed sheets.")
+    render_explanation_block(
+        "导出总览",
+        summary="先确认结果，再导出本地文件。",
+        details=[
+            ("来源文件", current_file),
+            ("映射建议", len(result.mapping_results)),
+            ("STG 建议", len(result.stg_field_suggestions)),
+            ("质量规则", len(result.quality_rule_suggestions)),
+            ("确认映射", len(result.confirmed_mapping_results)),
+            ("确认 STG", len(result.confirmed_stg_suggestions)),
+            ("确认质量规则", len(result.confirmed_quality_rules)),
+        ],
+        next_step="导出后可以直接下载，或回到评审页继续固化覆盖。",
+    )
 
-    if st.button("Export Reports", type="primary"):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        base_name = f"{Path(current_file).stem}_{timestamp}"
+    export_col1, export_col2 = st.columns([1, 2])
+    with export_col1:
+        if st.button("导出报告", type="primary", use_container_width=True):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            base_name = f"{Path(current_file).stem}_{timestamp}"
+            try:
+                report_paths = export_all_reports(result, str(REPORT_OUTPUT_DIR), base_name)
+            except Exception as exc:
+                st.error(f"导出失败: {exc}")
+            else:
+                set_last_exported_files(ensure_agent_shell_session_id(), report_paths)
+                st.session_state["latest_report_paths"] = report_paths
+                history = list(st.session_state.get("report_export_history", []))
+                history.append(report_paths)
+                st.session_state["report_export_history"] = history[-10:]
+                st.success("报告已导出。")
 
-        try:
-            report_paths = export_all_reports(result, str(REPORT_OUTPUT_DIR), base_name)
-        except Exception as exc:
-            st.error(f"Failed to export reports: {exc}")
-        else:
-            set_last_exported_files(ensure_agent_shell_session_id(), report_paths)
-            st.session_state["latest_report_paths"] = report_paths
-            history = list(st.session_state.get("report_export_history", []))
-            history.append(report_paths)
-            st.session_state["report_export_history"] = history[-10:]
-            st.success("Reports exported successfully.")
-
-latest_report_paths = st.session_state.get("latest_report_paths", {})
-if latest_report_paths:
-    st.subheader("Latest Exported Files")
-    for report_type, report_path in latest_report_paths.items():
-        path = Path(report_path)
-        st.write(f"- `{report_type}`: {report_path}")
-        if path.exists():
-            mime = {
-                "json": "application/json",
-                "markdown": "text/markdown",
-                "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            }.get(report_type, "application/octet-stream")
-            st.download_button(
-                label=f"Download {report_type}",
-                data=path.read_bytes(),
-                file_name=path.name,
-                mime=mime,
-                key=f"download_{report_type}_{path.name}",
+    with export_col2:
+        latest_report_paths = st.session_state.get("latest_report_paths", {})
+        if latest_report_paths:
+            render_explanation_block(
+                "最近一次导出",
+                summary="下面是可下载的本地文件。",
+                details=list(latest_report_paths.items()),
             )
+            for report_type, report_path in latest_report_paths.items():
+                path = Path(report_path)
+                if path.exists():
+                    mime = {
+                        "json": "application/json",
+                        "markdown": "text/markdown",
+                        "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    }.get(report_type, "application/octet-stream")
+                    st.download_button(
+                        label=f"下载 {report_type}",
+                        data=path.read_bytes(),
+                        file_name=path.name,
+                        mime=mime,
+                        key=f"download_{report_type}_{path.name}",
+                        use_container_width=True,
+                    )
+        else:
+            st.info("暂无最近导出文件。")
 
 history = st.session_state.get("report_export_history", [])
 if history:
-    st.subheader("Recent Export History")
+    st.subheader("导出历史")
     for export_index, export_paths in enumerate(reversed(history), start=1):
-        st.write(f"Export {export_index}")
-        for report_type, report_path in export_paths.items():
-            st.write(f"- `{report_type}`: {report_path}")
+        with st.expander(f"导出 {export_index}", expanded=export_index == 1):
+            for report_type, report_path in export_paths.items():
+                st.write(f"- `{report_type}`: {report_path}")

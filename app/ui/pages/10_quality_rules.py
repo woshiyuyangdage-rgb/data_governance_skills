@@ -40,6 +40,8 @@ from app.core.review.quality_review_service import (
     summarize_quality_rule_review_records,
 )
 from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
+from app.ui.explanation_blocks import render_explanation_block
+from app.ui.performance_helpers import render_lazy_dataframe_section
 from app.ui.workbench_cache import (
     confirmed_quality_rules_to_dataframe,
     cross_field_quality_rules_to_dataframe,
@@ -199,23 +201,23 @@ else:
         in visible_cross_field_keys
     ]
 
-    st.subheader("Field-Level Quality Rules")
-    if visible_field_suggestions:
-        st.dataframe(
+    with st.expander("Field-Level Quality Rules", expanded=True):
+        render_lazy_dataframe_section(
+            "Field-Level Quality Rules",
             quality_rules_to_dataframe(visible_field_suggestions),
-            use_container_width=True,
+            empty_message="No field-level quality rules match the current filters.",
+            compact=True,
+            key_prefix="quality_field_rules",
         )
-    else:
-        st.info("No field-level quality rules match the current filters.")
 
-    st.subheader("Cross-Field Quality Rules")
-    if visible_cross_field_rules:
-        st.dataframe(
+    with st.expander("Cross-Field Quality Rules", expanded=False):
+        render_lazy_dataframe_section(
+            "Cross-Field Quality Rules",
             cross_field_quality_rules_to_dataframe(visible_cross_field_rules),
-            use_container_width=True,
+            empty_message="No cross-field quality rules match the current filters.",
+            compact=True,
+            key_prefix="quality_cross_field_rules",
         )
-    else:
-        st.info("No cross-field quality rules match the current filters.")
 
     st.subheader("Batch Review")
     batch_col1, batch_col2 = st.columns(2)
@@ -277,15 +279,24 @@ else:
                 existing = override_lookup.get(key)
                 label = f"{key}"
                 with st.expander(label, expanded=False):
-                    st.write(
-                        f"Suggested expression: `{rule.rule_expression or 'N/A'}` | "
-                        f"severity=`{rule.severity}` | priority=`{rule.priority or 'N/A'}` | "
-                        f"confidence=`{rule.confidence if rule.confidence is not None else 'N/A'}` | "
-                        f"review_priority=`{rule.review_priority or 'N/A'}`"
+                    render_explanation_block(
+                        "推荐说明",
+                        summary=rule.reason or "No recommendation reason available.",
+                        details=[
+                            ("建议表达式", rule.rule_expression or "N/A"),
+                            ("严重度", rule.severity),
+                            ("优先级", rule.priority or "N/A"),
+                            ("置信度", rule.confidence),
+                            ("评审优先级", rule.review_priority or "N/A"),
+                            ("推荐来源", rule.recommendation_source),
+                            ("匹配依据", rule.match_basis or "N/A"),
+                            ("字段组", rule.field_group),
+                        ],
+                        evidence=rule.learning_context,
+                        next_step="确认、拒绝或编辑后再保存评审记录。",
                     )
-                    if rule.field_group:
-                        st.caption(f"Field group: {', '.join(rule.field_group)}")
-                    st.caption(rule.reason or "No recommendation reason available.")
+                    if rule.notes:
+                        st.caption(rule.notes)
                     if existing is not None:
                         st.info(
                             "Saved override: "
@@ -377,25 +388,37 @@ else:
         confirmed_count=len(confirmed_rules),
     )
     summary_df = quality_rule_review_summary_to_dataframe(summary)
-    if not summary_df.empty:
-        st.dataframe(summary_df, use_container_width=True)
-    else:
-        st.info("No quality rule review summary is available.")
+    with st.expander("Quality Rule Review Summary", expanded=False):
+        render_lazy_dataframe_section(
+            "Quality Rule Review Summary",
+            summary_df,
+            empty_message="No quality rule review summary is available.",
+            compact=True,
+            key_prefix="quality_review_summary",
+        )
 
     st.subheader("Quality Review Queue Summary")
     queue_summary = result.quality_review_queue_summary or summarize_review_queue(review_queue)
     queue_df = quality_review_queue_summary_to_dataframe(queue_summary)
-    if not queue_df.empty:
-        st.dataframe(queue_df, use_container_width=True)
-    else:
-        st.info("No quality review queue summary is available.")
+    with st.expander("Quality Review Queue Summary", expanded=False):
+        render_lazy_dataframe_section(
+            "Quality Review Queue Summary",
+            queue_df,
+            empty_message="No quality review queue summary is available.",
+            compact=True,
+            key_prefix="quality_review_queue",
+        )
 
     st.subheader("Confirmed Quality Rules")
     if confirmed_rules:
-        st.dataframe(
-            confirmed_quality_rules_to_dataframe(confirmed_rules),
-            use_container_width=True,
-        )
+        with st.expander("Confirmed Quality Rules", expanded=False):
+            render_lazy_dataframe_section(
+                "Confirmed Quality Rules",
+                confirmed_quality_rules_to_dataframe(confirmed_rules),
+                empty_message="No confirmed quality rules are available yet.",
+                compact=True,
+                key_prefix="confirmed_quality_rules",
+            )
         if st.button("Build Execution Package From Confirmed Rules"):
             builder = ExecutionPackageBuilder()
             package = builder.build_package(
@@ -463,16 +486,22 @@ else:
 
     st.subheader("Rule Export Results")
     export_df = rule_export_results_to_dataframe(result.rule_export_results)
-    if not export_df.empty:
-        st.dataframe(export_df, use_container_width=True)
-    else:
-        st.info("No rule export results are available.")
+    with st.expander("Rule Export Results", expanded=False):
+        render_lazy_dataframe_section(
+            "Rule Export Results",
+            export_df,
+            empty_message="No rule export results are available.",
+            compact=True,
+            key_prefix="quality_rule_exports",
+        )
 
     with st.expander("Stored Quality Rule Overrides", expanded=False):
         if stored_overrides:
-            st.dataframe(
+            render_lazy_dataframe_section(
+                "Stored Quality Rule Overrides",
                 pd.DataFrame([record.model_dump() for record in stored_overrides]),
-                use_container_width=True,
+                compact=True,
+                key_prefix="stored_quality_overrides",
             )
         else:
             st.info("No stored quality rule overrides found.")

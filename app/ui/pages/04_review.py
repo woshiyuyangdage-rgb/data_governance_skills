@@ -10,6 +10,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.explanation_blocks import render_explanation_block
+from app.ui.performance_helpers import render_lazy_dataframe_section
 
 ensure_project_root_on_path()
 
@@ -39,7 +41,7 @@ from app.ui.workbench_cache import (
 initialize_session_state()
 
 st.title("Review Workbench")
-st.write("Accept, reject, edit, or mark suggestions for manual review, then rerun with local override memory.")
+st.write("确认、拒绝、编辑或标记建议，并把覆盖结果写回本地。")
 st.caption("Quality rule review and rule export are available in the Quality Rules page.")
 
 result = st.session_state.get("workflow_result")
@@ -59,10 +61,35 @@ else:
     mapping_override_lookup = build_mapping_override_lookup(mapping_overrides)
     stg_override_lookup = build_stg_override_lookup(stg_overrides)
 
+    render_explanation_block(
+        "评审概览",
+        summary="先看当前建议，再决定是否保存本地覆盖。",
+        details=[
+            ("输入文件", uploaded_file_path or "N/A"),
+            ("映射建议", len(mapping_results)),
+            ("STG 建议", len(stg_suggestions)),
+            ("已有映射覆盖", len(mapping_overrides)),
+            ("已有 STG 覆盖", len(stg_overrides)),
+        ],
+        next_step="保存后可以在本页重新运行，验证覆盖是否生效。",
+    )
+
     if not mapping_results and not stg_suggestions:
         st.warning("Current result does not include mapping or STG suggestions to review.")
     else:
         review_actions = ["accept", "reject", "edit", "mark_for_manual_review"]
+
+        def _candidate_evidence(top_candidates: list[dict[str, object]]) -> list[str]:
+            evidence: list[str] = []
+            for candidate in top_candidates:
+                standard_code = candidate.get("standard_code") or "N/A"
+                standard_name = candidate.get("standard_name") or "N/A"
+                match_score = candidate.get("match_score")
+                match_reason = candidate.get("match_reason") or "N/A"
+                evidence.append(
+                    f"{standard_code} | {standard_name} | score={match_score} | {match_reason}"
+                )
+            return evidence
 
         with st.form("review_records_form"):
             st.subheader("Mapping Review")
@@ -71,10 +98,19 @@ else:
                     key = f"{mapping_result.table_name}.{mapping_result.field_name}"
                     existing_override = mapping_override_lookup.get(key)
                     with st.expander(f"Mapping: {key}", expanded=False):
-                        st.write(
-                            f"Suggested standard: `{mapping_result.recommended_standard_code or 'N/A'}`"
+                        render_explanation_block(
+                            "推荐说明",
+                            summary=mapping_result.match_reason or "No match reason available.",
+                            details=[
+                                ("建议标准", mapping_result.recommended_standard_code or "N/A"),
+                                ("标准名称", mapping_result.recommended_standard_name or "N/A"),
+                                ("标准中文名", mapping_result.recommended_standard_name_cn or "N/A"),
+                                ("命中分数", mapping_result.match_score),
+                                ("候选数", mapping_result.candidate_count),
+                            ],
+                            evidence=_candidate_evidence(mapping_result.top_candidates),
+                            next_step="确认后再保存该条覆盖。",
                         )
-                        st.caption(mapping_result.match_reason or "No match reason available.")
                         if existing_override is not None:
                             st.info(
                                 "Saved override: "
@@ -121,11 +157,24 @@ else:
                     key = f"{suggestion.source_table_name}.{suggestion.source_field_name}"
                     existing_override = stg_override_lookup.get(key)
                     with st.expander(f"STG: {key}", expanded=False):
-                        st.write(
-                            f"Suggested field: `{suggestion.recommended_stg_field_name}` | "
-                            f"type=`{suggestion.recommended_data_type}`"
+                        render_explanation_block(
+                            "推荐说明",
+                            summary=suggestion.notes or "No suggestion note available.",
+                            details=[
+                                ("建议字段", suggestion.recommended_stg_field_name),
+                                ("建议中文名", suggestion.recommended_stg_field_name_cn or "N/A"),
+                                ("建议类型", suggestion.recommended_data_type or "N/A"),
+                                ("映射来源", suggestion.mapping_source),
+                                ("命中分数", suggestion.match_score),
+                                ("动作", suggestion.action),
+                                ("可空", suggestion.nullable),
+                            ],
+                            evidence=[
+                                f"source_table={suggestion.source_table_name}",
+                                f"source_field={suggestion.source_field_name}",
+                            ],
+                            next_step="确认后再保存该条覆盖。",
                         )
-                        st.caption(suggestion.notes or "No suggestion note available.")
                         if existing_override is not None:
                             st.info(
                                 "Saved override: "
@@ -243,8 +292,13 @@ else:
             stg_overrides,
         )
         stored_summary_df = review_summary_to_dataframe(stored_review_summary)
-        if not stored_summary_df.empty:
-            st.dataframe(stored_summary_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Stored Review Summary",
+            stored_summary_df,
+            empty_message="No stored review summary is available.",
+            compact=True,
+            key_prefix="stored_review_summary",
+        )
 
         if st.button("Re-run With Overrides"):
             if not uploaded_file_path:
@@ -272,5 +326,10 @@ else:
         if latest_review_summary is not None:
             st.subheader("Latest Review Summary")
             latest_summary_df = review_summary_to_dataframe(latest_review_summary)
-            if not latest_summary_df.empty:
-                st.dataframe(latest_summary_df, use_container_width=True)
+            render_lazy_dataframe_section(
+                "Latest Review Summary",
+                latest_summary_df,
+                empty_message="No latest review summary is available.",
+                compact=True,
+                key_prefix="latest_review_summary",
+            )

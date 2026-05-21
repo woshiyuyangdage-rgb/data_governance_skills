@@ -383,6 +383,62 @@ class ControlPlaneService:
             validation_result=validation_result,
         )
 
+    def restore_asset_from_backup(
+        self,
+        asset_name: str,
+        backup_path: str | Path,
+    ) -> ConfigEditResult:
+        """Restore one managed asset from a saved backup copy."""
+        asset = self._get_asset(asset_name)
+        if not asset.editable:
+            return ConfigEditResult(
+                asset_name=asset_name,
+                status="failed",
+                message=f"Asset '{asset_name}' is not editable.",
+            )
+
+        resolved_asset_path = self._resolve_asset_path(asset)
+        resolved_backup_path = Path(backup_path)
+        if not resolved_backup_path.exists():
+            raise FileNotFoundError(f"Backup file does not exist: {resolved_backup_path}")
+
+        target_backup_root = BACKUP_DIR / asset.asset_name
+        if target_backup_root not in resolved_backup_path.parents:
+            raise ValueError(
+                f"Backup file must belong to asset '{asset_name}': {resolved_backup_path}"
+            )
+
+        backup_content = read_asset_file(resolved_backup_path)
+        validation_result = validate_asset_content(asset.asset_name, backup_content)
+        if not validation_result.is_valid:
+            self._update_status(
+                asset,
+                current_status="invalid",
+                validation_result=validation_result,
+            )
+            return ConfigEditResult(
+                asset_name=asset_name,
+                status="invalid",
+                message="Backup content is invalid and cannot be restored.",
+                validation_result=validation_result,
+            )
+
+        current_backup_path = self.create_backup(asset_name)
+        write_asset_file(resolved_asset_path, backup_content)
+        self._invalidate_runtime_caches(asset.asset_name)
+        self._update_status(
+            asset,
+            current_status="draft",
+            validation_result=validation_result,
+        )
+        return ConfigEditResult(
+            asset_name=asset_name,
+            status="draft",
+            message="Asset restored successfully from backup.",
+            backup_path=current_backup_path,
+            validation_result=validation_result,
+        )
+
     def publish_asset(self, asset_name: str) -> ConfigEditResult:
         """Mark one validated asset as published."""
         asset = self._get_asset(asset_name)

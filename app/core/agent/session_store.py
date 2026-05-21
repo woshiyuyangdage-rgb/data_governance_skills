@@ -44,6 +44,46 @@ def _snapshot_session(session: AgentSession) -> None:
     )
 
 
+def list_session_snapshots() -> list[Path]:
+    """Return saved session snapshot files, newest first."""
+    if not SESSION_SNAPSHOT_DIR.exists():
+        return []
+    return sorted(
+        [
+            path
+            for path in SESSION_SNAPSHOT_DIR.iterdir()
+            if path.is_file() and path.suffix.lower() == ".json"
+        ],
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    )
+
+
+def load_session_from_snapshot(snapshot_path: str | Path) -> AgentSession | None:
+    """Load one saved session snapshot into memory."""
+    resolved_path = Path(snapshot_path)
+    if not resolved_path.exists() or not resolved_path.is_file():
+        return None
+
+    try:
+        payload = json.loads(resolved_path.read_text(encoding="utf-8"))
+        session = AgentSession.model_validate(payload)
+    except Exception:
+        return None
+
+    _SESSION_STORE[session.session_id] = session
+    return session
+
+
+def load_latest_session_snapshot() -> AgentSession | None:
+    """Load the most recent session snapshot into memory."""
+    for snapshot_path in list_session_snapshots():
+        session = load_session_from_snapshot(snapshot_path)
+        if session is not None:
+            return session
+    return None
+
+
 def create_session(session_id: str | None = None) -> AgentSession:
     """Create a new local agent shell session."""
     resolved_session_id = session_id or uuid4().hex

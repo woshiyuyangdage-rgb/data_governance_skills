@@ -1,5 +1,6 @@
 """Unified file loader for metadata ingestion."""
 
+from functools import lru_cache
 from pathlib import Path
 
 from app.core.models.table_meta import TableMeta
@@ -7,22 +8,37 @@ from app.core.parser.csv_parser import parse_csv
 from app.core.parser.excel_parser import parse_excel
 from app.core.parser.parser_exceptions import ParserError, UnsupportedFileFormatError
 
+def _file_signature(path: Path) -> str:
+    """Build a stable cache token for one local file."""
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return str(path)
+    return f"{path.resolve()}::{stat.st_size}::{stat.st_mtime_ns}"
 
-def load_metadata_file(file_path: str) -> list[TableMeta]:
-    """Load metadata rows from a supported local file."""
+
+@lru_cache(maxsize=32)
+def _load_metadata_file_cached(file_path: str, file_signature: str) -> tuple[TableMeta, ...]:
+    """Load metadata rows from a supported local file with signature-based caching."""
     path = Path(file_path)
     if not path.exists():
         raise ParserError(f"Input file does not exist: {file_path}")
 
     extension = path.suffix.lower()
     if extension == ".csv":
-        return parse_csv(str(path))
+        return tuple(parse_csv(str(path)))
     if extension in {".xlsx", ".xls"}:
-        return parse_excel(str(path))
+        return tuple(parse_excel(str(path)))
 
     raise UnsupportedFileFormatError(
         f"Unsupported file format '{extension or '<none>'}'. Supported formats: .csv, .xlsx, .xls."
     )
+
+
+def load_metadata_file(file_path: str) -> list[TableMeta]:
+    """Load metadata rows from a supported local file."""
+    path = Path(file_path)
+    return list(_load_metadata_file_cached(str(path), _file_signature(path)))
 
 
 def load_metadata_with_intake_adapter(

@@ -18,55 +18,88 @@ from app.ui.page_utils import (
     ensure_agent_shell_session_id,
     ensure_project_root_on_path,
     initialize_session_state,
+    restore_agent_session_to_state,
 )
+from app.ui.performance_helpers import ensure_large_file_runtime_ready
 
 ensure_project_root_on_path()
 
+from app.core.agent.session_store import (
+    list_session_snapshots,
+    load_latest_session_snapshot,
+    set_last_uploaded_file,
+)
 from app.core.orchestrator.profile_loader import list_enabled_profiles
-from app.core.agent.session_store import set_last_uploaded_file
 from app.core.utils.file_utils import get_file_extension, save_uploaded_file
 
 initialize_session_state()
 
-st.title("Upload Metadata")
-st.write("Upload a local CSV or Excel file that follows the metadata input template.")
+st.title("上传元数据")
+st.write("上传符合模板的本地 CSV 或 Excel 文件，作为后续诊断与评审的入口。")
 
-st.subheader("Template Summary")
-st.markdown(
-    """
-    - Supported formats: `csv`, `xlsx`
-    - Supported granularity: `table-level only`, `table + field-level`
-    - Preferred template: `table + field-level`
-    - Main rule: one row represents one field, and table-level information repeats across rows
-    - Required column for all files: `table_name`
-    - Recommended field-level column: `field_name`
-    """
-)
-st.caption(f"Detailed spec: {INPUT_TEMPLATE_DOC_PATH}")
+left, right = st.columns([2, 1])
 
-st.subheader("Available Workflow Profiles")
-enabled_profiles = list_enabled_profiles()
-for profile in enabled_profiles:
+with left:
+    st.subheader("恢复入口")
+    snapshots = list_session_snapshots()
+    if snapshots and st.button("恢复最近会话状态", use_container_width=True):
+        session = load_latest_session_snapshot()
+        if session is None:
+            st.warning("没有可恢复的会话快照。")
+        else:
+            restore_agent_session_to_state(session, source_label=str(snapshots[0]))
+            st.success(f"已恢复会话 {session.session_id}")
+    elif not snapshots:
+        st.info("当前没有可恢复的会话快照。")
+
+    if st.button("载入示例数据", use_container_width=True):
+        sample_bytes = SAMPLE_METADATA_PATH.read_bytes()
+        st.session_state["uploaded_file_path"] = str(SAMPLE_METADATA_PATH)
+        st.session_state["uploaded_file_name"] = SAMPLE_METADATA_PATH.name
+        st.session_state["uploaded_file_size"] = SAMPLE_METADATA_PATH.stat().st_size
+        st.session_state["uploaded_file_extension"] = SAMPLE_METADATA_PATH.suffix.lstrip(".")
+        st.session_state["uploaded_file_signature"] = hashlib.md5(sample_bytes).hexdigest()
+        st.session_state["workflow_result"] = None
+        st.session_state["workflow_result_file_path"] = None
+        st.session_state["latest_report_paths"] = {}
+        st.success("示例数据已载入。")
+        ensure_large_file_runtime_ready(str(SAMPLE_METADATA_PATH), hashlib.md5(sample_bytes).hexdigest())
+
+with right:
+    st.subheader("模板说明")
+    st.caption(f"详细说明: {INPUT_TEMPLATE_DOC_PATH}")
+    st.markdown(
+        """
+        - 支持格式: `csv`, `xlsx`
+        - 推荐粒度: `table + field-level`
+        - 必填列: `table_name`
+        - 推荐字段列: `field_name`
+        """
+    )
+
+st.subheader("工作流配置")
+for profile in list_enabled_profiles():
     st.markdown(
         f"- `{profile.name}`: {profile.description} "
         f"(stages: {', '.join(profile.stages)})"
     )
 
 sample_df = pd.read_csv(SAMPLE_METADATA_PATH)
-with st.expander("Preview sample_metadata.csv", expanded=True):
+with st.expander("示例数据预览", expanded=True):
     st.dataframe(sample_df, use_container_width=True)
-    st.caption(f"Sample file path: {SAMPLE_METADATA_PATH}")
+    st.caption(f"示例文件: {SAMPLE_METADATA_PATH}")
     st.download_button(
-        label="Download Sample CSV",
+        label="下载示例 CSV",
         data=SAMPLE_METADATA_PATH.read_bytes(),
         file_name=SAMPLE_METADATA_PATH.name,
         mime="text/csv",
+        use_container_width=True,
     )
 
 uploaded_file = st.file_uploader(
-    "Select metadata file",
+    "选择元数据文件",
     type=["csv", "xlsx"],
-    help="Upload a metadata file for the local P0 diagnosis workflow.",
+    help="上传后会本地保存，并进入诊断流程。",
 )
 
 if uploaded_file is not None:
@@ -82,7 +115,7 @@ if uploaded_file is not None:
         try:
             saved_path = save_uploaded_file(uploaded_file, UPLOAD_OUTPUT_DIR)
         except Exception as exc:
-            st.error(f"Failed to save uploaded file: {exc}")
+            st.error(f"保存上传文件失败: {exc}")
         else:
             st.session_state["uploaded_file_path"] = saved_path
             st.session_state["uploaded_file_name"] = uploaded_file.name
@@ -92,17 +125,20 @@ if uploaded_file is not None:
             st.session_state["workflow_result"] = None
             st.session_state["workflow_result_file_path"] = None
             st.session_state["latest_report_paths"] = {}
-            st.success("File uploaded and saved locally.")
+            st.success("文件已保存到本地。")
+            ensure_large_file_runtime_ready(saved_path, current_signature)
+    else:
+        ensure_large_file_runtime_ready(saved_path, current_signature)
 
 file_path = st.session_state.get("uploaded_file_path")
 if file_path:
     agent_session_id = ensure_agent_shell_session_id()
     set_last_uploaded_file(agent_session_id, file_path)
 
-    st.subheader("Current Uploaded File")
-    file_info_col1, file_info_col2, file_info_col3 = st.columns(3)
-    file_info_col1.metric("File Name", st.session_state.get("uploaded_file_name") or "N/A")
-    file_info_col2.metric("File Size (bytes)", st.session_state.get("uploaded_file_size") or 0)
-    file_info_col3.metric("Extension", st.session_state.get("uploaded_file_extension") or "N/A")
-    st.caption(f"Saved local path: {file_path}")
-    st.caption(f"Shared agent session: {agent_session_id}")
+    st.subheader("当前上传文件")
+    metric_col1, metric_col2, metric_col3 = st.columns(3)
+    metric_col1.metric("文件名", st.session_state.get("uploaded_file_name") or "N/A")
+    metric_col2.metric("文件大小(字节)", st.session_state.get("uploaded_file_size") or 0)
+    metric_col3.metric("扩展名", st.session_state.get("uploaded_file_extension") or "N/A")
+    st.caption(f"本地路径: {file_path}")
+    st.caption(f"共享会话: {agent_session_id}")

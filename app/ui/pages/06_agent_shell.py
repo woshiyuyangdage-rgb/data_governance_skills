@@ -16,6 +16,7 @@ ensure_project_root_on_path()
 
 from app.core.agent.agent_shell_service import AgentShellService
 from app.core.agent.session_store import get_session, set_last_uploaded_file
+from app.ui.explanation_blocks import render_explanation_block
 from app.ui.workbench_cache import (
     quality_rules_to_dataframe,
     review_summary_to_dataframe,
@@ -117,51 +118,50 @@ shell_result = st.session_state.get("latest_agent_shell_result")
 if shell_result is not None:
     plan = shell_result.execution_plan
     interpreted_intent = shell_result.interpreted_intent
-    st.subheader("Plan Preview")
-    st.write(f"Session ID: `{shell_result.session_id or 'N/A'}`")
-    st.write(f"Matched Profile: `{interpreted_intent.matched_profile_name}`")
-    st.write(f"Match Source: `{interpreted_intent.match_source}`")
-    if interpreted_intent.nlp_similarity is not None:
-        st.write(f"Local NLP Similarity: `{interpreted_intent.nlp_similarity}`")
-    st.write(f"Stages: `{', '.join(plan.stages) or 'N/A'}`")
-    st.write(f"Requires Confirmation: `{plan.requires_confirmation}`")
-    st.write(f"Validation Passed: `{plan.validation_passed}`")
-    st.write(f"Suggested Output Mode: `{plan.suggested_output_mode or 'N/A'}`")
-    if plan.summary:
-        st.caption(plan.summary)
+    render_explanation_block(
+        "计划预览",
+        summary=plan.summary,
+        details=[
+            ("会话 ID", shell_result.session_id),
+            ("匹配方案", interpreted_intent.matched_profile_name),
+            ("匹配来源", interpreted_intent.match_source),
+            ("阶段", plan.stages),
+            ("需要确认", plan.requires_confirmation),
+            ("验证通过", plan.validation_passed),
+            ("输出模式", plan.suggested_output_mode or "N/A"),
+        ],
+        confidence=interpreted_intent.confidence,
+        next_step=(
+            "如果计划需要确认，先检查验证说明；如果没有问题，可以直接执行。"
+        ),
+    )
 
     resolved_context = shell_result.resolved_context
     if resolved_context is not None:
-        st.subheader("Resolved Context")
-        st.write(
-            f"Resolved File Path: `{resolved_context.resolved_file_path or 'N/A'}`"
+        render_explanation_block(
+            "解析出的上下文",
+            details=[
+                ("文件路径", resolved_context.resolved_file_path or "N/A"),
+                ("输出目录", resolved_context.resolved_output_dir or "N/A"),
+                ("解析来源", resolved_context.resolved_from),
+                ("参考命中", resolved_context.reference_matches),
+                ("自动补全", shell_result.resolution_applied),
+                ("歧义检测", resolved_context.ambiguity_detected),
+            ],
+            evidence=resolved_context.messages,
+            next_step="确认自动补全是否合理，再决定是否强制执行。",
         )
-        st.write(
-            f"Resolved Output Dir: `{resolved_context.resolved_output_dir or 'N/A'}`"
-        )
-        st.write(
-            f"Resolved From: `{', '.join(resolved_context.resolved_from) or 'N/A'}`"
-        )
-        st.write(
-            f"Reference Matches: `{', '.join(resolved_context.reference_matches) or 'N/A'}`"
-        )
-        st.write(f"Autofilled Parameters: `{shell_result.resolution_applied}`")
-        st.write(f"Ambiguity Detected: `{resolved_context.ambiguity_detected}`")
         if resolved_context.autofilled_parameters:
             st.json(resolved_context.autofilled_parameters)
-        if resolved_context.messages:
-            st.subheader("Context Messages")
-            for message in resolved_context.messages:
-                st.write(f"- {message}")
 
-    st.subheader("Validation Messages")
+    st.subheader("验证说明")
     if plan.validation_messages:
         for message in plan.validation_messages:
             st.write(f"- {message}")
     else:
         st.info("No validation warnings.")
 
-    st.subheader("Task Request")
+    st.subheader("任务请求")
     st.json(shell_result.task_request.model_dump())
 
     if plan.requires_confirmation and shell_result.task_response is None:
@@ -205,10 +205,15 @@ if shell_result is not None:
         task_response = shell_result.task_response
         workflow_result = task_response.result
 
-        st.subheader("Execution Result")
-        st.write(f"Status: `{task_response.status}`")
-        st.write(f"Stages Executed: `{', '.join(task_response.stages_executed) or 'N/A'}`")
-        st.caption(task_response.message)
+        render_explanation_block(
+            "执行结果",
+            summary=task_response.message,
+            details=[
+                ("状态", task_response.status),
+                ("执行阶段", task_response.stages_executed),
+            ],
+            next_step="如果结果已确认，可直接导出或去 Review 页面固化覆盖。",
+        )
 
         metric_issue, metric_mapping, metric_stg, metric_quality = st.columns(4)
         metric_issue.metric("Issue Count", workflow_result.issue_count)
@@ -217,9 +222,11 @@ if shell_result is not None:
         metric_quality.metric("Quality Rules", len(workflow_result.quality_rule_suggestions))
 
         if workflow_result.quality_rule_summary or workflow_result.quality_rule_suggestions:
-            st.subheader("Quality Rule Recommendations")
-            if workflow_result.quality_rule_summary:
-                st.caption(workflow_result.quality_rule_summary)
+            render_explanation_block(
+                "质量规则推荐",
+                summary=workflow_result.quality_rule_summary,
+                next_step="建议先在 Quality Rules 页确认，再构建执行包。",
+            )
             quality_rules_df = quality_rules_to_dataframe(
                 workflow_result.quality_rule_suggestions
             )
