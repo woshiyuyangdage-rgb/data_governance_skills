@@ -47,6 +47,48 @@ def isolated_control_plane_runtime(tmp_path: Path, monkeypatch) -> Path:
         encoding="utf-8",
     )
 
+    semantic_asset_file = tmp_path / "standard_mapping_semantic.yaml"
+    semantic_asset_file.write_text(
+        "\n".join(
+            [
+                "enabled: true",
+                "model_name_or_path: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                "local_files_only: true",
+                "threshold: 0.85",
+                "candidate_limit: 3",
+                "standard_text_fields:",
+                "  - standard_name",
+                "  - standard_name_cn",
+                "  - description",
+                "  - business_domain",
+                "  - aliases",
+                "source_text_fields:",
+                "  - field_name",
+                "  - field_name_cn",
+                "  - field_description",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    intent_nlp_asset_file = tmp_path / "intent_nlp_classifier.yaml"
+    intent_nlp_asset_file.write_text(
+        "\n".join(
+            [
+                "enabled: true",
+                "use_keyword_samples: true",
+                "min_similarity: 0.42",
+                "min_margin: 0.02",
+                "ngram_min: 2",
+                "ngram_max: 4",
+                "training_examples:",
+                "  - intent_name: standard_recommendation",
+                "    text: 帮我把这些字段对齐公司统一数据标准",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
     asset_registry_path = tmp_path / "asset_registry.json"
     asset_registry_path.write_text(
         json.dumps(
@@ -58,7 +100,21 @@ def isolated_control_plane_runtime(tmp_path: Path, monkeypatch) -> Path:
                         "file_path": str(asset_file),
                         "description": "Workflow profile config",
                         "editable": True,
-                    }
+                    },
+                    {
+                        "asset_name": "standard_mapping_semantic",
+                        "asset_type": "yaml",
+                        "file_path": str(semantic_asset_file),
+                        "description": "Semantic mapping policy config",
+                        "editable": True,
+                    },
+                    {
+                        "asset_name": "intent_nlp_classifier",
+                        "asset_type": "yaml",
+                        "file_path": str(intent_nlp_asset_file),
+                        "description": "Local NLP intent classifier config",
+                        "editable": True,
+                    },
                 ]
             },
             ensure_ascii=False,
@@ -80,7 +136,25 @@ def isolated_control_plane_runtime(tmp_path: Path, monkeypatch) -> Path:
                         "last_validated_at": None,
                         "last_published_at": None,
                         "last_error_message": None,
-                    }
+                    },
+                    {
+                        "asset_name": "standard_mapping_semantic",
+                        "asset_type": "yaml",
+                        "file_path": str(semantic_asset_file),
+                        "current_status": "draft",
+                        "last_validated_at": None,
+                        "last_published_at": None,
+                        "last_error_message": None,
+                    },
+                    {
+                        "asset_name": "intent_nlp_classifier",
+                        "asset_type": "yaml",
+                        "file_path": str(intent_nlp_asset_file),
+                        "current_status": "draft",
+                        "last_validated_at": None,
+                        "last_published_at": None,
+                        "last_error_message": None,
+                    },
                 ]
             },
             ensure_ascii=False,

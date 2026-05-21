@@ -166,6 +166,49 @@ def test_standard_fields_validator_rejects_duplicate_standard_codes() -> None:
     assert any("must be unique" in message for message in result.messages)
 
 
+def test_standard_mapping_semantic_validator_accepts_valid_config() -> None:
+    result = validate_asset_content(
+        "standard_mapping_semantic",
+        {
+            "enabled": True,
+            "model_name_or_path": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+            "local_files_only": True,
+            "threshold": 0.85,
+            "candidate_limit": 3,
+            "standard_text_fields": [
+                "standard_name",
+                "standard_name_cn",
+                "description",
+            ],
+            "source_text_fields": [
+                "field_name",
+                "field_name_cn",
+                "field_description",
+            ],
+        },
+    )
+
+    assert result.is_valid is True
+
+
+def test_standard_mapping_semantic_validator_rejects_invalid_threshold() -> None:
+    result = validate_asset_content(
+        "standard_mapping_semantic",
+        {
+            "enabled": True,
+            "model_name_or_path": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+            "local_files_only": True,
+            "threshold": 1.5,
+            "candidate_limit": 3,
+            "standard_text_fields": ["standard_name"],
+            "source_text_fields": ["field_name"],
+        },
+    )
+
+    assert result.is_valid is False
+    assert any("threshold" in message for message in result.messages)
+
+
 def test_quality_rule_templates_validator_accepts_valid_templates() -> None:
     result = validate_asset_content(
         "quality_rule_templates",

@@ -1,6 +1,7 @@
 """Rule-based v1 skill for naming standard checks with knowledge-pack support."""
 
 import re
+from functools import lru_cache
 
 from pydantic import BaseModel, Field
 
@@ -18,6 +19,66 @@ from app.core.normalize import (
 )
 from app.core.rules.config_loader import get_issue_severity, get_naming_rules_config
 from app.core.skills.base_skill import BaseSkill
+
+try:
+    from thefuzz import fuzz, process
+except Exception:  # pragma: no cover - optional dependency fallback
+    fuzz = None  # type: ignore[assignment]
+    process = None  # type: ignore[assignment]
+
+SPELLING_ISSUE_TYPE = "naming_suspected_spelling_error"
+
+
+@lru_cache(maxsize=1)
+def _spellcheck_candidates() -> tuple[str, ...]:
+    dataframe = load_root_word_dict()
+    candidates: list[str] = []
+    for column_name in ("token", "normalized_form"):
+        if column_name not in dataframe:
+            continue
+        for value in dataframe[column_name]:
+            candidate = str(value).strip().lower()
+            if candidate and candidate != "nan":
+                candidates.append(candidate)
+    return tuple(dict.fromkeys(candidates))
+
+
+def clear_naming_standard_check_caches() -> None:
+    """Clear cached naming-analysis helpers."""
+    _spellcheck_candidates.cache_clear()
+
+
+def _edit_distance(left: str, right: str) -> int:
+    """Return a small edit distance that also counts adjacent transpositions."""
+    if left == right:
+        return 0
+    if not left:
+        return len(right)
+    if not right:
+        return len(left)
+
+    previous_previous_row: list[int] | None = None
+    previous_row = list(range(len(right) + 1))
+    for i, left_char in enumerate(left, start=1):
+        current_row = [i] + [0] * len(right)
+        for j, right_char in enumerate(right, start=1):
+            deletion = previous_row[j] + 1
+            insertion = current_row[j - 1] + 1
+            substitution = previous_row[j - 1] + (left_char != right_char)
+            current_row[j] = min(deletion, insertion, substitution)
+
+            if (
+                previous_previous_row is not None
+                and i > 1
+                and j > 1
+                and left_char == right[j - 2]
+                and left[i - 2] == right_char
+            ):
+                current_row[j] = min(current_row[j], previous_previous_row[j - 2] + 1)
+
+        previous_previous_row, previous_row = previous_row, current_row
+
+    return previous_row[-1]
 
 
 class NamingStandardCheckInput(BaseModel):
@@ -42,8 +103,11 @@ class NamingStandardCheckSkill(BaseSkill):
     """Evaluate names against simple configurable naming rules."""
 
     skill_name = "naming_standard_check"
-    version = "0.3.0"
-    description = "Rule-based v1 naming checks with token analysis and knowledge-pack suggestions."
+    version = "0.4.0"
+    description = (
+        "Rule-based v1 naming checks with token analysis, fuzzy typo detection, "
+        "and knowledge-pack suggestions."
+    )
 
     @staticmethod
     def check_snake_case(name: str) -> bool:
@@ -126,6 +190,56 @@ class NamingStandardCheckSkill(BaseSkill):
     def _should_flag_unknown_token(token: str, dictionary_tokens: set[str]) -> bool:
         return token.isalpha() and len(token) >= 3 and token not in dictionary_tokens
 
+    @classmethod
+    def _detect_spelling_suspicions(
+        cls,
+        normalized_tokens: list[str],
+        rule_config: dict[str, object],
+    ) -> tuple[list[dict[str, object]], list[str], str | None]:
+        if not rule_config.get("enable_spelling_detection", True):
+            return [], list(normalized_tokens), None
+        if process is None or fuzz is None:
+            return [], list(normalized_tokens), None
+
+        candidates = _spellcheck_candidates()
+        if not candidates:
+            return [], list(normalized_tokens), None
+
+        min_length = int(rule_config.get("spelling_min_token_length", 4))
+        max_distance = int(rule_config.get("spelling_max_edit_distance", 1))
+        min_similarity = int(rule_config.get("spelling_min_similarity", 86))
+
+        spell_matches: list[dict[str, object]] = []
+        corrected_tokens = list(normalized_tokens)
+        for index, token in enumerate(normalized_tokens):
+            if len(token) < min_length or token in candidates:
+                continue
+
+            best_match = process.extractOne(token, candidates, scorer=fuzz.ratio)
+            if best_match is None:
+                continue
+
+            candidate_token = str(best_match[0]).strip().lower()
+            similarity = int(best_match[1])
+            distance = _edit_distance(token, candidate_token)
+            if distance > max_distance or similarity < min_similarity:
+                continue
+
+            spell_matches.append(
+                {
+                    "token": token,
+                    "suggested_token": candidate_token,
+                    "edit_distance": distance,
+                    "similarity": similarity,
+                }
+            )
+            corrected_tokens[index] = candidate_token
+
+        if not spell_matches:
+            return [], list(normalized_tokens), None
+
+        return spell_matches, corrected_tokens, "_".join(corrected_tokens)
+
     def _analyze_name_tokens(
         self,
         raw_name: str,
@@ -138,12 +252,25 @@ class NamingStandardCheckSkill(BaseSkill):
         tokens = split_tokens(cleaned_name)
         expanded_tokens, expanded_pairs, expansion_evidence = expand_tokens_with_evidence(tokens)
         normalized_token_list = normalize_tokens(expanded_tokens)
+        spelling_matches, corrected_tokens, spelling_suggestion = self._detect_spelling_suspicions(
+            normalized_token_list,
+            rule_config,
+        )
 
+        suggested_source_name = spelling_suggestion or "_".join(normalized_token_list)
         suggested_name = self.normalize_name(
-            "_".join(normalized_token_list) or base_normalized_name,
+            suggested_source_name or base_normalized_name,
             rule_config,
             object_type,
         )
+        spelling_evidence = [
+            (
+                "possible spelling error: "
+                f"'{match['token']}' -> '{match['suggested_token']}' "
+                f"(edit_distance={match['edit_distance']}, similarity={match['similarity']})"
+            )
+            for match in spelling_matches
+        ]
         token_evidence = [
             f"original_name={raw_name}",
             f"tokens={tokens}",
@@ -151,11 +278,16 @@ class NamingStandardCheckSkill(BaseSkill):
             f"normalized_tokens={normalized_token_list}",
             f"suggested_name={suggested_name}",
         ] + expansion_evidence
+        if spelling_evidence:
+            token_evidence.extend(spelling_evidence)
+
+        suspicious_tokens = {match["token"] for match in spelling_matches}
 
         unknown_tokens = [
             token
             for token in normalized_token_list
             if self._should_flag_unknown_token(token, dictionary_tokens)
+            and token not in suspicious_tokens
         ]
 
         return {
@@ -166,6 +298,8 @@ class NamingStandardCheckSkill(BaseSkill):
             "normalized_tokens": normalized_token_list,
             "token_evidence": token_evidence,
             "suggested_name": suggested_name,
+            "spelling_matches": spelling_matches,
+            "corrected_tokens": corrected_tokens,
             "unknown_tokens": unknown_tokens,
         }
 
@@ -279,6 +413,29 @@ class NamingStandardCheckSkill(BaseSkill):
                 )
             )
 
+        if analysis["spelling_matches"]:
+            issues.append(
+                self._build_issue(
+                    issue_id=f"{issue_prefix}-spelling",
+                    object_type=object_type,
+                    object_name=object_key,
+                    issue_type=SPELLING_ISSUE_TYPE,
+                    evidence=[
+                        "fuzzy dictionary comparison found a likely spelling error",
+                    ]
+                    + [
+                        (
+                            f"token={match['token']} suggested_token={match['suggested_token']} "
+                            f"edit_distance={match['edit_distance']} similarity={match['similarity']}"
+                        )
+                        for match in analysis["spelling_matches"]
+                    ]
+                    + token_evidence,
+                    suggestion_name=suggestion_name,
+                    confidence=0.74,
+                )
+            )
+
         if analysis["expanded_pairs"]:
             issues.append(
                 self._build_issue(
@@ -327,6 +484,7 @@ class NamingStandardCheckSkill(BaseSkill):
         issues: list[Issue] = []
         abbreviation_hit_object_count = 0
         enhanced_suggestion_count = 0
+        spelling_warning_object_count = 0
 
         for table_index, table in enumerate(payload.tables, start=1):
             raw_table_name = table.table_name or ""
@@ -349,6 +507,8 @@ class NamingStandardCheckSkill(BaseSkill):
                 abbreviation_hit_object_count += 1
             if table_suggestion != table_analysis["base_normalized_name"]:
                 enhanced_suggestion_count += 1
+            if table_analysis["spelling_matches"]:
+                spelling_warning_object_count += 1
             issues.extend(table_issues)
 
             for field_index, field in enumerate(table.fields, start=1):
@@ -372,6 +532,8 @@ class NamingStandardCheckSkill(BaseSkill):
                     abbreviation_hit_object_count += 1
                 if field_suggestion != field_analysis["base_normalized_name"]:
                     enhanced_suggestion_count += 1
+                if field_analysis["spelling_matches"]:
+                    spelling_warning_object_count += 1
                 issues.extend(field_issues)
 
         # TODO: extend naming enhancement with domain-specific dictionaries and semantic disambiguation.
@@ -385,6 +547,7 @@ class NamingStandardCheckSkill(BaseSkill):
             summary=(
                 f"Checked naming standards for {len(payload.tables)} tables, "
                 f"hit abbreviations on {abbreviation_hit_object_count} objects, "
+                f"flagged {spelling_warning_object_count} spelling-suspicion objects, "
                 f"generated {enhanced_suggestion_count} enhanced token-based suggestions, "
                 f"and produced {len(issues)} naming issues."
             ),

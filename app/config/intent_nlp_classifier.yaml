@@ -1,0 +1,83 @@
+enabled: true
+use_keyword_samples: true
+min_similarity: 0.42
+min_margin: 0.02
+ngram_min: 2
+ngram_max: 4
+
+training_examples:
+  - intent_name: quick_scan
+    text: 帮我检查这些表的元数据质量
+  - intent_name: quick_scan
+    text: 看看这批元数据有没有明显问题
+  - intent_name: standard_recommendation
+    text: 把这些字段对齐公司统一数据标准
+  - intent_name: standard_recommendation
+    text: 按企业标准给源字段做映射推荐
+  - intent_name: structure_suggestion
+    text: 帮我按财务域标准做贴源层规划
+  - intent_name: structure_suggestion
+    text: 根据映射结果生成贴源层结构建议
+  - intent_name: quality_rule_recommendation
+    text: 自动推荐数据质量校验规则
+  - intent_name: quality_rule_recommendation
+    text: 给金额日期和状态字段补质量规则
+  - intent_name: confirmed_quality_rules
+    text: 使用人工评审结果重新推荐质量规则
+  - intent_name: confirmed_quality_rules
+    text: 按已确认规则复跑质量规则
+  - intent_name: execution_ready_package
+    text: 生成可执行治理规则包
+  - intent_name: execution_ready_package
+    text: 导出 dbt 测试 yaml
+  - intent_name: governance_readiness_assessment
+    text: 评估这批表的治理就绪度
+  - intent_name: governance_readiness_assessment
+    text: 做治理成熟度评分
+  - intent_name: full_governance_work_package
+    text: 生成治理整改计划
+  - intent_name: full_governance_work_package
+    text: 输出治理行动包
+  - intent_name: governance_backlog_build
+    text: 生成治理待办清单
+  - intent_name: governance_backlog_build
+    text: 建立整改 backlog
+  - intent_name: governance_portfolio_assessment
+    text: 看治理进度和负责人工作量
+  - intent_name: governance_portfolio_assessment
+    text: 汇总 SLA 逾期情况
+  - intent_name: governance_delivery_package
+    text: 生成治理交付包
+  - intent_name: governance_delivery_package
+    text: 导出交付材料
+  - intent_name: confirmation_workbook_only
+    text: 生成业务确认表
+  - intent_name: confirmation_workbook_only
+    text: 导出人工确认工作簿
+  - intent_name: batch_governance_run
+    text: 批量处理这些元数据文件
+  - intent_name: batch_governance_run
+    text: 多个文件一起跑治理
+  - intent_name: batch_incremental_rerun
+    text: 只重跑有变化的对象
+  - intent_name: batch_incremental_rerun
+    text: 做增量复跑
+  - intent_name: import_confirmation_workbook
+    text: 导入人工确认结果
+  - intent_name: import_confirmation_workbook
+    text: 回传确认工作簿
+  - intent_name: import_and_rerun_changed_objects
+    text: 导入确认结果后只重跑变化对象
+  - intent_name: project_template_run
+    text: 用供应链金融模板跑完整治理流程
+    inferred_parameters:
+      template_name: full_governance_delivery_project
+      domain_pack_name: supply_chain_finance_domain_pack
+  - intent_name: metadata_intake_template
+    text: 自动识别这个元数据模板
+    inferred_parameters:
+      auto_match_template: true
+  - intent_name: confirmation_template_import
+    text: 导入质量规则确认表模板
+    inferred_parameters:
+      workbook_type: quality_rule_confirmation

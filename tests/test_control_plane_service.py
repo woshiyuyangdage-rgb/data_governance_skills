@@ -17,6 +17,8 @@ def test_control_plane_service_can_list_and_get_assets(
 
     assert assets
     assert assets[0].asset_name == "workflow_profiles"
+    assert any(asset.asset_name == "standard_mapping_semantic" for asset in assets)
+    assert any(asset.asset_name == "intent_nlp_classifier" for asset in assets)
     assert payload["format"] == "yaml"
     assert payload["content"]["profiles"][0]["name"] == "metadata_diagnosis_only"
 
@@ -32,7 +34,12 @@ def test_control_plane_service_can_validate_assets(
     status_payload = json.loads(
         control_plane_module.CONFIG_STATUS_PATH.read_text(encoding="utf-8")
     )
-    assert status_payload["statuses"][0]["current_status"] == "published"
+    workflow_status = next(
+        status
+        for status in status_payload["statuses"]
+        if status["asset_name"] == "workflow_profiles"
+    )
+    assert workflow_status["current_status"] == "published"
 
 
 def test_control_plane_service_can_validate_all_assets_without_status_writes(
@@ -44,10 +51,32 @@ def test_control_plane_service_can_validate_all_assets_without_status_writes(
     results = service.validate_all_assets(persist_status=False)
 
     after_status = control_plane_module.CONFIG_STATUS_PATH.read_text(encoding="utf-8")
-    assert len(results) == 1
+    assert len(results) == 3
     assert results[0].asset_name == "workflow_profiles"
     assert results[0].is_valid is True
+    assert any(result.asset_name == "standard_mapping_semantic" for result in results)
+    assert any(result.asset_name == "intent_nlp_classifier" for result in results)
     assert after_status == before_status
+
+
+def test_control_plane_service_can_validate_semantic_mapping_asset(
+    isolated_control_plane_runtime: Path,
+) -> None:
+    service = ControlPlaneService()
+
+    result = service.validate_asset("standard_mapping_semantic")
+
+    assert result.is_valid is True
+
+
+def test_control_plane_service_can_validate_intent_nlp_classifier_asset(
+    isolated_control_plane_runtime: Path,
+) -> None:
+    service = ControlPlaneService()
+
+    result = service.validate_asset("intent_nlp_classifier")
+
+    assert result.is_valid is True
 
 
 def test_control_plane_service_save_creates_backup_and_marks_draft(
@@ -98,5 +127,10 @@ def test_control_plane_service_publish_updates_status(
     status_payload = json.loads(
         control_plane_module.CONFIG_STATUS_PATH.read_text(encoding="utf-8")
     )
-    assert status_payload["statuses"][0]["current_status"] == "published"
-    assert status_payload["statuses"][0]["last_published_at"] is not None
+    workflow_status = next(
+        status
+        for status in status_payload["statuses"]
+        if status["asset_name"] == "workflow_profiles"
+    )
+    assert workflow_status["current_status"] == "published"
+    assert workflow_status["last_published_at"] is not None

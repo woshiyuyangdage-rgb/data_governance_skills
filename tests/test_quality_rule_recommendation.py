@@ -2,13 +2,16 @@
 
 from app.core.models.field_meta import FieldMeta
 from app.core.models.mapping_result import MappingResult
+from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.table_meta import TableMeta
+from app.core.review import quality_override_store
 from app.core.skills.data_quality_rule_skill import (
     QualityRuleRecommendationInput,
     QualityRuleRecommendationSkill,
 )
+from app.core.skills.data_quality_rule_skill import quality_rule_learning
 
 
 def test_identifier_field_recommends_not_null_and_uniqueness() -> None:
@@ -236,3 +239,61 @@ def test_field_level_rules_include_confidence_and_review_priority() -> None:
     assert result.quality_rule_suggestions
     assert all(rule.confidence is not None for rule in result.quality_rule_suggestions)
     assert all(rule.review_priority is not None for rule in result.quality_rule_suggestions)
+
+
+def test_review_history_association_rules_promote_learned_rule(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        quality_override_store,
+        "QUALITY_RULE_OVERRIDES_PATH",
+        tmp_path / "quality_rule_overrides.csv",
+    )
+    monkeypatch.setattr(
+        quality_override_store,
+        "QUALITY_RULE_SESSIONS_DIR",
+        tmp_path / "quality_rule_sessions",
+    )
+    quality_rule_learning.clear_quality_rule_learning_caches()
+
+    records = [
+        QualityRuleReviewRecord(
+            source_table_name=f"trade_{index}",
+            source_field_name=f"interest_rate_{index}",
+            rule_type="numeric_range",
+            original_rule_expression="value >= 0",
+            final_rule_expression="value between 0 and 1",
+            original_severity="medium",
+            final_severity="medium",
+            recommended_field_name=f"interest_rate_{index}",
+            recommendation_source="source_field_fallback",
+            match_basis=f"source_field_name=interest_rate_{index}",
+            learning_context=["type:decimal", "token:rate", "source:source_field_fallback"],
+            review_action="accept",
+            reviewer_note="confirmed ratio/rate range",
+            reviewed_at="2026-05-01T10:00:00",
+            source="test",
+        )
+        for index in range(3)
+    ]
+    quality_override_store.save_quality_rule_review_records(records)
+
+    skill = QualityRuleRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="trade_fact",
+            fields=[FieldMeta(field_name="fee_rate", data_type="decimal")],
+        )
+    ]
+
+    result = skill.run(QualityRuleRecommendationInput(tables=tables))
+
+    assert result.quality_rule_suggestions
+    first_rule = result.quality_rule_suggestions[0]
+    assert first_rule.rule_type == "numeric_range"
+    assert first_rule.review_priority == "learned_review_priority"
+    assert first_rule.learned_confidence == 1.0
+    assert first_rule.learned_support == 1.0
+    assert first_rule.notes is not None
+    assert "learned_from_quality_review_history" in first_rule.notes

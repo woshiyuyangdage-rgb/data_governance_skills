@@ -15,6 +15,10 @@ class QualityRuleReviewRecord(BaseModel):
     final_rule_expression: str | None = None
     original_severity: str | None = None
     final_severity: str | None = None
+    recommended_field_name: str | None = None
+    recommendation_source: str | None = None
+    match_basis: str | None = None
+    learning_context: list[str] = Field(default_factory=list)
     review_action: str
     confidence: float | None = None
     review_priority: str | None = None

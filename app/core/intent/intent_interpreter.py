@@ -1,8 +1,12 @@
-"""Rule-based intent interpreter for natural-language governance requests."""
+"""Rule-based and local NLP-assisted intent interpreter for governance requests."""
 
 from app.core.intent.intent_loader import (
     get_intent_definitions,
     get_parameter_definitions,
+)
+from app.core.intent.intent_nlp_classifier import (
+    IntentNlpMatch,
+    classify_intent_text,
 )
 from app.core.models.governance_task_request import GovernanceTaskRequest
 from app.core.models.interpreted_intent import InterpretedIntent
@@ -157,7 +161,8 @@ class IntentInterpreter:
     def choose_best_intent(
         self,
         cleaned_text: str,
-    ) -> tuple[str | None, dict[str, object] | None, list[str], float]:
+        nlp_match: IntentNlpMatch | None = None,
+    ) -> tuple[str | None, dict[str, object] | None, list[str], float, str, float | None]:
         """Choose the best scoring intent from configured definitions."""
         best_intent_name: str | None = None
         best_payload: dict[str, object] | None = None
@@ -179,14 +184,42 @@ class IntentInterpreter:
             elif score > second_best_score:
                 second_best_score = score
 
+        nlp_match = nlp_match or classify_intent_text(cleaned_text)
         if best_intent_name is None or best_payload is None or best_score == 0:
-            return None, None, [], 0.0
+            if nlp_match is None:
+                return None, None, [], 0.0, "fallback", None
+            nlp_payload = get_intent_definitions().get(nlp_match.intent_name)
+            if nlp_payload is None:
+                return None, None, [], 0.0, "fallback", None
+            confidence = round(min(0.95, max(0.3, nlp_match.similarity)), 2)
+            return (
+                nlp_match.intent_name,
+                nlp_payload,
+                [f"nlp:{nlp_match.matched_text}"],
+                confidence,
+                "local_nlp",
+                nlp_match.similarity,
+            )
 
         keyword_count = max(1, len(best_payload.get("keywords", [])))
         coverage = len(best_keywords) / keyword_count
         separation = 0.0 if best_score == 0 else (best_score - second_best_score) / best_score
         confidence = round(min(1.0, max(0.3, (coverage * 0.6) + (separation * 0.4))), 2)
-        return best_intent_name, best_payload, best_keywords, confidence
+        match_source = "keyword"
+        nlp_similarity: float | None = None
+        if nlp_match is not None and nlp_match.intent_name == best_intent_name:
+            confidence = round(max(confidence, min(0.95, nlp_match.similarity)), 2)
+            best_keywords = list(dict.fromkeys([*best_keywords, f"nlp:{nlp_match.matched_text}"]))
+            match_source = "keyword+local_nlp"
+            nlp_similarity = nlp_match.similarity
+        return (
+            best_intent_name,
+            best_payload,
+            best_keywords,
+            confidence,
+            match_source,
+            nlp_similarity,
+        )
 
     @staticmethod
     def build_fallback_intent(raw_text: str) -> InterpretedIntent:
@@ -199,6 +232,8 @@ class IntentInterpreter:
             matched_keywords=[],
             inferred_parameters={},
             fallback_used=True,
+            match_source="fallback",
+            nlp_similarity=None,
             message=(
                 "No clear workflow intent was matched, so the interpreter fell back "
                 "to metadata_diagnosis_only."
@@ -217,13 +252,25 @@ class IntentInterpreter:
             return fallback_intent
 
         inferred_parameters = self.extract_parameters(cleaned_text)
-        intent_name, intent_payload, matched_keywords, confidence = self.choose_best_intent(
-            cleaned_text
-        )
+        nlp_match = classify_intent_text(cleaned_text)
+        (
+            intent_name,
+            intent_payload,
+            matched_keywords,
+            confidence,
+            match_source,
+            nlp_similarity,
+        ) = self.choose_best_intent(cleaned_text, nlp_match=nlp_match)
         if intent_name is None or intent_payload is None:
             fallback_intent = self.build_fallback_intent(text)
             fallback_intent.inferred_parameters = inferred_parameters
             return fallback_intent
+
+        if nlp_match is not None and nlp_match.intent_name == intent_name:
+            inferred_parameters = {
+                **nlp_match.inferred_parameters,
+                **inferred_parameters,
+            }
 
         profile_name = str(intent_payload.get("profile_name", FALLBACK_PROFILE_NAME))
         parameter_flags = [
@@ -237,6 +284,17 @@ class IntentInterpreter:
             else ""
         )
         file_message = " File path was also provided." if file_path else ""
+        nlp_message = ""
+        if match_source == "local_nlp" and nlp_similarity is not None and nlp_match is not None:
+            nlp_message = (
+                f" Local NLP matched sample '{nlp_match.matched_text}'"
+                f" with similarity {nlp_similarity:.2f}."
+            )
+        elif match_source == "keyword+local_nlp" and nlp_similarity is not None and nlp_match is not None:
+            nlp_message = (
+                f" Local NLP also matched sample '{nlp_match.matched_text}'"
+                f" with similarity {nlp_similarity:.2f}."
+            )
 
         return InterpretedIntent(
             raw_text=text,
@@ -246,9 +304,11 @@ class IntentInterpreter:
             matched_keywords=matched_keywords,
             inferred_parameters=inferred_parameters,
             fallback_used=False,
+            match_source=match_source,
+            nlp_similarity=nlp_similarity,
             message=(
                 f"Matched intent '{intent_name}' and mapped it to profile "
-                f"'{profile_name}'.{parameter_message}{file_message}"
+                f"'{profile_name}'.{parameter_message}{file_message}{nlp_message}"
             ),
         )
 

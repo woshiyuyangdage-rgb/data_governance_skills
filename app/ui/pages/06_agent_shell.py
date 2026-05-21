@@ -120,6 +120,9 @@ if shell_result is not None:
     st.subheader("Plan Preview")
     st.write(f"Session ID: `{shell_result.session_id or 'N/A'}`")
     st.write(f"Matched Profile: `{interpreted_intent.matched_profile_name}`")
+    st.write(f"Match Source: `{interpreted_intent.match_source}`")
+    if interpreted_intent.nlp_similarity is not None:
+        st.write(f"Local NLP Similarity: `{interpreted_intent.nlp_similarity}`")
     st.write(f"Stages: `{', '.join(plan.stages) or 'N/A'}`")
     st.write(f"Requires Confirmation: `{plan.requires_confirmation}`")
     st.write(f"Validation Passed: `{plan.validation_passed}`")

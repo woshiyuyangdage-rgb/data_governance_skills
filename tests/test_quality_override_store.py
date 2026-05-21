@@ -42,6 +42,10 @@ def test_quality_override_store_can_save_load_and_lookup_records(
             final_rule_expression="not_null",
             original_severity="high",
             final_severity="high",
+            recommended_field_name="order_id",
+            recommendation_source="source_field_fallback",
+            match_basis="source_field_name=order_id",
+            learning_context=["token:order", "token:id", "type:varchar"],
             review_action="accept",
             reviewer_note="confirmed",
             reviewed_at="2026-05-01T10:00:00",
@@ -56,4 +60,9 @@ def test_quality_override_store_can_save_load_and_lookup_records(
     assert result["saved_count"] == 1
     assert len(loaded) == 1
     assert lookup["sales_order.order_id.not_null"].review_action == "accept"
+    assert lookup["sales_order.order_id.not_null"].learning_context == [
+        "token:order",
+        "token:id",
+        "type:varchar",
+    ]
     assert Path(str(result["history_path"])).exists()

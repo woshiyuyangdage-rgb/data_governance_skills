@@ -47,3 +47,7 @@ suspicious_tokens:
   - ods
   - dwd
   - stg
+enable_spelling_detection: true
+spelling_min_token_length: 4
+spelling_max_edit_distance: 1
+spelling_min_similarity: 86

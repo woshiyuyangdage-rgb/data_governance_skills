@@ -19,6 +19,7 @@ severity_mapping:
   naming_too_long: low
   naming_contains_ambiguous_abbreviation: low
   naming_token_not_in_dictionary: low
+  naming_suspected_spelling_error: low
   standard_mapping_missing: medium
   standard_mapping_low_confidence: low
   stg_field_low_confidence: low

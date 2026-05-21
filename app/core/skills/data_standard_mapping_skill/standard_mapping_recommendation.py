@@ -19,6 +19,10 @@ from app.core.rules.config_loader import get_issue_severity
 from app.core.review.override_store import load_mapping_overrides
 from app.core.review.review_service import apply_mapping_overrides_to_results
 from app.core.skills.base_skill import BaseSkill
+from app.core.skills.data_standard_mapping_skill.semantic_index import (
+    SemanticFieldMatch,
+    semantic_match_source_fields,
+)
 
 
 class StandardMappingInput(BaseModel):
@@ -62,8 +66,8 @@ class StandardMappingRecommendationSkill(BaseSkill):
     """Recommend standard fields using explainable knowledge-pack rules."""
 
     skill_name = "standard_mapping_recommendation"
-    version = "0.3.0"
-    description = "P1 rule-based standard field recommendation using local knowledge packs."
+    version = "0.4.0"
+    description = "P1 standard field recommendation using local knowledge packs and optional semantic retrieval."
 
     @staticmethod
     def normalize_field_for_matching(
@@ -212,6 +216,141 @@ class StandardMappingRecommendationSkill(BaseSkill):
         return scored
 
     @staticmethod
+    def _semantic_match_lookup(
+        semantic_match: SemanticFieldMatch | None,
+    ) -> dict[str, object]:
+        if semantic_match is None or not semantic_match.enabled:
+            return {}
+        return {
+            match.standard_code: match
+            for match in semantic_match.top_matches
+        }
+
+    @classmethod
+    def rank_standard_candidates_with_semantics(
+        cls,
+        field_info: dict[str, object],
+        candidates: list[StandardCandidate],
+        semantic_match: SemanticFieldMatch | None = None,
+    ) -> list[tuple[StandardCandidate, float, list[str]]]:
+        """Rank standard candidates by combining rules and optional semantic retrieval."""
+        rule_ranked = cls.rank_standard_candidates(field_info, candidates)
+        ranked_lookup: dict[str, tuple[StandardCandidate, float, list[str]]] = {
+            candidate.standard_code: (candidate, score, list(reasons))
+            for candidate, score, reasons in rule_ranked
+        }
+        candidate_lookup = {candidate.standard_code: candidate for candidate in candidates}
+        semantic_lookup = cls._semantic_match_lookup(semantic_match)
+
+        if semantic_match is not None and semantic_match.enabled:
+            for standard_code, match in semantic_lookup.items():
+                candidate = candidate_lookup.get(standard_code)
+                if candidate is None:
+                    continue
+
+                semantic_score = round(float(match.score), 2)
+                semantic_reason = (
+                    "semantic embedding cosine similarity "
+                    f"{semantic_score:.2f} >= threshold {semantic_match.threshold:.2f}"
+                    if semantic_score >= semantic_match.threshold
+                    else f"semantic embedding cosine similarity {semantic_score:.2f}"
+                )
+                existing = ranked_lookup.get(standard_code)
+                if existing is None:
+                    ranked_lookup[standard_code] = (
+                        candidate,
+                        semantic_score,
+                        [semantic_reason],
+                    )
+                    continue
+
+                _, rule_score, reasons = existing
+                combined_score = max(rule_score, semantic_score)
+                ranked_lookup[standard_code] = (
+                    candidate,
+                    round(combined_score, 2),
+                    list(dict.fromkeys([*reasons, semantic_reason])),
+                )
+
+        ranked = list(ranked_lookup.values())
+        ranked.sort(
+            key=lambda item: (item[1], len(item[2]), item[0].standard_code),
+            reverse=True,
+        )
+        if (
+            semantic_match is not None
+            and semantic_match.enabled
+            and semantic_match.best_match is not None
+            and semantic_match.best_match.score >= semantic_match.threshold
+            and ranked
+            and ranked[0][1] < 0.9
+        ):
+            accepted_code = semantic_match.best_match.standard_code
+            ranked = [
+                item for item in ranked if item[0].standard_code == accepted_code
+            ] + [
+                item for item in ranked if item[0].standard_code != accepted_code
+            ]
+        return ranked
+
+    @staticmethod
+    def _has_accepted_semantic_match(
+        semantic_match: SemanticFieldMatch | None,
+        standard_code: str,
+    ) -> bool:
+        if (
+            semantic_match is None
+            or not semantic_match.enabled
+            or semantic_match.best_match is None
+        ):
+            return False
+        return semantic_match.best_match.standard_code == standard_code
+
+    @staticmethod
+    def _semantic_candidate_payloads(
+        semantic_match: SemanticFieldMatch | None,
+    ) -> list[dict[str, object]]:
+        if semantic_match is None or not semantic_match.enabled:
+            return []
+        return [
+            {
+                "standard_code": match.standard_code,
+                "standard_name": match.standard_name,
+                "match_score": round(match.score, 2),
+                "match_reason": (
+                    "semantic embedding cosine similarity "
+                    f"{match.score:.2f} against source_text={semantic_match.field_text}"
+                ),
+            }
+            for match in semantic_match.top_matches
+        ]
+
+    @staticmethod
+    def _merge_top_candidates(
+        top_candidates: list[tuple[StandardCandidate, float, list[str]]],
+        semantic_match: SemanticFieldMatch | None,
+    ) -> list[dict[str, object]]:
+        payloads = [
+            {
+                "standard_code": candidate.standard_code,
+                "standard_name": candidate.standard_name,
+                "match_score": score,
+                "match_reason": "; ".join(reasons),
+            }
+            for candidate, score, reasons in top_candidates
+        ]
+        seen = {str(payload["standard_code"]) for payload in payloads}
+        for semantic_payload in StandardMappingRecommendationSkill._semantic_candidate_payloads(
+            semantic_match
+        ):
+            standard_code = str(semantic_payload["standard_code"])
+            if standard_code in seen:
+                continue
+            payloads.append(semantic_payload)
+            seen.add(standard_code)
+        return payloads[:3]
+
+    @staticmethod
     def build_mapping_issue(
         issue_id: str,
         table_name: str,
@@ -251,15 +390,31 @@ class StandardMappingRecommendationSkill(BaseSkill):
         issues: list[Issue] = []
         mapped_count = 0
 
+        field_entries = [
+            (table, field)
+            for table in payload.tables
+            for field in table.fields
+        ]
+        semantic_matches = semantic_match_source_fields(
+            [field for _, field in field_entries]
+        )
+        semantic_match_by_key = {
+            f"{table.table_name}.{field.field_name}": semantic_match
+            for (table, field), semantic_match in zip(field_entries, semantic_matches)
+        }
+
         for table in payload.tables:
             for field in table.fields:
                 field_info = self.normalize_field_for_matching(
                     field.field_name,
                     field.field_name_cn,
                 )
-                ranked_candidates = self.rank_standard_candidates(
+                lookup_key = f"{table.table_name}.{field.field_name}"
+                semantic_match = semantic_match_by_key.get(lookup_key)
+                ranked_candidates = self.rank_standard_candidates_with_semantics(
                     field_info,
                     standard_candidates,
+                    semantic_match,
                 )
                 top_candidates = ranked_candidates[:3]
 
@@ -275,6 +430,16 @@ class StandardMappingRecommendationSkill(BaseSkill):
                             evidence=[
                                 f"normalized_name={field_info['normalized_name']}",
                                 f"normalized_tokens={field_info['normalized_tokens']}",
+                                (
+                                    f"semantic_text={semantic_match.field_text}"
+                                    if semantic_match is not None
+                                    else "semantic_text="
+                                ),
+                                (
+                                    "semantic_retrieval=unavailable"
+                                    if semantic_match is None or not semantic_match.enabled
+                                    else "semantic_retrieval=no candidate above threshold"
+                                ),
                             ]
                             + list(field_info["expansion_evidence"]),
                         )
@@ -291,7 +456,7 @@ class StandardMappingRecommendationSkill(BaseSkill):
                             evidence=[
                                 f"normalized_name={field_info['normalized_name']}",
                                 f"normalized_tokens={field_info['normalized_tokens']}",
-                                "no standard candidate produced a positive rule-based score",
+                                "no standard candidate produced a positive rule-based or semantic score",
                             ]
                             + list(field_info["expansion_evidence"]),
                             suggestion=(
@@ -315,6 +480,11 @@ class StandardMappingRecommendationSkill(BaseSkill):
                         *top_reasons,
                         "domain pack preferred_standard_codes hint matched",
                     ]
+                if semantic_match is not None and semantic_match.enabled:
+                    top_reasons = [
+                        *top_reasons,
+                        f"semantic_source_text={semantic_match.field_text}",
+                    ]
                 mapping_results.append(
                     MappingResult(
                         table_name=table.table_name,
@@ -325,19 +495,17 @@ class StandardMappingRecommendationSkill(BaseSkill):
                         match_score=top_score,
                         match_reason="; ".join(top_reasons),
                         candidate_count=len(ranked_candidates),
-                        top_candidates=[
-                            {
-                                "standard_code": candidate.standard_code,
-                                "standard_name": candidate.standard_name,
-                                "match_score": score,
-                                "match_reason": "; ".join(reasons),
-                            }
-                            for candidate, score, reasons in top_candidates
-                        ],
+                        top_candidates=self._merge_top_candidates(
+                            top_candidates,
+                            semantic_match,
+                        ),
                     )
                 )
 
-                if top_score >= 0.9:
+                if top_score >= 0.9 or self._has_accepted_semantic_match(
+                    semantic_match,
+                    top_candidate.standard_code,
+                ):
                     mapped_count += 1
                 else:
                     unmapped_fields.append(
@@ -390,7 +558,6 @@ class StandardMappingRecommendationSkill(BaseSkill):
         if payload.apply_overrides and review_applied_count:
             summary += f" Applied {review_applied_count} mapping overrides."
 
-        # TODO: extend mapping ranking with richer domain context and semantic retrieval in a future P2 version.
         return StandardMappingOutput(
             mapping_results=mapping_results,
             confirmed_mapping_results=confirmed_mapping_results,

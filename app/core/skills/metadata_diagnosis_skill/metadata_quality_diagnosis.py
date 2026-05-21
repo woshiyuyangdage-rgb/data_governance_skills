@@ -23,6 +23,7 @@ ISSUE_TYPE_TO_DEFECT = {
     "naming_contains_disallowed_prefix": "naming_standard_defect",
     "naming_not_snake_case": "naming_standard_defect",
     "naming_too_long": "naming_standard_defect",
+    "naming_suspected_spelling_error": "naming_standard_defect",
     "missing_table_description": "semantic_description_defect",
     "missing_field_description": "semantic_description_defect",
     "suspicious_short_description": "semantic_description_defect",

@@ -143,6 +143,7 @@ class ControlPlaneService:
         if asset_name in {
             "workflow_profiles",
             "intent_patterns",
+            "intent_nlp_classifier",
             "tool_registry",
             "quality_rule_templates",
             "quality_rule_policies",
@@ -174,6 +175,17 @@ class ControlPlaneService:
             profile_loader.load_workflow_profiles.cache_clear()
         elif asset_name == "intent_patterns":
             intent_loader.load_intent_patterns.cache_clear()
+            from app.core.intent.intent_nlp_classifier import (
+                clear_intent_nlp_classifier_cache,
+            )
+
+            clear_intent_nlp_classifier_cache()
+        elif asset_name == "intent_nlp_classifier":
+            from app.core.intent.intent_nlp_classifier import (
+                clear_intent_nlp_classifier_cache,
+            )
+
+            clear_intent_nlp_classifier_cache()
         elif asset_name == "tool_registry":
             tool_loader.load_tool_registry.cache_clear()
         elif asset_name in {
@@ -203,6 +215,12 @@ class ControlPlaneService:
             "confirmation_workbook_diagnosis_policies",
         }:
             load_yaml_config.cache_clear()
+            if asset_name == "quality_review_policies":
+                from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
+                    clear_quality_rule_learning_caches,
+                )
+
+                clear_quality_rule_learning_caches()
             if asset_name in {
                 "confirmation_workbook_template_profiles",
                 "confirmation_workbook_mapping_specs",
@@ -215,8 +233,17 @@ class ControlPlaneService:
             knowledge_loader._load_abbreviation_dict_cached.cache_clear()
         elif asset_name == "root_word_dict":
             knowledge_loader._load_root_word_dict_cached.cache_clear()
+            from app.core.skills.metadata_diagnosis_skill.naming_standard_check import (
+                clear_naming_standard_check_caches,
+            )
+
+            clear_naming_standard_check_caches()
         elif asset_name == "standard_fields":
             knowledge_loader._load_standard_fields_cached.cache_clear()
+        elif asset_name == "standard_mapping_semantic":
+            from app.core.skills.data_standard_mapping_skill import semantic_index
+
+            semantic_index.clear_semantic_mapping_caches()
 
     def list_assets(self) -> list[ConfigAsset]:
         """Return managed control-plane assets."""

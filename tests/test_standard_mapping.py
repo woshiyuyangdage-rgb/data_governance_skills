@@ -10,6 +10,8 @@ from app.core.skills.data_standard_mapping_skill import (
     StandardMappingInput,
     StandardMappingRecommendationSkill,
 )
+from app.core.skills.data_standard_mapping_skill import semantic_index
+from app.core.skills.data_standard_mapping_skill import standard_mapping_recommendation
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "samples" / "sample_metadata.csv"
@@ -79,3 +81,50 @@ def test_standard_mapping_override_is_applied_before_confirmed_output() -> None:
     assert result.review_applied_count == 1
     assert result.confirmed_mapping_results[0].recommended_standard_code == "audit_log_id"
     assert result.confirmed_mapping_results[0].confirmed_source == "override_edit"
+
+
+def test_semantic_match_can_promote_low_rule_score_to_mapping(monkeypatch) -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="customer_master",
+            fields=[FieldMeta(field_name="buyer_name", field_name_cn="buyer name")],
+        )
+    ]
+
+    semantic_match = semantic_index.SemanticFieldMatch(
+        field_text="buyer_name | buyer name",
+        best_match=semantic_index.SemanticMatch(
+            standard_code="customer_name",
+            standard_name="customer_name",
+            standard_name_cn="customer name",
+            score=0.86,
+            rank=1,
+        ),
+        top_matches=[
+            semantic_index.SemanticMatch(
+                standard_code="customer_name",
+                standard_name="customer_name",
+                standard_name_cn="customer name",
+                score=0.86,
+                rank=1,
+            )
+        ],
+        threshold=0.85,
+        enabled=True,
+    )
+
+    monkeypatch.setattr(
+        standard_mapping_recommendation,
+        "semantic_match_source_fields",
+        lambda fields, candidate_limit=None: [semantic_match for _ in fields],
+    )
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    assert result.mapping_results
+    assert result.mapping_results[0].recommended_standard_code == "customer_name"
+    assert result.mapping_results[0].match_score == 0.86
+    assert all(
+        unmapped.field_name != "buyer_name" for unmapped in result.unmapped_fields
+    )

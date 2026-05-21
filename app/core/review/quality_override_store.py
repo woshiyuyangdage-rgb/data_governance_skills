@@ -25,6 +25,10 @@ QUALITY_RULE_OVERRIDE_COLUMNS = [
     "final_rule_expression",
     "original_severity",
     "final_severity",
+    "recommended_field_name",
+    "recommendation_source",
+    "match_basis",
+    "learning_context",
     "review_action",
     "confidence",
     "review_priority",
@@ -54,6 +58,9 @@ def _write_csv(path: Path, records: list[dict[str, object]]) -> str:
         field_group = payload.get("field_group")
         if isinstance(field_group, list):
             payload["field_group"] = json.dumps(field_group, ensure_ascii=False)
+        learning_context = payload.get("learning_context")
+        if isinstance(learning_context, list):
+            payload["learning_context"] = json.dumps(learning_context, ensure_ascii=False)
         normalized_records.append(payload)
     dataframe = pd.DataFrame(normalized_records, columns=QUALITY_RULE_OVERRIDE_COLUMNS)
     dataframe.to_csv(path, index=False, encoding="utf-8")
@@ -61,6 +68,23 @@ def _write_csv(path: Path, records: list[dict[str, object]]) -> str:
 
 
 def _parse_field_group(value: object) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item).strip()]
+    text = str(value).strip()
+    if not text:
+        return []
+    try:
+        parsed = json.loads(text)
+    except Exception:
+        return [item.strip() for item in text.split("|") if item.strip()]
+    if isinstance(parsed, list):
+        return [str(item) for item in parsed if str(item).strip()]
+    return []
+
+
+def _parse_learning_context(value: object) -> list[str]:
     if value is None:
         return []
     if isinstance(value, list):
@@ -128,6 +152,9 @@ def load_quality_rule_overrides() -> list[QualityRuleReviewRecord]:
         payload = dict(row)
         payload["rule_scope"] = payload.get("rule_scope") or "field"
         payload["field_group"] = _parse_field_group(payload.get("field_group"))
+        payload["learning_context"] = _parse_learning_context(
+            payload.get("learning_context")
+        )
         records.append(QualityRuleReviewRecord(**payload))
     return records
 
@@ -141,6 +168,11 @@ def save_quality_rule_review_records(
     merged = _merge_by_key(existing_records, new_records)
     csv_path = _write_csv(QUALITY_RULE_OVERRIDES_PATH, merged)
     history_path = _save_review_session_snapshot(new_records)
+    from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
+        clear_quality_rule_learning_caches,
+    )
+
+    clear_quality_rule_learning_caches()
     return {"path": csv_path, "history_path": history_path, "saved_count": len(records)}
 
 

@@ -11,3 +11,10 @@ confidence_policy:
   stg_name_match: 0.7
   source_token_match: 0.6
   weak_hint_match: 0.4
+
+association_rule_learning:
+  enabled: true
+  min_records: 3
+  min_support: 0.2
+  min_confidence: 0.8
+  boost_review_priority: learned_review_priority

@@ -199,6 +199,15 @@
       "last_error_message": null
     },
     {
+      "asset_name": "intent_nlp_classifier",
+      "asset_type": "yaml",
+      "file_path": "app/config/intent_nlp_classifier.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
       "asset_name": "progress_snapshot_policies",
       "asset_type": "yaml",
       "file_path": "app/config/progress_snapshot_policies.yaml",
@@ -285,6 +294,15 @@
       "file_path": "app/data/standards/standard_fields.csv",
       "current_status": "published",
       "last_validated_at": "2026-05-07T04:15:25",
+      "last_published_at": null,
+      "last_error_message": null
+    },
+    {
+      "asset_name": "standard_mapping_semantic",
+      "asset_type": "yaml",
+      "file_path": "app/config/standard_mapping_semantic.yaml",
+      "current_status": "draft",
+      "last_validated_at": null,
       "last_published_at": null,
       "last_error_message": null
     },

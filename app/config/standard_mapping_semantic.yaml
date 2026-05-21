@@ -1,0 +1,15 @@
+enabled: true
+model_name_or_path: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+local_files_only: true
+threshold: 0.85
+candidate_limit: 3
+standard_text_fields:
+  - standard_name
+  - standard_name_cn
+  - description
+  - business_domain
+  - aliases
+source_text_fields:
+  - field_name
+  - field_name_cn
+  - field_description

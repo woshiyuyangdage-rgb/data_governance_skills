@@ -247,3 +247,15 @@ def test_unknown_text_falls_back_to_diagnosis_profile() -> None:
 
     assert intent.matched_profile_name == "metadata_diagnosis_only"
     assert intent.fallback_used is True
+
+
+def test_local_nlp_intent_can_match_without_keyword_hit() -> None:
+    interpreter = IntentInterpreter()
+
+    intent = interpreter.interpret("帮我把这些字段对齐公司统一数据标准")
+
+    assert intent.matched_intent_name == "standard_recommendation"
+    assert intent.matched_profile_name == "diagnosis_plus_mapping"
+    assert intent.match_source == "local_nlp"
+    assert intent.nlp_similarity is not None
+    assert intent.fallback_used is False

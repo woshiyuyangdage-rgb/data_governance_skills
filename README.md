@@ -2,7 +2,7 @@
 
 `data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换为可诊断、可评审、可交付的治理资产，覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、整改待办、组合视图和本地交付物导出。
 
-项目当前定位是“治理决策支持与交付资产生成工具”，不是线上执行平台。它不直接连接生产数据库执行质量检查，不调用 LLM，不创建外部工单，也不集成企业流程系统。
+项目当前定位是“治理决策支持与交付资产生成工具”，不是线上执行平台。它不直接连接生产数据库执行质量检查，不调用云端 LLM，不创建外部工单，也不集成企业流程系统。
 
 ## 一句话说明
 
@@ -37,7 +37,7 @@
 - 直接连接生产数据库执行质量检查。
 - 替代 dbt、Great Expectations、Soda 等执行引擎。
 - 多用户审批、权限管理、流程流转或工单创建。
-- 调用 LLM、向量检索、语义召回或外部企业系统。
+- 调用云端 LLM 或外部企业系统。
 
 ### 环境要求
 
@@ -174,7 +174,7 @@ tests/        pytest 自动化测试
 | 质量与执行包 | `app/core/adapters/`、`app/core/tools/` | 生成确认质量规则、执行准备包、规则导出结果和工具化调用响应。 |
 | 治理度量 | `app/core/governance/` | 评估治理就绪度，分类治理缺口，生成整改动作、工作包、待办、SLA 状态、进度快照和组合汇总。 |
 | 交付包 | `app/core/delivery/` | 导出确认工作簿，导入确认结果，构建治理交付 manifest 和本地交付包。 |
-| 意图、上下文与 Agent Shell | `app/core/intent/`、`app/core/context/`、`app/core/agent/` | 将自然语言意图解析为治理任务，解析运行上下文，生成执行计划并保存本地会话。当前为规则化本地能力，不调用 LLM。 |
+| 意图、上下文与 Agent Shell | `app/core/intent/`、`app/core/context/`、`app/core/agent/` | 将自然语言意图解析为治理任务，解析运行上下文，生成执行计划并保存本地会话。当前为规则 + 本地传统 NLP 能力，不调用云端 LLM。 |
 | 工具注册与适配 | `app/core/tools/`、`app/core/adapters/` | 暴露本地工具注册表、工具调用、OpenAI/MCP/native schema 导出和适配器调用封装。 |
 | 配置控制面 | `app/core/control_plane/`、`app/config/` | 管理 YAML 配置资产、校验、保存、发布和本地状态记录。 |
 | 审计与报告 | `app/core/audit/`、`app/core/reports/` | 记录工具执行 trace，导出 JSON、Markdown、Excel 报告。 |
@@ -261,7 +261,7 @@ python -m ruff check app tests
 
 项目当前不提供：
 
-- LLM 推理、向量检索、语义召回或 embeddings。
+- 云端 LLM 推理和外部在线模型服务。
 - 数据库质量检查的真实执行。
 - 调度器、队列、Docker 或 CI 编排。
 - dbt、Great Expectations、Soda 或自定义 SQL 引擎的运行时执行。

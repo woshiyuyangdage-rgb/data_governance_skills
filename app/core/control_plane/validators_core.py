@@ -109,6 +109,80 @@ def _validate_intent_patterns(content: Any) -> ValidationResult:
         warnings=warnings,
     )
 
+
+def _validate_intent_nlp_classifier(content: Any) -> ValidationResult:
+    asset_name = "intent_nlp_classifier"
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    if not isinstance(content, dict):
+        return ValidationResult(
+            asset_name=asset_name,
+            is_valid=False,
+            messages=["intent_nlp_classifier must be a mapping."],
+            warnings=[],
+        )
+
+    if not isinstance(content.get("enabled"), bool):
+        errors.append("intent_nlp_classifier must define enabled as a boolean.")
+
+    if not isinstance(content.get("use_keyword_samples"), bool):
+        errors.append(
+            "intent_nlp_classifier must define use_keyword_samples as a boolean."
+        )
+
+    for field_name in ["min_similarity", "min_margin"]:
+        value = content.get(field_name)
+        if not isinstance(value, (int, float)):
+            errors.append(
+                f"intent_nlp_classifier must define a numeric '{field_name}'."
+            )
+        elif not 0.0 <= float(value) <= 1.0:
+            errors.append(
+                f"intent_nlp_classifier '{field_name}' must be between 0 and 1."
+            )
+
+    for field_name in ["ngram_min", "ngram_max"]:
+        value = content.get(field_name)
+        if not isinstance(value, int) or value < 1:
+            errors.append(
+                f"intent_nlp_classifier must define '{field_name}' as a positive integer."
+            )
+
+    examples = content.get("training_examples")
+    if not isinstance(examples, list) or not examples:
+        errors.append(
+            "intent_nlp_classifier must define a non-empty training_examples list."
+        )
+    else:
+        for index, example in enumerate(examples):
+            if not isinstance(example, dict):
+                errors.append(f"training example at index {index} must be a mapping.")
+                continue
+            if not str(example.get("intent_name", "")).strip():
+                errors.append(
+                    f"training example at index {index} must define intent_name."
+                )
+            if not str(example.get("text", "")).strip():
+                errors.append(
+                    f"training example at index {index} must define text."
+                )
+            inferred_parameters = example.get("inferred_parameters", {})
+            if inferred_parameters and not isinstance(inferred_parameters, dict):
+                errors.append(
+                    f"training example at index {index} has invalid inferred_parameters."
+                )
+
+    if not examples:
+        warnings.append("intent_nlp_classifier has no training examples configured.")
+
+    return ValidationResult(
+        asset_name=asset_name,
+        is_valid=not errors,
+        messages=errors,
+        warnings=warnings,
+    )
+
 def _validate_tool_registry(content: Any) -> ValidationResult:
     asset_name = "tool_registry"
     errors: list[str] = []
@@ -234,11 +308,66 @@ def _validate_standard_fields(content: Any) -> ValidationResult:
 
     return ValidationResult(asset_name=asset_name, is_valid=not errors, messages=errors)
 
+
+def _validate_standard_mapping_semantic(content: Any) -> ValidationResult:
+    asset_name = "standard_mapping_semantic"
+    errors: list[str] = []
+
+    if not isinstance(content, dict):
+        return ValidationResult(
+            asset_name=asset_name,
+            is_valid=False,
+            messages=["standard_mapping_semantic must be a mapping."],
+        )
+
+    if not isinstance(content.get("enabled"), bool):
+        errors.append("standard_mapping_semantic must define enabled as a boolean.")
+
+    model_name_or_path = str(content.get("model_name_or_path", "")).strip()
+    if not model_name_or_path:
+        errors.append(
+            "standard_mapping_semantic must define a non-empty model_name_or_path."
+        )
+
+    if not isinstance(content.get("local_files_only"), bool):
+        errors.append(
+            "standard_mapping_semantic must define local_files_only as a boolean."
+        )
+
+    threshold = content.get("threshold")
+    if not isinstance(threshold, (int, float)):
+        errors.append("standard_mapping_semantic must define a numeric threshold.")
+    elif not 0.0 <= float(threshold) <= 1.0:
+        errors.append("standard_mapping_semantic threshold must be between 0 and 1.")
+
+    candidate_limit = content.get("candidate_limit")
+    if not isinstance(candidate_limit, int) or candidate_limit < 1:
+        errors.append(
+            "standard_mapping_semantic must define candidate_limit as a positive integer."
+        )
+
+    for field_name in ["standard_text_fields", "source_text_fields"]:
+        field_values = content.get(field_name)
+        if not isinstance(field_values, list) or not field_values:
+            errors.append(
+                f"standard_mapping_semantic must define a non-empty '{field_name}' list."
+            )
+            continue
+        for index, value in enumerate(field_values):
+            if not str(value).strip():
+                errors.append(
+                    f"standard_mapping_semantic '{field_name}' item at index {index} must be a non-empty string."
+                )
+
+    return ValidationResult(asset_name=asset_name, is_valid=not errors, messages=errors)
+
 CORE_VALIDATORS = {
     "workflow_profiles": _validate_workflow_profiles,
     "intent_patterns": _validate_intent_patterns,
+    "intent_nlp_classifier": _validate_intent_nlp_classifier,
     "tool_registry": _validate_tool_registry,
     "abbreviation_dict": _validate_abbreviation_dict,
     "root_word_dict": _validate_root_word_dict,
     "standard_fields": _validate_standard_fields,
+    "standard_mapping_semantic": _validate_standard_mapping_semantic,
 }

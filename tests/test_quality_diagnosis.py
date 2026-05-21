@@ -27,6 +27,14 @@ def test_quality_diagnosis_aggregates_upstream_issues() -> None:
             severity="low",
             evidence=["field name contains repeated underscore"],
         ),
+        Issue(
+            issue_id="issue-3",
+            object_type="field",
+            object_name="sales_order.transaciton_id",
+            issue_type="naming_suspected_spelling_error",
+            severity="low",
+            evidence=["token=transaciton suggested_token=transaction"],
+        ),
     ]
 
     result = skill.run(

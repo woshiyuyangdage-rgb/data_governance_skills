@@ -87,6 +87,9 @@ if execution_result is not None:
     st.write(f"Matched Intent: `{interpreted_intent.matched_intent_name or 'fallback'}`")
     st.write(f"Matched Profile: `{interpreted_intent.matched_profile_name}`")
     st.write(f"Confidence: `{interpreted_intent.confidence}`")
+    st.write(f"Match Source: `{interpreted_intent.match_source}`")
+    if interpreted_intent.nlp_similarity is not None:
+        st.write(f"Local NLP Similarity: `{interpreted_intent.nlp_similarity}`")
     st.write(f"Matched Keywords: `{', '.join(interpreted_intent.matched_keywords) or 'N/A'}`")
     st.write(f"Fallback Used: `{interpreted_intent.fallback_used}`")
     if interpreted_intent.message:

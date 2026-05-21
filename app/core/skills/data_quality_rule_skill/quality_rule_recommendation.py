@@ -41,6 +41,9 @@ from app.core.skills.data_quality_rule_skill.quality_rule_field_rules import (
     table_tokens,
     tokenize_name,
 )
+from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
+    apply_learned_quality_rule_priority,
+)
 from app.core.skills.data_quality_rule_skill.quality_rule_io import (
     QualityRuleRecommendationInput,
     QualityRuleRecommendationOutput,
@@ -204,6 +207,7 @@ class QualityRuleRecommendationSkill(BaseSkill):
                             self.build_quality_rule_suggestion(
                                 source_table_name=table.table_name,
                                 source_field_name=field.field_name,
+                                source_data_type=field.data_type,
                                 recommended_field_name=recommended_field_name,
                                 recommendation_source=recommendation_source,
                                 template_name=template_name,
@@ -215,6 +219,10 @@ class QualityRuleRecommendationSkill(BaseSkill):
 
                 deduped_field_suggestions = self.deduplicate_rules_for_field(
                     field_suggestions
+                )
+                deduped_field_suggestions = apply_learned_quality_rule_priority(
+                    deduped_field_suggestions,
+                    [(table.table_name, field)],
                 )
                 if not deduped_field_suggestions:
                     issues.append(

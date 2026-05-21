@@ -13,4 +13,6 @@ class InterpretedIntent(BaseModel):
     matched_keywords: list[str] = Field(default_factory=list)
     inferred_parameters: dict[str, object] = Field(default_factory=dict)
     fallback_used: bool = False
+    match_source: str = "keyword"
+    nlp_similarity: float | None = None
     message: str | None = None

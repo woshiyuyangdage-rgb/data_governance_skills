@@ -142,6 +142,38 @@ def field_tokens(field_name: str) -> set[str]:
     return expanded
 
 
+def learning_context_for_field(
+    *,
+    field_name: str,
+    data_type: str | None,
+    recommended_field_name: str | None,
+    recommendation_source: str,
+    match_basis: str | None,
+) -> list[str]:
+    """Build stable association-rule items for one field-level recommendation."""
+    context: list[str] = []
+    if data_type:
+        normalized_type = data_type.strip().lower().split("(", 1)[0]
+        if normalized_type:
+            context.append(f"type:{normalized_type}")
+
+    for token in sorted(field_tokens(field_name)):
+        context.append(f"token:{token}")
+
+    for token in sorted(field_tokens(recommended_field_name or "")):
+        context.append(f"field:{token}")
+
+    if recommendation_source:
+        context.append(f"source:{recommendation_source.strip().lower()}")
+
+    if match_basis:
+        basis_text = str(match_basis).strip().lower()
+        if "standard_code=" in basis_text:
+            context.append(f"basis:{basis_text.split('standard_code=', 1)[1]}")
+
+    return list(dict.fromkeys(context))
+
+
 def table_tokens(table: TableMeta) -> set[str]:
     """Return normalized tokens collected from table and field metadata."""
     tokens: set[str] = set()
@@ -282,6 +314,7 @@ def infer_rule_templates_from_source_name(
 def build_quality_rule_suggestion(
     source_table_name: str,
     source_field_name: str,
+    source_data_type: str | None,
     recommended_field_name: str | None,
     recommendation_source: str,
     template_name: str,
@@ -313,6 +346,13 @@ def build_quality_rule_suggestion(
         recommendation_source=recommendation_source,
         match_basis=match_basis,
         reason=reason,
+        learning_context=learning_context_for_field(
+            field_name=source_field_name,
+            data_type=source_data_type,
+            recommended_field_name=recommended_field_name,
+            recommendation_source=recommendation_source,
+            match_basis=match_basis,
+        ),
         notes=f"Recommended from template={template_name}.",
     )
 
