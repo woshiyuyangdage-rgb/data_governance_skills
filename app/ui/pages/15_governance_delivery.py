@@ -9,7 +9,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_current_input_file_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
@@ -19,17 +25,19 @@ from app.core.orchestrator.pipeline_service import (
     run_full_governance_delivery_package_with_review_from_file,
 )
 from app.ui.page_overview import build_workflow_overview
+from app.ui.performance_helpers import render_json_section, render_records_dataframe_section
 from app.ui.result_overview import render_result_overview
+from app.ui.status_blocks import render_key_value_block, render_page_header
 
 initialize_session_state()
 
-st.title("Governance Delivery")
-st.write("Build confirmation workbooks and a local governance delivery package.")
-
-uploaded_file_path = st.session_state.get("workflow_result_file_path") or st.session_state.get(
-    "uploaded_file_path"
+render_page_header(
+    "Governance Delivery",
+    "Build confirmation workbooks and a local governance delivery package.",
 )
-current_result: WorkflowResult | None = st.session_state.get("workflow_result")
+
+uploaded_file_path = get_current_input_file_path()
+current_result: WorkflowResult | None = get_workflow_result()
 output_dir = st.text_input(
     "Output directory",
     value=str(PROJECT_ROOT / "outputs" / "delivery_packages"),
@@ -56,7 +64,7 @@ with col_workbooks:
                         base_name=base_name,
                     )
                     current_result.confirmation_workbook_results = workbook_results
-                    st.session_state["workflow_result"] = current_result
+                    set_workflow_result_state(current_result)
             except Exception as exc:
                 st.error(f"Failed to build confirmation workbooks: {exc}")
             else:
@@ -79,13 +87,13 @@ with col_package:
                             output_dir=output_dir,
                             base_name=base_name,
                         )
-                    st.session_state["workflow_result"] = current_result
+                    set_workflow_result_state(current_result)
             except Exception as exc:
                 st.error(f"Failed to build delivery package: {exc}")
             else:
                 st.success("Governance delivery package generated.")
 
-result: WorkflowResult | None = st.session_state.get("workflow_result")
+result: WorkflowResult | None = get_workflow_result()
 if result is None:
     st.info("Build a delivery package to see generated artifact paths.")
     st.stop()
@@ -100,9 +108,10 @@ render_result_overview(
 
 st.subheader("Generated Workbooks")
 if result.confirmation_workbook_results:
-    st.dataframe(
-        [workbook.model_dump() for workbook in result.confirmation_workbook_results],
-        use_container_width=True,
+    render_records_dataframe_section(
+        "Generated Workbooks",
+        result.confirmation_workbook_results,
+        key_prefix="delivery_workbooks",
     )
 else:
     st.info("No confirmation workbooks have been generated yet.")
@@ -110,14 +119,17 @@ else:
 st.subheader("Delivery Package")
 if result.governance_delivery_package_result is not None:
     package_result = result.governance_delivery_package_result
-    st.write(f"Output directory: `{package_result.output_dir}`")
-    st.json(package_result.generated_files)
+    render_key_value_block(
+        None,
+        rows=[("Output directory", package_result.output_dir)],
+    )
+    render_json_section("Generated Files", package_result.generated_files, compact=True)
 else:
     st.info("No delivery package has been generated yet.")
 
 st.subheader("Manifest Preview")
 if result.governance_delivery_manifest is not None:
-    st.json(result.governance_delivery_manifest.model_dump())
+    render_json_section("Manifest Preview", result.governance_delivery_manifest, compact=True)
 else:
     st.info("Manifest will appear after building the delivery package.")
 

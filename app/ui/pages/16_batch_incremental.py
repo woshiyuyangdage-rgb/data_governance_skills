@@ -9,18 +9,32 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    get_batch_file_paths,
+    ensure_project_root_on_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_batch_file_paths,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
 from app.core.orchestrator.workflow_engine import WorkflowEngine
 from app.core.reports.report_service import export_all_reports
 from app.core.utils.file_utils import save_uploaded_file
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_records_dataframe_section,
+)
+from app.ui.status_blocks import render_key_value_block, render_page_header
 
 initialize_session_state()
 
-st.title("Batch & Incremental Rerun")
-st.write("Run multi-file governance batches and changed-only reruns from local snapshots.")
+render_page_header(
+    "Batch & Incremental Rerun",
+    "Run multi-file governance batches and changed-only reruns from local snapshots.",
+)
 
 uploaded_files = st.file_uploader(
     "Choose metadata files",
@@ -39,11 +53,14 @@ if uploaded_files:
         save_uploaded_file(uploaded_file, upload_dir)
         for uploaded_file in uploaded_files
     ]
-    st.session_state["batch_file_paths"] = saved_paths
+    set_batch_file_paths(saved_paths)
     st.success(f"Saved {len(saved_paths)} files for batch processing.")
 
-file_paths = st.session_state.get("batch_file_paths", [])
-st.write(f"Selected files: {len(file_paths)}")
+file_paths = get_batch_file_paths()
+render_key_value_block(
+    None,
+    rows=[("Selected files", len(file_paths))],
+)
 
 engine = WorkflowEngine()
 col_full, col_incremental, col_export = st.columns(3)
@@ -60,7 +77,7 @@ with col_full:
                     changed_only=False,
                     batch_name=batch_name,
                 )
-            st.session_state["workflow_result"] = result
+            set_workflow_result_state(result)
             st.success("Batch governance run completed.")
 
 with col_incremental:
@@ -75,12 +92,12 @@ with col_incremental:
                     changed_only=True,
                     batch_name=batch_name,
                 )
-            st.session_state["workflow_result"] = result
+            set_workflow_result_state(result)
             st.success("Changed-only rerun completed.")
 
 with col_export:
     if st.button("Export Batch Report"):
-        result = st.session_state.get("workflow_result")
+        result = get_workflow_result()
         if result is None:
             st.warning("Run a batch first.")
         else:
@@ -91,35 +108,37 @@ with col_export:
             )
             st.success(f"Batch report exported: {paths['json']}")
 
-result = st.session_state.get("workflow_result")
+result = get_workflow_result()
 if result is None:
     st.info("Run a batch to see summaries.")
     st.stop()
 
 st.subheader("Batch Group Summary")
 if result.batch_group_results:
-    st.dataframe(
-        [group.model_dump() for group in result.batch_group_results],
-        use_container_width=True,
+    render_records_dataframe_section(
+        "Batch Group Summary",
+        result.batch_group_results,
+        key_prefix="batch_group_summary",
     )
 else:
     st.info("No batch groups were processed.")
 
 st.subheader("Incremental Diff Summary")
 if result.incremental_diff_summary is not None:
-    st.json(result.incremental_diff_summary.model_dump())
+    render_json_section("Incremental Diff Summary", result.incremental_diff_summary)
 else:
     st.info("No diff summary is available.")
 
 st.subheader("Diff Items")
 if result.incremental_diff_items:
-    st.dataframe(
-        [item.model_dump() for item in result.incremental_diff_items],
-        use_container_width=True,
+    render_records_dataframe_section(
+        "Diff Items",
+        result.incremental_diff_items,
+        key_prefix="batch_diff_items",
     )
 else:
     st.info("No diff items are available.")
 
 st.subheader("Rerun Scope Summary")
-st.json(result.rerun_scope_summary or {})
+render_json_section("Rerun Scope Summary", result.rerun_scope_summary)
 

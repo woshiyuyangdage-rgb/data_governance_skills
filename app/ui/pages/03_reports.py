@@ -14,11 +14,22 @@ from app.ui.page_utils import (
     REPORT_OUTPUT_DIR,
     ensure_agent_shell_session_id,
     ensure_project_root_on_path,
+    get_current_input_file_path,
+    get_latest_report_paths,
+    get_report_export_history,
+    get_workflow_result,
     initialize_session_state,
+    record_report_paths,
 )
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_workflow_overview
-from app.ui.result_overview import render_result_overview
+from app.ui.result_overview import (
+    build_result_artifacts,
+    render_result_artifacts,
+    render_result_overview,
+)
+from app.ui.status_blocks import render_bullet_list
+from app.ui.status_blocks import render_page_header
 
 ensure_project_root_on_path()
 
@@ -27,14 +38,22 @@ from app.core.reports.report_service import export_all_reports
 
 initialize_session_state()
 
-st.title("导出报告")
-st.write("把当前工作流结果整理成 JSON、Markdown、Excel 三类交付物。")
+REPORT_MIME_TYPES = {
+    "json": "application/json",
+    "markdown": "text/markdown",
+    "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
 
-result = st.session_state.get("workflow_result")
+render_page_header(
+    "导出报告",
+    "把当前工作流结果整理成 JSON、Markdown、Excel 三类交付物。",
+)
+
+result = get_workflow_result()
 if result is None:
     st.warning("当前没有可导出的工作流结果，请先完成诊断。")
 else:
-    current_file = st.session_state.get("workflow_result_file_path") or "unknown_input"
+    current_file = get_current_input_file_path() or "unknown_input"
     render_result_overview(
         build_workflow_overview(
             result,
@@ -54,43 +73,33 @@ else:
                 st.error(f"导出失败: {exc}")
             else:
                 set_last_exported_files(ensure_agent_shell_session_id(), report_paths)
-                st.session_state["latest_report_paths"] = report_paths
-                history = list(st.session_state.get("report_export_history", []))
-                history.append(report_paths)
-                st.session_state["report_export_history"] = history[-10:]
+                record_report_paths(report_paths)
                 st.success("报告已导出。")
 
     with export_col2:
-        latest_report_paths = st.session_state.get("latest_report_paths", {})
+        latest_report_paths = get_latest_report_paths()
         if latest_report_paths:
             render_explanation_block(
                 "最近一次导出",
                 summary="下面是可下载的本地文件。",
                 details=list(latest_report_paths.items()),
             )
-            for report_type, report_path in latest_report_paths.items():
-                path = Path(report_path)
-                if path.exists():
-                    mime = {
-                        "json": "application/json",
-                        "markdown": "text/markdown",
-                        "excel": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    }.get(report_type, "application/octet-stream")
-                    st.download_button(
-                        label=f"下载 {report_type}",
-                        data=path.read_bytes(),
-                        file_name=path.name,
-                        mime=mime,
-                        key=f"download_{report_type}_{path.name}",
-                        use_container_width=True,
-                    )
+            render_result_artifacts(
+                build_result_artifacts(
+                    latest_report_paths,
+                    mime_by_label=REPORT_MIME_TYPES,
+                ),
+                use_container_width=True,
+            )
         else:
             st.info("暂无最近导出文件。")
 
-history = st.session_state.get("report_export_history", [])
+history = get_report_export_history()
 if history:
     st.subheader("导出历史")
     for export_index, export_paths in enumerate(reversed(history), start=1):
         with st.expander(f"导出 {export_index}", expanded=export_index == 1):
-            for report_type, report_path in export_paths.items():
-                st.write(f"- `{report_type}`: {report_path}")
+            render_bullet_list(
+                None,
+                [f"`{report_type}`: {report_path}" for report_type, report_path in export_paths.items()],
+            )

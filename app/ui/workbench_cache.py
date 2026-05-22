@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
@@ -122,6 +123,19 @@ def file_cache_key(file_path: str | None) -> str:
     except FileNotFoundError:
         return str(path)
     return f"{path.resolve()}::{stat.st_size}::{stat.st_mtime_ns}"
+
+
+def content_signature(content: bytes) -> str:
+    """Return the stable md5 signature used for uploaded file identity."""
+    return hashlib.md5(content).hexdigest()
+
+
+def _read_file_bytes(file_path: str, cache_token: str | None = None) -> bytes:
+    return Path(file_path).read_bytes()
+
+
+def _read_csv_dataframe(file_path: str, cache_token: str | None = None) -> pd.DataFrame:
+    return pd.read_csv(file_path)
 
 
 def tool_registry_cache_key() -> str:
@@ -460,6 +474,8 @@ def _load_quality_rule_overrides(
 
 
 load_metadata_file_cached = _cache_builder(_load_metadata_file)
+read_file_bytes_cached = _cache_builder(_read_file_bytes)
+read_csv_dataframe_cached = _cache_builder(_read_csv_dataframe)
 
 
 def _list_tools(cache_token: str | None = None) -> list[ToolDefinition]:

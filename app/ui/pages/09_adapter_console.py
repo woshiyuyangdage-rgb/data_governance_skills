@@ -10,11 +10,20 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_latest_adapter_invocation_result,
+    get_uploaded_file_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_latest_adapter_invocation_result,
+)
 
 ensure_project_root_on_path()
 
 from app.core.adapters.invocation_adapter import InvocationAdapter
+from app.ui.performance_helpers import records_to_dataframe, render_json_section
+from app.ui.status_blocks import render_key_value_block, render_metric_row, render_page_header
 from app.ui.workbench_cache import (
     adapter_schema_cache_key,
     adapter_schema_bundle_cached,
@@ -35,38 +44,47 @@ native_schema_lookup = {schema.tool_name: schema for schema in native_schemas}
 tool_names = list(native_schema_lookup.keys())
 
 default_arguments = build_adapter_console_default_arguments(
-    st.session_state.get("uploaded_file_path"),
-    st.session_state.get("workflow_result"),
+    get_uploaded_file_path(),
+    get_workflow_result(),
 )
 
-st.title("Adapter Console")
-st.write(
-    "Inspect adapter-ready capability exports and invoke the local tool platform "
-    "through native or OpenAI-style adapter shapes."
+render_page_header(
+    "Adapter Console",
+    (
+        "Inspect adapter-ready capability exports and invoke the local tool platform "
+        "through native or OpenAI-style adapter shapes."
+    ),
 )
 
 st.subheader("Capability Manifest")
-metric_col1, metric_col2, metric_col3 = st.columns(3)
-metric_col1.metric("Service", manifest.service_name)
-metric_col2.metric("Version", manifest.version)
-metric_col3.metric("Tool Count", len(manifest.tools))
+render_metric_row(
+    [
+        ("Service", manifest.service_name),
+        ("Version", manifest.version),
+        ("Tool Count", len(manifest.tools)),
+    ],
+)
 st.caption(manifest.description)
 
 with st.expander("Capability Manifest JSON", expanded=False):
-    st.json(manifest.model_dump())
+    render_json_section("Capability Manifest JSON", manifest, compact=True)
 
 tab_native, tab_openai, tab_mcp = st.tabs(
     ["Native Schemas", "OpenAI-Style Schemas", "MCP-Style Manifest"]
 )
 
 with tab_native:
-    st.json([schema.model_dump() for schema in native_schemas])
+    render_json_section(
+        "Native Schemas",
+        records_to_dataframe(native_schemas).to_dict("records"),
+        compact=True,
+    )
 
 with tab_openai:
-    st.json(openai_schemas)
+    render_json_section("OpenAI-Style Schemas", openai_schemas, compact=True)
 
 with tab_mcp:
-    st.json(mcp_manifest)
+    render_json_section("MCP-Style Manifest", mcp_manifest, compact=True)
 
 st.subheader("Local Adapter Invocation")
 adapter_mode = st.selectbox(
@@ -106,19 +124,23 @@ if st.button("Invoke Through Adapter", type="primary"):
     except Exception as exc:
         st.error(f"Adapter invocation failed: {exc}")
     else:
-        st.session_state["latest_adapter_invocation_result"] = result
+        set_latest_adapter_invocation_result(result)
         if result.status in {"success", "executed_successfully", "interpreted_only"}:
             st.success("Adapter invocation completed.")
         else:
             st.error(result.message)
 
-result = st.session_state.get("latest_adapter_invocation_result")
+result = get_latest_adapter_invocation_result()
 if result is not None:
-    st.subheader("Invocation Result")
-    st.write(f"Adapter: `{result.adapter_name}`")
-    st.write(f"Tool: `{result.tool_name}`")
-    st.write(f"Status: `{result.status}`")
-    st.write(f"Trace ID: `{result.trace_id or 'N/A'}`")
-    st.caption(result.message)
+    render_key_value_block(
+        "Invocation Result",
+        summary=result.message,
+        rows=[
+            ("Adapter", result.adapter_name),
+            ("Tool", result.tool_name),
+            ("Status", result.status),
+            ("Trace ID", result.trace_id or "N/A"),
+        ],
+    )
     if result.tool_response is not None:
-        st.json(result.tool_response)
+        render_json_section("Tool Response", result.tool_response, compact=True)

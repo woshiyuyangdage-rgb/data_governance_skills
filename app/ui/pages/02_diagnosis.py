@@ -10,14 +10,25 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
-from app.ui.page_utils import ensure_agent_shell_session_id
+from app.ui.page_utils import (
+    ensure_agent_shell_session_id,
+    get_selected_workflow_profile,
+    get_task_response,
+    get_uploaded_file_path,
+    get_uploaded_file_signature,
+    get_workflow_result,
+    set_selected_workflow_profile,
+    set_task_response_state,
+)
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_workflow_overview
 from app.ui.result_overview import render_result_overview
 from app.ui.performance_helpers import (
     ensure_large_file_runtime_ready,
+    render_deferred_dataframe_section,
     render_lazy_dataframe_section,
 )
+from app.ui.status_blocks import render_page_header
 
 ensure_project_root_on_path()
 
@@ -43,22 +54,25 @@ from app.ui.workbench_cache import (
 
 initialize_session_state()
 
-st.title("Diagnosis Workbench")
-st.write(
-    "Select a workflow profile, run the unified governance task entrypoint, then "
-    "inspect or review the returned results."
-)
-st.info(
-    "Prefer a natural-language or preview-first entry? Use the Intent Runner or Agent Shell page before running a workflow directly here."
+render_page_header(
+    "Diagnosis Workbench",
+    (
+        "Select a workflow profile, run the unified governance task entrypoint, then "
+        "inspect or review the returned results."
+    ),
+    info=(
+        "Prefer a natural-language or preview-first entry? Use the Intent Runner or "
+        "Agent Shell page before running a workflow directly here."
+    ),
 )
 
-uploaded_file_path = st.session_state.get("uploaded_file_path")
+uploaded_file_path = get_uploaded_file_path()
 if not uploaded_file_path:
     st.warning("No metadata file is available yet. Please upload a CSV or Excel file first.")
 else:
     ensure_large_file_runtime_ready(
         uploaded_file_path,
-        st.session_state.get("uploaded_file_signature"),
+        get_uploaded_file_signature(),
     )
     agent_session_id = ensure_agent_shell_session_id()
     set_last_uploaded_file(agent_session_id, uploaded_file_path)
@@ -66,7 +80,7 @@ else:
     enabled_profiles = list_enabled_profiles()
     profile_lookup = {profile.name: profile for profile in enabled_profiles}
     profile_names = list(profile_lookup.keys())
-    selected_profile_name = st.session_state.get("selected_workflow_profile")
+    selected_profile_name = get_selected_workflow_profile()
     if selected_profile_name not in profile_lookup:
         selected_profile_name = profile_names[0] if profile_names else "metadata_diagnosis_only"
     selected_index = profile_names.index(selected_profile_name) if profile_names else 0
@@ -78,7 +92,7 @@ else:
         index=selected_index,
         format_func=lambda name: f"{name} - {profile_lookup[name].description}",
     )
-    st.session_state["selected_workflow_profile"] = selected_profile_name
+    set_selected_workflow_profile(selected_profile_name)
     selected_profile = profile_lookup[selected_profile_name]
     st.caption(
         f"Selected stages: {', '.join(selected_profile.stages)} | "
@@ -136,9 +150,7 @@ else:
                 export_reports=export_reports,
             )
             result = task_response.result
-            st.session_state["governance_task_response"] = task_response
-            st.session_state["workflow_result"] = result
-            st.session_state["workflow_result_file_path"] = uploaded_file_path
+            set_task_response_state(task_response, file_path=uploaded_file_path)
             set_last_task_context(
                 agent_session_id,
                 task_request=task_request,
@@ -146,17 +158,13 @@ else:
             )
             if task_response.exported_files:
                 set_last_exported_files(agent_session_id, task_response.exported_files)
-                st.session_state["latest_report_paths"] = task_response.exported_files
-                history = list(st.session_state.get("report_export_history", []))
-                history.append(task_response.exported_files)
-                st.session_state["report_export_history"] = history[-10:]
             if task_response.status == "success":
                 st.success("Pipeline execution completed.")
             else:
                 st.error(task_response.message)
 
-task_response = st.session_state.get("governance_task_response")
-result = st.session_state.get("workflow_result")
+task_response = get_task_response()
+result = get_workflow_result()
 if result is not None:
     render_result_overview(
         build_workflow_overview(
@@ -169,30 +177,27 @@ if result is not None:
         st.info("Reports were exported during the run and are available on the Reports page.")
 
     with st.expander("Skill Summaries", expanded=False):
-        skill_df = skill_outputs_to_dataframe(result.skill_outputs)
-        render_lazy_dataframe_section(
+        render_deferred_dataframe_section(
             "Skill Summaries",
-            skill_df,
+            lambda: skill_outputs_to_dataframe(result.skill_outputs),
             empty_message="No skill outputs available for display.",
             compact=True,
             key_prefix="diagnosis_skill_summaries",
         )
 
     with st.expander("Issues", expanded=False):
-        issues_df = issues_to_dataframe(result.issues)
-        render_lazy_dataframe_section(
+        render_deferred_dataframe_section(
             "Issues",
-            issues_df,
+            lambda: issues_to_dataframe(result.issues),
             empty_message="No issues were generated.",
             compact=True,
             key_prefix="diagnosis_issues",
         )
 
     with st.expander("Tasks", expanded=False):
-        tasks_df = tasks_to_dataframe(result.tasks)
-        render_lazy_dataframe_section(
+        render_deferred_dataframe_section(
             "Tasks",
-            tasks_df,
+            lambda: tasks_to_dataframe(result.tasks),
             empty_message="No tasks were generated.",
             compact=True,
             key_prefix="diagnosis_tasks",
@@ -206,20 +211,18 @@ if result is not None:
         )
 
         with st.expander("Mapping Results", expanded=False):
-            mapping_df = mapping_results_to_dataframe(result.mapping_results)
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "Mapping Results",
-                mapping_df,
+                lambda: mapping_results_to_dataframe(result.mapping_results),
                 empty_message="No standard mapping recommendations were generated.",
                 compact=True,
                 key_prefix="diagnosis_mapping_results",
             )
 
         with st.expander("Unmapped or Low-Confidence Fields", expanded=False):
-            unmapped_df = unmapped_fields_to_dataframe(result.unmapped_fields)
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "Unmapped or Low-Confidence Fields",
-                unmapped_df,
+                lambda: unmapped_fields_to_dataframe(result.unmapped_fields),
                 empty_message="No low-confidence or unmapped fields were flagged.",
                 compact=True,
                 key_prefix="diagnosis_unmapped_fields",
@@ -227,12 +230,9 @@ if result is not None:
 
     if result.confirmed_mapping_results:
         with st.expander("Confirmed Mapping Results", expanded=False):
-            confirmed_mapping_df = mapping_results_to_dataframe(
-                result.confirmed_mapping_results
-            )
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "Confirmed Mapping Results",
-                confirmed_mapping_df,
+                lambda: mapping_results_to_dataframe(result.confirmed_mapping_results),
                 empty_message="No confirmed mapping results are available.",
                 compact=True,
                 key_prefix="diagnosis_confirmed_mapping",
@@ -246,20 +246,18 @@ if result is not None:
         )
 
         with st.expander("STG Table Suggestions", expanded=False):
-            stg_tables_df = stg_tables_to_dataframe(result.stg_suggestions)
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "STG Table Suggestions",
-                stg_tables_df,
+                lambda: stg_tables_to_dataframe(result.stg_suggestions),
                 empty_message="No STG table suggestions were generated.",
                 compact=True,
                 key_prefix="diagnosis_stg_tables",
             )
 
         with st.expander("STG Field Suggestions", expanded=False):
-            stg_fields_df = stg_fields_to_dataframe(result.stg_field_suggestions)
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "STG Field Suggestions",
-                stg_fields_df,
+                lambda: stg_fields_to_dataframe(result.stg_field_suggestions),
                 empty_message="No STG field suggestions were generated.",
                 columns=[
                     "source_table_name",
@@ -277,10 +275,9 @@ if result is not None:
 
     if result.confirmed_stg_suggestions:
         with st.expander("Confirmed STG Suggestions", expanded=False):
-            confirmed_stg_df = stg_fields_to_dataframe(result.confirmed_stg_suggestions)
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "Confirmed STG Suggestions",
-                confirmed_stg_df,
+                lambda: stg_fields_to_dataframe(result.confirmed_stg_suggestions),
                 empty_message="No confirmed STG suggestions are available.",
                 compact=True,
                 key_prefix="diagnosis_confirmed_stg",
@@ -294,10 +291,9 @@ if result is not None:
         )
 
         with st.expander("Quality Rule Suggestions", expanded=False):
-            quality_rules_df = quality_rules_to_dataframe(result.quality_rule_suggestions)
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "Quality Rule Suggestions",
-                quality_rules_df,
+                lambda: quality_rules_to_dataframe(result.quality_rule_suggestions),
                 empty_message="No quality rule recommendations were generated.",
                 compact=True,
                 key_prefix="diagnosis_quality_rules",
@@ -305,10 +301,9 @@ if result is not None:
 
     if result.review_summary is not None:
         with st.expander("Review Summary", expanded=False):
-            review_summary_df = review_summary_to_dataframe(result.review_summary)
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "Review Summary",
-                review_summary_df,
+                lambda: review_summary_to_dataframe(result.review_summary),
                 empty_message="No review summary is available.",
                 compact=True,
                 key_prefix="diagnosis_review_summary",

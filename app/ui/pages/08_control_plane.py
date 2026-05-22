@@ -13,9 +13,26 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_latest_control_plane_preview,
+    get_latest_control_plane_result,
+    get_session_value,
+    initialize_session_state,
+    set_latest_control_plane_preview,
+    set_latest_control_plane_result,
+    set_session_value,
+)
+from app.ui.control_plane_helpers import (
+    can_publish_without_save,
+    content_fingerprint,
+    diff_stats,
+    should_warn_baseline_changed,
+)
 from app.ui.page_overview import build_config_edit_overview, build_validation_overview
+from app.ui.performance_helpers import render_json_section, render_lazy_dataframe_section
 from app.ui.result_overview import render_result_overview
+from app.ui.status_blocks import render_bullet_list, render_metric_row, render_page_header
 
 ensure_project_root_on_path()
 
@@ -43,9 +60,14 @@ def _render_preview(asset_format: str, content: object) -> None:
         if dataframe.empty:
             st.info("CSV 资产当前为空。")
         else:
-            st.dataframe(dataframe, use_container_width=True)
+            render_lazy_dataframe_section(
+                "当前内容预览",
+                dataframe,
+                compact=True,
+                key_prefix="control_plane_csv_preview",
+            )
         return
-    st.json(content)
+    render_json_section("当前内容预览", content, compact=True)
 
 
 def _render_diff_preview(original_text: str, edited_text: str, asset_name: str) -> None:
@@ -64,8 +86,10 @@ def _render_diff_preview(original_text: str, edited_text: str, asset_name: str) 
         st.info("当前编辑内容与原始内容一致。")
 
 
-st.title("治理控制面")
-st.write("集中管理本地治理配置资产，支持预览、校验、保存、发布和回滚。")
+render_page_header(
+    "治理控制面",
+    "集中管理本地治理配置资产，支持预览、校验、保存、发布和回滚。",
+)
 
 asset_rows = service.list_assets_with_status()
 asset_lookup = {row["asset_name"]: row for row in asset_rows}
@@ -80,15 +104,25 @@ else:
     status = asset_payload["status"]
     asset_format = str(asset_payload["format"])
     content = asset_payload["content"]
+    editor_value = _serialize_content(asset_format, content)
+    baseline_key = f"control_plane_baseline_{selected_asset_name}"
+    current_baseline = content_fingerprint(editor_value)
+    previous_baseline = get_session_value(baseline_key)
+    if should_warn_baseline_changed(previous_baseline, current_baseline):
+        st.warning("该资产的磁盘内容已经变化，请确认当前编辑区是否仍然基于最新内容。")
+    set_session_value(baseline_key, current_baseline)
 
     st.caption(
         f"类型: {asset['asset_type']} | 文件: {asset['file_path']} | 可编辑: {asset['editable']}"
     )
 
-    metric_status, metric_validated, metric_published = st.columns(3)
-    metric_status.metric("状态", status.get("current_status") or "unknown")
-    metric_validated.metric("最近校验", status.get("last_validated_at") or "N/A")
-    metric_published.metric("最近发布", status.get("last_published_at") or "N/A")
+    render_metric_row(
+        [
+            ("状态", status.get("current_status") or "unknown"),
+            ("最近校验", status.get("last_validated_at") or "N/A"),
+            ("最近发布", status.get("last_published_at") or "N/A"),
+        ],
+    )
     if status.get("last_error_message"):
         st.error(status["last_error_message"])
     if status.get("current_status") == "published":
@@ -100,16 +134,23 @@ else:
             _render_preview(asset_format, content)
 
     with content_right:
-        editor_value = _serialize_content(asset_format, content)
         edited_text = st.text_area(
             "编辑内容",
             value=editor_value,
             height=420,
             key=f"control_plane_editor_{selected_asset_name}",
         )
-        st.session_state["latest_control_plane_preview"] = edited_text
+        set_latest_control_plane_preview(edited_text)
 
     st.subheader("变更预览")
+    added_lines, removed_lines = diff_stats(editor_value, edited_text)
+    render_metric_row(
+        [
+            ("新增行", added_lines),
+            ("删除行", removed_lines),
+            ("是否有变更", "是" if added_lines or removed_lines else "否"),
+        ],
+    )
     _render_diff_preview(editor_value, edited_text, selected_asset_name)
 
     action_col1, action_col2, action_col3, action_col4 = st.columns(4)
@@ -122,7 +163,7 @@ else:
         except Exception as exc:
             st.error(f"预览校验失败: {exc}")
         else:
-            st.session_state["latest_control_plane_result"] = validation_result
+            set_latest_control_plane_result(validation_result)
             if validation_result.is_valid:
                 st.success("当前编辑内容校验通过。")
             else:
@@ -130,16 +171,18 @@ else:
 
     backup_result = None
     if action_col2.button("保存", type="primary", use_container_width=True):
-        latest_preview = st.session_state.get("latest_control_plane_preview")
+        latest_preview = get_latest_control_plane_preview()
         if latest_preview is None:
             st.warning("没有可保存的编辑内容。")
+        elif latest_preview == editor_value:
+            st.info("编辑内容没有变化，无需保存。")
         else:
             try:
                 save_result = service.save_asset(selected_asset_name, latest_preview)
             except Exception as exc:
                 st.error(f"保存资产失败: {exc}")
             else:
-                st.session_state["latest_control_plane_result"] = save_result
+                set_latest_control_plane_result(save_result)
                 if save_result.status in {"draft", "published"}:
                     st.success(save_result.message)
                 else:
@@ -147,12 +190,23 @@ else:
                 st.rerun()
 
     if action_col3.button("发布", use_container_width=True):
+        if not can_publish_without_save(editor_value, edited_text):
+            st.warning("当前有未保存变更，请先保存并通过校验后再发布。")
+            st.stop()
+        validation_before_publish = service.validate_asset_preview(
+            selected_asset_name,
+            edited_text,
+        )
+        if not validation_before_publish.is_valid:
+            set_latest_control_plane_result(validation_before_publish)
+            st.error("发布前校验未通过，请先修正配置。")
+            st.stop()
         try:
             publish_result = service.publish_asset(selected_asset_name)
         except Exception as exc:
             st.error(f"发布资产失败: {exc}")
         else:
-            st.session_state["latest_control_plane_result"] = publish_result
+            set_latest_control_plane_result(publish_result)
             if publish_result.status == "published":
                 st.success(publish_result.message)
             else:
@@ -179,14 +233,14 @@ else:
             except Exception as exc:
                 st.error(f"回滚失败: {exc}")
             else:
-                st.session_state["latest_control_plane_result"] = backup_result
+                set_latest_control_plane_result(backup_result)
                 if backup_result.status in {"draft", "published"}:
                     st.success(backup_result.message)
                 else:
                     st.error(backup_result.message)
                 st.rerun()
 
-    latest_result = st.session_state.get("latest_control_plane_result")
+    latest_result = get_latest_control_plane_result()
     if latest_result is not None:
         if hasattr(latest_result, "validation_result") and latest_result.validation_result is not None:
             render_result_overview(build_config_edit_overview(latest_result))
@@ -196,13 +250,12 @@ else:
         else:
             st.subheader("最近结果")
             if hasattr(latest_result, "model_dump"):
-                st.json(latest_result.model_dump())
+                render_json_section("最近结果", latest_result)
             else:
                 st.write(latest_result)
 
-    st.subheader("最近备份")
-    if not backups:
-        st.info("当前资产还没有备份。")
-    else:
-        for backup_path in backups[:10]:
-            st.write(f"- `{backup_path}`")
+    render_bullet_list(
+        "最近备份",
+        [f"`{backup_path}`" for backup_path in backups[:10]],
+        empty_message="当前资产还没有备份。",
+    )

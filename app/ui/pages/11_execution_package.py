@@ -10,7 +10,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_current_input_file_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_latest_execution_package_export_results,
+    set_latest_execution_ready_package,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
@@ -28,19 +36,21 @@ from app.ui.workbench_cache import (
     execution_package_summary_to_dataframe,
     execution_ready_rules_to_dataframe,
 )
+from app.ui.performance_helpers import render_lazy_dataframe_section
+from app.ui.status_blocks import render_metric_row, render_page_header
 
 initialize_session_state()
 
-st.title("Execution Package")
-st.write(
-    "Build the execution-ready governance package layer from confirmed quality rules "
-    "and export package assets for future engine adapters."
+render_page_header(
+    "Execution Package",
+    (
+        "Build the execution-ready governance package layer from confirmed quality rules "
+        "and export package assets for future engine adapters."
+    ),
 )
 
-result: WorkflowResult | None = st.session_state.get("workflow_result")
-uploaded_file_path = st.session_state.get("workflow_result_file_path") or st.session_state.get(
-    "uploaded_file_path"
-)
+result: WorkflowResult | None = get_workflow_result()
+uploaded_file_path = get_current_input_file_path()
 
 if result is None:
     st.warning("No workflow result is available yet. Run a quality workflow first.")
@@ -57,18 +67,16 @@ else:
     package = result.execution_ready_package
 
     summary = result.execution_package_summary or {}
-    metric_col1, metric_col2, metric_col3, metric_col4, metric_col5, metric_col6 = st.columns(6)
-    metric_col1.metric("Confirmed Rules", len(confirmed_rules))
-    metric_col2.metric("Package Rules", package.rule_count if package else 0)
-    metric_col3.metric("Field Rules", int(summary.get("field_rule_count", 0) or 0))
-    metric_col4.metric(
-        "Cross-Field Rules",
-        int(summary.get("cross_field_rule_count", 0) or 0),
-    )
-    metric_col5.metric("Non-Native Rules", int(summary.get("non_native_rule_count", 0) or 0))
-    metric_col6.metric(
-        "Exports",
-        len(result.execution_package_export_results),
+    render_metric_row(
+        [
+            ("Confirmed Rules", len(confirmed_rules)),
+            ("Package Rules", package.rule_count if package else 0),
+            ("Field Rules", int(summary.get("field_rule_count", 0) or 0)),
+            ("Cross-Field Rules", int(summary.get("cross_field_rule_count", 0) or 0)),
+            ("Non-Native Rules", int(summary.get("non_native_rule_count", 0) or 0)),
+            ("Exports", len(result.execution_package_export_results)),
+        ],
+        max_columns=6,
     )
 
     col_build, col_rerun = st.columns(2)
@@ -85,8 +93,8 @@ else:
                 )
                 result.execution_ready_package = package
                 result.execution_package_summary = builder.summarize_package(package)
-                st.session_state["workflow_result"] = result
-                st.session_state["latest_execution_ready_package"] = package
+                set_workflow_result_state(result)
+                set_latest_execution_ready_package(package)
                 st.success("Execution-ready governance package was built.")
 
     with col_rerun:
@@ -104,8 +112,7 @@ else:
                 except Exception as exc:
                     st.error(f"Failed to rerun package workflow: {exc}")
                 else:
-                    st.session_state["workflow_result"] = rerun_result
-                    st.session_state["workflow_result_file_path"] = uploaded_file_path
+                    set_workflow_result_state(rerun_result, file_path=uploaded_file_path)
                     result = rerun_result
                     package = rerun_result.execution_ready_package
                     st.success("Quality review replay and package build completed.")
@@ -116,14 +123,24 @@ else:
         result.execution_package_summary,
     )
     if not summary_df.empty:
-        st.dataframe(summary_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Execution Package Summary",
+            summary_df,
+            compact=True,
+            key_prefix="execution_package_summary",
+        )
     else:
         st.info("No execution package summary is available.")
 
     st.subheader("Execution-Ready Rules")
     rules_df = execution_ready_rules_to_dataframe(result.execution_ready_package)
     if not rules_df.empty:
-        st.dataframe(rules_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Execution-Ready Rules",
+            rules_df,
+            compact=True,
+            key_prefix="execution_ready_rules",
+        )
     else:
         st.info("No execution-ready rules are available.")
 
@@ -133,7 +150,10 @@ else:
         options=["package JSON", "package manifest", "dbt YAML"],
     )
     if st.button("Export Execution Package"):
-        current_result: WorkflowResult = st.session_state["workflow_result"]
+        current_result: WorkflowResult | None = get_workflow_result()
+        if current_result is None:
+            st.warning("No workflow result is available to export.")
+            st.stop()
         current_package = current_result.execution_ready_package
         if current_package is None:
             st.warning("Build an execution-ready package before exporting.")
@@ -169,8 +189,8 @@ else:
                         message=dbt_result.message,
                     )
                 current_result.execution_package_export_results.append(export_result)
-                st.session_state["workflow_result"] = current_result
-                st.session_state["latest_execution_package_export_results"] = (
+                set_workflow_result_state(current_result)
+                set_latest_execution_package_export_results(
                     current_result.execution_package_export_results
                 )
                 st.success("Execution-ready package was exported.")
@@ -182,6 +202,11 @@ else:
         result.execution_package_export_results
     )
     if not export_df.empty:
-        st.dataframe(export_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Execution Package Export Results",
+            export_df,
+            compact=True,
+            key_prefix="execution_package_exports",
+        )
     else:
         st.info("No execution package export results are available.")

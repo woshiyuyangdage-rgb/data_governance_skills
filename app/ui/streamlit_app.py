@@ -1,10 +1,8 @@
 """Streamlit workbench homepage."""
 
-import hashlib
 from pathlib import Path
 import sys
 
-import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -14,10 +12,21 @@ if str(PROJECT_ROOT) not in sys.path:
 from app.ui.page_utils import (
     INPUT_TEMPLATE_DOC_PATH,
     SAMPLE_METADATA_PATH,
+    get_agent_shell_session_id,
+    get_restored_session_id,
+    get_restored_session_source,
     ensure_project_root_on_path,
     initialize_session_state,
     restore_agent_session_to_state,
+    set_uploaded_file_state,
 )
+from app.ui.workbench_cache import (
+    content_signature,
+    file_cache_key,
+    read_csv_dataframe_cached,
+    read_file_bytes_cached,
+)
+from app.ui.status_blocks import render_key_value_block, render_page_header
 
 ensure_project_root_on_path()
 st.set_page_config(page_title="Data Governance Skills Workbench", layout="wide")
@@ -25,9 +34,11 @@ initialize_session_state()
 
 from app.core.agent.session_store import load_latest_session_snapshot, list_session_snapshots
 
-st.title("治理启动台")
-st.write("先上传，再诊断，再评审，最后导出。治理能力也可以进入意图、Agent 和控制面。")
-st.caption(f"输入模板: `{INPUT_TEMPLATE_DOC_PATH}` | 示例元数据: `{SAMPLE_METADATA_PATH}`")
+render_page_header(
+    "治理启动台",
+    "先上传，再诊断，再评审，最后导出。治理能力也可以进入意图、Agent 和控制面。",
+    caption=f"输入模板: `{INPUT_TEMPLATE_DOC_PATH}` | 示例元数据: `{SAMPLE_METADATA_PATH}`",
+)
 
 top_left, top_right = st.columns([2, 1])
 
@@ -48,34 +59,33 @@ with top_left:
         st.info("还没有可恢复的会话快照。")
 
 with top_right:
-    st.subheader("当前状态")
-    st.write(f"- 读取模板: `{INPUT_TEMPLATE_DOC_PATH.name}`")
-    st.write(f"- 示例数据: `{SAMPLE_METADATA_PATH.name}`")
-    st.write(
-        f"- 当前会话: `{st.session_state.get('agent_shell_session_id') or 'N/A'}`"
+    render_key_value_block(
+        "当前状态",
+        rows=[
+            ("读取模板", INPUT_TEMPLATE_DOC_PATH.name),
+            ("示例数据", SAMPLE_METADATA_PATH.name),
+            ("当前会话", get_agent_shell_session_id() or "N/A"),
+        ],
     )
 
 demo_left, demo_right = st.columns(2)
 
 with demo_left:
     st.subheader("示例数据")
-    sample_df = pd.read_csv(SAMPLE_METADATA_PATH)
+    sample_cache_token = file_cache_key(str(SAMPLE_METADATA_PATH))
+    sample_bytes = read_file_bytes_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
+    sample_df = read_csv_dataframe_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
     st.dataframe(sample_df.head(8), use_container_width=True)
     if st.button("载入示例数据", use_container_width=True):
-        sample_bytes = SAMPLE_METADATA_PATH.read_bytes()
-        st.session_state["uploaded_file_path"] = str(SAMPLE_METADATA_PATH)
-        st.session_state["uploaded_file_name"] = SAMPLE_METADATA_PATH.name
-        st.session_state["uploaded_file_size"] = SAMPLE_METADATA_PATH.stat().st_size
-        st.session_state["uploaded_file_extension"] = SAMPLE_METADATA_PATH.suffix.lstrip(".")
-        st.session_state["uploaded_file_signature"] = hashlib.md5(sample_bytes).hexdigest()
-        st.session_state["workflow_result"] = None
-        st.session_state["workflow_result_file_path"] = None
-        st.session_state["latest_report_paths"] = {}
-        st.session_state["restored_session_source"] = "sample_metadata"
+        set_uploaded_file_state(
+            file_path=SAMPLE_METADATA_PATH,
+            file_signature=content_signature(sample_bytes),
+            source_label="sample_metadata",
+        )
         st.success("示例数据已载入，可以直接进入上传或诊断页面。")
     st.download_button(
         label="下载示例 CSV",
-        data=SAMPLE_METADATA_PATH.read_bytes(),
+        data=sample_bytes,
         file_name=SAMPLE_METADATA_PATH.name,
         mime="text/csv",
         use_container_width=True,
@@ -100,10 +110,11 @@ for column, (page, label, icon) in zip(maintainer_cols, maintainer_links, strict
     with column:
         st.page_link(page, label=label, icon=icon, use_container_width=True)
 
-if st.session_state.get("restored_session_id"):
+restored_session_id = get_restored_session_id()
+if restored_session_id:
     st.info(
-        f"已恢复会话 `{st.session_state['restored_session_id']}` "
-        f"来自 `{st.session_state.get('restored_session_source') or 'N/A'}`"
+        f"已恢复会话 `{restored_session_id}` "
+        f"来自 `{get_restored_session_source() or 'N/A'}`"
     )
 
 st.caption("侧边栏保留更多页面，适合继续处理、回放或维护。")

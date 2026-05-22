@@ -5,20 +5,32 @@ import streamlit as st
 from app.core.domain.domain_pack_loader import list_enabled_domain_packs
 from app.core.templates.project_template_loader import list_enabled_project_templates
 from app.core.templates.project_template_service import ProjectTemplateService
+from app.ui.performance_helpers import render_json_section, render_records_dataframe_section
+from app.ui.status_blocks import render_page_header
 from app.ui.workbench_cache import file_cache_key, match_domain_pack_from_file_cached
 
 
-st.title("Domain Governance Packs & Project Templates")
-st.caption("Rule-based domain defaults and one-click project template execution.")
+render_page_header(
+    "Domain Governance Packs & Project Templates",
+    caption="Rule-based domain defaults and one-click project template execution.",
+)
 
 packs = list_enabled_domain_packs()
 templates = list_enabled_project_templates()
 
 st.subheader("Available Domain Packs")
-st.dataframe([pack.model_dump() for pack in packs], use_container_width=True)
+render_records_dataframe_section(
+    "Available Domain Packs",
+    packs,
+    key_prefix="domain_packs",
+)
 
 st.subheader("Available Project Templates")
-st.dataframe([template.model_dump() for template in templates], use_container_width=True)
+render_records_dataframe_section(
+    "Available Project Templates",
+    templates,
+    key_prefix="project_templates",
+)
 
 st.subheader("Run Project Template")
 file_path = st.text_input("Metadata file path")
@@ -35,7 +47,7 @@ if st.button("Auto Match Domain Pack"):
         st.warning("Please provide a metadata file path first.")
     else:
         match = match_domain_pack_from_file_cached(file_path, file_cache_key(file_path))
-        st.json(match.model_dump())
+        render_json_section("Domain Pack Match", match)
 
 if st.button("Run Project Template"):
     if not file_path:
@@ -50,12 +62,13 @@ if st.button("Run Project Template"):
         )
         st.success(result.message)
         if result.domain_pack_match:
-            st.write("Matched pack")
-            st.json(result.domain_pack_match.model_dump())
+            render_json_section("Matched Pack", result.domain_pack_match, compact=True)
         if result.project_template_result:
-            st.write("Template defaults")
-            st.json(result.project_template_result.model_dump())
+            render_json_section("Template Defaults", result.project_template_result, compact=True)
         if result.governance_delivery_package_result:
-            st.write("Generated outputs")
-            st.json(result.governance_delivery_package_result.model_dump())
+            render_json_section(
+                "Generated Outputs",
+                result.governance_delivery_package_result,
+                compact=True,
+            )
 

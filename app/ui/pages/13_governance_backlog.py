@@ -4,14 +4,19 @@ import json
 from pathlib import Path
 import sys
 
-import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_current_input_file_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
@@ -25,27 +30,22 @@ from app.ui.workbench_cache import (
     backlog_summary_to_dataframe,
     governance_backlog_items_to_dataframe,
 )
+from app.ui.performance_helpers import (
+    render_dataframe_multiselect_filter,
+    render_lazy_dataframe_section,
+)
+from app.ui.status_blocks import render_metric_row, render_page_header
 
 initialize_session_state()
 
-st.title("Governance Backlog")
-st.write("Build, persist, filter, and update local governance backlog items.")
-
-
-def _filter_df(df: pd.DataFrame, column_name: str, label: str) -> pd.DataFrame:
-    if df.empty or column_name not in df.columns:
-        return df
-    options = sorted(str(value) for value in df[column_name].dropna().unique())
-    selected = st.multiselect(label, options=options)
-    if not selected:
-        return df
-    return df[df[column_name].astype(str).isin(selected)]
-
-
-result: WorkflowResult | None = st.session_state.get("workflow_result")
-uploaded_file_path = st.session_state.get("workflow_result_file_path") or st.session_state.get(
-    "uploaded_file_path"
+render_page_header(
+    "Governance Backlog",
+    "Build, persist, filter, and update local governance backlog items.",
 )
+
+
+result: WorkflowResult | None = get_workflow_result()
+uploaded_file_path = get_current_input_file_path()
 service = GovernanceBacklogTrackingService()
 
 col_build, col_persist, col_export = st.columns(3)
@@ -58,8 +58,7 @@ with col_build:
             except Exception as exc:
                 st.error(f"Failed to build backlog: {exc}")
             else:
-                st.session_state["workflow_result"] = result
-                st.session_state["workflow_result_file_path"] = uploaded_file_path
+                set_workflow_result_state(result, file_path=uploaded_file_path)
                 st.success("Governance backlog was built.")
         elif result is not None:
             items, summary = service.build_backlog_from_work_package(
@@ -67,14 +66,14 @@ with col_build:
             )
             result.governance_backlog_items = items
             result.backlog_summary = summary
-            st.session_state["workflow_result"] = result
+            set_workflow_result_state(result)
             st.success("Governance backlog was built from current result.")
         else:
             st.warning("Run readiness/remediation first or provide an uploaded file.")
 
 with col_persist:
     if st.button("Persist Backlog"):
-        current_result: WorkflowResult | None = st.session_state.get("workflow_result")
+        current_result: WorkflowResult | None = get_workflow_result()
         if current_result is None or not current_result.governance_backlog_items:
             st.warning("Build backlog items before persisting.")
         else:
@@ -120,25 +119,42 @@ if result is not None:
         )
     )
 
-metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-metric_col1.metric("Backlog Items", summary.total_items)
-metric_col2.metric("Blocked", summary.blocked_count)
-metric_col3.metric("Completed", summary.completed_count)
-metric_col4.metric("Owners", len(summary.by_owner_role))
+render_metric_row(
+    [
+        ("Backlog Items", summary.total_items),
+        ("Blocked", summary.blocked_count),
+        ("Completed", summary.completed_count),
+        ("Owners", len(summary.by_owner_role)),
+    ],
+)
 
 st.subheader("Backlog Summary")
 summary_df = backlog_summary_to_dataframe(summary)
 if not summary_df.empty:
-    st.dataframe(summary_df, use_container_width=True)
+    render_lazy_dataframe_section(
+        "Backlog Summary",
+        summary_df,
+        compact=True,
+        key_prefix="backlog_summary",
+    )
 
 st.subheader("Backlog Items")
 items_df = governance_backlog_items_to_dataframe(display_items)
-items_df = _filter_df(items_df, "status", "Filter status")
-items_df = _filter_df(items_df, "priority", "Filter priority")
-items_df = _filter_df(items_df, "owner_role", "Filter owner role")
-items_df = _filter_df(items_df, "gap_type", "Filter gap type")
+items_df = render_dataframe_multiselect_filter(items_df, "status", "Filter status")
+items_df = render_dataframe_multiselect_filter(items_df, "priority", "Filter priority")
+items_df = render_dataframe_multiselect_filter(
+    items_df,
+    "owner_role",
+    "Filter owner role",
+)
+items_df = render_dataframe_multiselect_filter(items_df, "gap_type", "Filter gap type")
 if not items_df.empty:
-    st.dataframe(items_df, use_container_width=True)
+    render_lazy_dataframe_section(
+        "Backlog Items",
+        items_df,
+        compact=True,
+        key_prefix="backlog_items",
+    )
 else:
     st.info("No backlog items are available.")
 

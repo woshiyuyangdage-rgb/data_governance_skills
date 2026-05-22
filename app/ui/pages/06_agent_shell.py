@@ -10,7 +10,15 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
-from app.ui.page_utils import ensure_agent_shell_session_id
+from app.ui.page_utils import (
+    ensure_agent_shell_session_id,
+    get_agent_shell_session_id,
+    get_latest_agent_shell_result,
+    get_uploaded_file_path,
+    get_session_value,
+    set_latest_agent_shell_result,
+    set_task_response_state,
+)
 
 ensure_project_root_on_path()
 
@@ -18,7 +26,14 @@ from app.core.agent.agent_shell_service import AgentShellService
 from app.core.agent.session_store import get_session, set_last_uploaded_file
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_agent_overview
+from app.ui.performance_helpers import render_json_section, render_lazy_dataframe_section
 from app.ui.result_overview import render_result_overview
+from app.ui.status_blocks import (
+    render_bullet_list,
+    render_key_value_block,
+    render_metric_row,
+    render_page_header,
+)
 from app.ui.workbench_cache import (
     quality_rules_to_dataframe,
     review_summary_to_dataframe,
@@ -28,14 +43,16 @@ initialize_session_state()
 
 service = AgentShellService()
 
-st.title("Agent Shell")
-st.write(
-    "Preview a rule-based execution plan, validate required parameters, and run "
-    "only after the shell policy allows it."
+render_page_header(
+    "Agent Shell",
+    (
+        "Preview a rule-based execution plan, validate required parameters, and run "
+        "only after the shell policy allows it."
+    ),
 )
 
-uploaded_file_path = st.session_state.get("uploaded_file_path")
-default_session_id = st.session_state.get("agent_shell_session_id") or ""
+uploaded_file_path = get_uploaded_file_path()
+default_session_id = get_agent_shell_session_id() or ""
 active_session_id = ensure_agent_shell_session_id()
 if uploaded_file_path:
     set_last_uploaded_file(active_session_id, uploaded_file_path)
@@ -80,8 +97,7 @@ if preview_clicked:
     except Exception as exc:
         st.error(f"Failed to build execution plan: {exc}")
     else:
-        st.session_state["latest_agent_shell_result"] = shell_result
-        st.session_state["agent_shell_session_id"] = shell_result.session_id
+        set_latest_agent_shell_result(shell_result)
         st.success("Execution plan preview generated.")
 
 if run_clicked:
@@ -96,17 +112,12 @@ if run_clicked:
     except Exception as exc:
         st.error(f"Failed to process agent shell request: {exc}")
     else:
-        st.session_state["latest_agent_shell_result"] = shell_result
-        st.session_state["agent_shell_session_id"] = shell_result.session_id
+        set_latest_agent_shell_result(shell_result)
         if shell_result.task_response is not None:
-            st.session_state["governance_task_response"] = shell_result.task_response
-            st.session_state["workflow_result"] = shell_result.task_response.result
-            st.session_state["workflow_result_file_path"] = shell_result.task_request.file_path
-            if shell_result.task_response.exported_files:
-                st.session_state["latest_report_paths"] = shell_result.task_response.exported_files
-                history = list(st.session_state.get("report_export_history", []))
-                history.append(shell_result.task_response.exported_files)
-                st.session_state["report_export_history"] = history[-10:]
+            set_task_response_state(
+                shell_result.task_response,
+                file_path=shell_result.task_request.file_path,
+            )
         if shell_result.status == "preview_requires_confirmation":
             st.warning(shell_result.message)
         elif shell_result.status == "validation_failed":
@@ -116,7 +127,7 @@ if run_clicked:
         else:
             st.info(shell_result.message)
 
-shell_result = st.session_state.get("latest_agent_shell_result")
+shell_result = get_latest_agent_shell_result()
 if shell_result is not None:
     render_result_overview(build_agent_overview(shell_result))
 
@@ -156,25 +167,27 @@ if shell_result is not None:
             next_step="确认自动补全是否合理，再决定是否强制执行。",
         )
         if resolved_context.autofilled_parameters:
-            st.json(resolved_context.autofilled_parameters)
+            render_json_section(
+                "自动补全参数",
+                resolved_context.autofilled_parameters,
+                compact=True,
+            )
 
-    st.subheader("验证说明")
-    if plan.validation_messages:
-        for message in plan.validation_messages:
-            st.write(f"- {message}")
-    else:
-        st.info("No validation warnings.")
+    render_bullet_list(
+        "验证说明",
+        plan.validation_messages,
+        empty_message="No validation warnings.",
+    )
 
-    st.subheader("任务请求")
-    st.json(shell_result.task_request.model_dump())
+    render_json_section("任务请求", shell_result.task_request)
 
     if plan.requires_confirmation and shell_result.task_response is None:
         if st.button("Force Run"):
             try:
                 with st.spinner("Force running the planned workflow..."):
                     forced_result = service.confirm_and_run(
-                        text=st.session_state.get("agent_shell_text_input", task_text),
-                        file_path=st.session_state.get(
+                        text=get_session_value("agent_shell_text_input", task_text),
+                        file_path=get_session_value(
                             "agent_shell_file_path_input",
                             file_path or None,
                         )
@@ -185,21 +198,12 @@ if shell_result is not None:
             except Exception as exc:
                 st.error(f"Failed to force run the planned workflow: {exc}")
             else:
-                st.session_state["latest_agent_shell_result"] = forced_result
-                st.session_state["agent_shell_session_id"] = forced_result.session_id
+                set_latest_agent_shell_result(forced_result)
                 if forced_result.task_response is not None:
-                    st.session_state["governance_task_response"] = forced_result.task_response
-                    st.session_state["workflow_result"] = forced_result.task_response.result
-                    st.session_state["workflow_result_file_path"] = (
-                        forced_result.task_request.file_path
+                    set_task_response_state(
+                        forced_result.task_response,
+                        file_path=forced_result.task_request.file_path,
                     )
-                    if forced_result.task_response.exported_files:
-                        st.session_state["latest_report_paths"] = (
-                            forced_result.task_response.exported_files
-                        )
-                        history = list(st.session_state.get("report_export_history", []))
-                        history.append(forced_result.task_response.exported_files)
-                        st.session_state["report_export_history"] = history[-10:]
                 if forced_result.status == "executed_successfully":
                     st.success(forced_result.message)
                 else:
@@ -219,11 +223,14 @@ if shell_result is not None:
             next_step="如果结果已确认，可直接导出或去 Review 页面固化覆盖。",
         )
 
-        metric_issue, metric_mapping, metric_stg, metric_quality = st.columns(4)
-        metric_issue.metric("Issue Count", workflow_result.issue_count)
-        metric_mapping.metric("Mapping Count", len(workflow_result.mapping_results))
-        metric_stg.metric("STG Count", len(workflow_result.stg_field_suggestions))
-        metric_quality.metric("Quality Rules", len(workflow_result.quality_rule_suggestions))
+        render_metric_row(
+            [
+                ("Issue Count", workflow_result.issue_count),
+                ("Mapping Count", len(workflow_result.mapping_results)),
+                ("STG Count", len(workflow_result.stg_field_suggestions)),
+                ("Quality Rules", len(workflow_result.quality_rule_suggestions)),
+            ],
+        )
 
         if workflow_result.quality_rule_summary or workflow_result.quality_rule_suggestions:
             render_explanation_block(
@@ -235,7 +242,12 @@ if shell_result is not None:
                 workflow_result.quality_rule_suggestions
             )
             if not quality_rules_df.empty:
-                st.dataframe(quality_rules_df, use_container_width=True)
+                render_lazy_dataframe_section(
+                    "质量规则推荐",
+                    quality_rules_df,
+                    compact=True,
+                    key_prefix="agent_quality_rules",
+                )
 
         if workflow_result.review_summary is not None:
             st.subheader("Review Summary")
@@ -243,31 +255,37 @@ if shell_result is not None:
                 workflow_result.review_summary
             )
             if not review_summary_df.empty:
-                st.dataframe(review_summary_df, use_container_width=True)
+                render_lazy_dataframe_section(
+                    "Review Summary",
+                    review_summary_df,
+                    compact=True,
+                    key_prefix="agent_review_summary",
+                )
 
         if task_response.exported_files:
-            st.subheader("Exported Files")
-            st.json(task_response.exported_files)
+            render_json_section("Exported Files", task_response.exported_files)
 
-resolved_session_id = st.session_state.get("agent_shell_session_id")
+resolved_session_id = get_agent_shell_session_id()
 if resolved_session_id:
     session = get_session(resolved_session_id)
     if session is not None:
-        st.subheader("Session Overview")
-        st.write(f"Current Session ID: `{session.session_id}`")
-        st.write(f"Recent Requests: `{len(session.recent_requests)}`")
-        st.write(f"Recent Plans: `{len(session.recent_plans)}`")
-        st.write(f"Last Trace ID: `{session.last_trace_id or 'N/A'}`")
-        st.write(f"Last Uploaded File: `{session.last_uploaded_file_path or 'N/A'}`")
-        st.write(
-            f"Recent Uploaded Files: `{', '.join(session.recent_uploaded_files) or 'N/A'}`"
-        )
-        st.write(
-            f"Recent Trace IDs: `{', '.join(session.recent_trace_ids) or 'N/A'}`"
+        render_key_value_block(
+            "Session Overview",
+            rows=[
+                ("Current Session ID", session.session_id),
+                ("Recent Requests", len(session.recent_requests)),
+                ("Recent Plans", len(session.recent_plans)),
+                ("Last Trace ID", session.last_trace_id or "N/A"),
+                ("Last Uploaded File", session.last_uploaded_file_path or "N/A"),
+                (
+                    "Recent Uploaded Files",
+                    ", ".join(session.recent_uploaded_files) or "N/A",
+                ),
+                ("Recent Trace IDs", ", ".join(session.recent_trace_ids) or "N/A"),
+            ],
         )
         if session.last_exported_files:
-            st.subheader("Last Exported Files")
-            st.json(session.last_exported_files)
+            render_json_section("Last Exported Files", session.last_exported_files)
 
         if session.recent_plans:
             st.subheader("Recent Plans")
@@ -276,10 +294,12 @@ if resolved_session_id:
                     f"Plan {index}: {recent_plan.profile_name}",
                     expanded=False,
                 ):
-                    st.write(f"Stages: `{', '.join(recent_plan.stages) or 'N/A'}`")
-                    st.write(
-                        f"Validation Passed: `{recent_plan.validation_passed}` | "
-                        f"Requires Confirmation: `{recent_plan.requires_confirmation}`"
+                    render_key_value_block(
+                        None,
+                        summary=recent_plan.summary,
+                        rows=[
+                            ("Stages", ", ".join(recent_plan.stages) or "N/A"),
+                            ("Validation Passed", recent_plan.validation_passed),
+                            ("Requires Confirmation", recent_plan.requires_confirmation),
+                        ],
                     )
-                    if recent_plan.summary:
-                        st.caption(recent_plan.summary)

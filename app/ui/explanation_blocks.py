@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 
 import streamlit as st
 
-from app.ui.value_formatters import format_value
+from app.ui.status_blocks import render_key_value_block
 
 
 def render_explanation_block(
@@ -18,15 +18,7 @@ def render_explanation_block(
     next_step: str | None = None,
 ) -> None:
     """Render a compact explanation block with shared section labels."""
-    st.subheader(title)
-    if summary:
-        st.caption(summary)
-
-    rows = list(details.items()) if isinstance(details, Mapping) else list(details or [])
-    for label, value in rows:
-        formatted_value = format_value(value)
-        if formatted_value:
-            st.write(f"- **{label}**: `{formatted_value}`")
+    render_key_value_block(title, summary=summary, rows=details)
 
     if confidence is not None:
         st.write(f"- **置信度**: `{confidence:.2f}`")

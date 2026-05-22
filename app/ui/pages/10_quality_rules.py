@@ -4,14 +4,22 @@ from datetime import datetime
 from pathlib import Path
 import sys
 
-import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_current_input_file_path,
+    get_uploaded_file_signature,
+    get_workflow_result,
+    get_session_value,
+    initialize_session_state,
+    set_latest_execution_ready_package,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
@@ -43,7 +51,13 @@ from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSki
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_workflow_overview
 from app.ui.result_overview import render_result_overview
-from app.ui.performance_helpers import render_lazy_dataframe_section
+from app.ui.review_form_helpers import collect_quality_review_inputs
+from app.ui.performance_helpers import (
+    records_to_dataframe,
+    render_deferred_dataframe_section,
+    render_lazy_dataframe_section,
+)
+from app.ui.status_blocks import render_metric_row, render_page_header
 from app.ui.workbench_cache import (
     confirmed_quality_rules_to_dataframe,
     cross_field_quality_rules_to_dataframe,
@@ -57,10 +71,12 @@ from app.ui.workbench_cache import (
 
 initialize_session_state()
 
-st.title("Quality Rules")
-st.write(
-    "Review field-level and cross-field quality rules, replay saved overrides, "
-    "and export confirmed rule assets."
+render_page_header(
+    "Quality Rules",
+    (
+        "Review field-level and cross-field quality rules, replay saved overrides, "
+        "and export confirmed rule assets."
+    ),
 )
 
 
@@ -116,9 +132,7 @@ def _persist_review_records(
     review_queue: list[QualityRuleSuggestion],
 ) -> tuple[dict[str, str | int], dict[str, object]]:
     save_result = save_quality_rule_review_records(records)
-    all_records = load_quality_rule_overrides_cached(
-        st.session_state.get("uploaded_file_signature")
-    )
+    all_records = load_quality_rule_overrides_cached(get_uploaded_file_signature())
     reviewed_suggestions, _, replay_summary = apply_quality_rule_overrides_to_results(
         review_queue,
         all_records,
@@ -133,14 +147,12 @@ def _persist_review_records(
         confirmed_count=len(confirmed_rules),
     )
     result.quality_review_queue_summary = summarize_review_queue(reviewed_suggestions)
-    st.session_state["workflow_result"] = result
+    set_workflow_result_state(result)
     return save_result, replay_summary
 
 
-result: WorkflowResult | None = st.session_state.get("workflow_result")
-uploaded_file_path = st.session_state.get("workflow_result_file_path") or st.session_state.get(
-    "uploaded_file_path"
-)
+result: WorkflowResult | None = get_workflow_result()
+uploaded_file_path = get_current_input_file_path()
 
 if result is None:
     st.warning("No workflow result is available yet. Run a quality rule workflow first.")
@@ -157,18 +169,19 @@ else:
     cross_field_rules = list(result.cross_field_quality_rules)
     review_queue = _reviewable_suggestions(result)
     confirmed_rules = result.confirmed_quality_rules
-    stored_overrides = load_quality_rule_overrides_cached(
-        st.session_state.get("uploaded_file_signature")
-    )
+    stored_overrides = load_quality_rule_overrides_cached(get_uploaded_file_signature())
     override_lookup = build_quality_rule_override_lookup(stored_overrides)
 
-    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-    metric_col1.metric("Field Rules", len(field_suggestions))
-    metric_col2.metric("Cross-Field Rules", len(cross_field_rules))
-    metric_col3.metric("Confirmed Rules", len(confirmed_rules))
-    metric_col4.metric(
-        "Low Confidence",
-        summarize_review_queue(review_queue).get("low_confidence_rule_count", 0),
+    render_metric_row(
+        [
+            ("Field Rules", len(field_suggestions)),
+            ("Cross-Field Rules", len(cross_field_rules)),
+            ("Confirmed Rules", len(confirmed_rules)),
+            (
+                "Low Confidence",
+                summarize_review_queue(review_queue).get("low_confidence_rule_count", 0),
+            ),
+        ],
     )
 
     st.subheader("Rule Filters")
@@ -212,18 +225,19 @@ else:
     ]
 
     with st.expander("Field-Level Quality Rules", expanded=True):
-        render_lazy_dataframe_section(
+        render_deferred_dataframe_section(
             "Field-Level Quality Rules",
-            quality_rules_to_dataframe(visible_field_suggestions),
+            lambda: quality_rules_to_dataframe(visible_field_suggestions),
             empty_message="No field-level quality rules match the current filters.",
             compact=True,
             key_prefix="quality_field_rules",
+            auto_render=len(visible_field_suggestions) <= 80,
         )
 
     with st.expander("Cross-Field Quality Rules", expanded=False):
-        render_lazy_dataframe_section(
+        render_deferred_dataframe_section(
             "Cross-Field Quality Rules",
-            cross_field_quality_rules_to_dataframe(visible_cross_field_rules),
+            lambda: cross_field_quality_rules_to_dataframe(visible_cross_field_rules),
             empty_message="No cross-field quality rules match the current filters.",
             compact=True,
             key_prefix="quality_cross_field_rules",
@@ -364,17 +378,11 @@ else:
             save_clicked = st.form_submit_button("Save Quality Rule Reviews", type="primary")
 
         if save_clicked:
-            review_inputs = {}
-            for rule in visible_review_queue:
-                key = _rule_key(rule)
-                review_inputs[key] = {
-                    "review_action": st.session_state.get(f"quality_action_{key}"),
-                    "final_rule_expression": st.session_state.get(
-                        f"quality_expression_{key}"
-                    ),
-                    "final_severity": st.session_state.get(f"quality_severity_{key}"),
-                    "reviewer_note": st.session_state.get(f"quality_note_{key}"),
-                }
+            review_inputs = collect_quality_review_inputs(
+                visible_review_queue,
+                _rule_key,
+                get_session_value,
+            )
 
             records = build_quality_rule_review_records_from_results(
                 visible_review_queue,
@@ -438,8 +446,8 @@ else:
             )
             result.execution_ready_package = package
             result.execution_package_summary = builder.summarize_package(package)
-            st.session_state["workflow_result"] = result
-            st.session_state["latest_execution_ready_package"] = package
+            set_workflow_result_state(result)
+            set_latest_execution_ready_package(package)
             st.success("Execution-ready package was built from confirmed quality rules.")
     else:
         st.info("No confirmed quality rules are available yet.")
@@ -458,8 +466,7 @@ else:
                 except Exception as exc:
                     st.error(f"Failed to rerun with quality overrides: {exc}")
                 else:
-                    st.session_state["workflow_result"] = rerun_result
-                    st.session_state["workflow_result_file_path"] = uploaded_file_path
+                    set_workflow_result_state(rerun_result, file_path=uploaded_file_path)
                     st.success("Quality workflow re-ran with saved overrides applied.")
 
     with col2:
@@ -469,7 +476,10 @@ else:
             key="quality_rule_export_format",
         )
         if st.button("Export Confirmed Rules"):
-            current_result: WorkflowResult = st.session_state["workflow_result"]
+            current_result: WorkflowResult | None = get_workflow_result()
+            if current_result is None:
+                st.warning("No workflow result is available to export.")
+                st.stop()
             current_rules = current_result.confirmed_quality_rules
             if not current_rules:
                 st.warning("No confirmed quality rules are available to export.")
@@ -489,17 +499,16 @@ else:
                             str(output_dir / f"confirmed_quality_rules_{timestamp}_dbt.yml"),
                         )
                     current_result.rule_export_results.append(export_result)
-                    st.session_state["workflow_result"] = current_result
+                    set_workflow_result_state(current_result)
                     st.success("Confirmed quality rules were exported.")
                 except Exception as exc:
                     st.error(f"Failed to export confirmed quality rules: {exc}")
 
     st.subheader("Rule Export Results")
-    export_df = rule_export_results_to_dataframe(result.rule_export_results)
     with st.expander("Rule Export Results", expanded=False):
-        render_lazy_dataframe_section(
+        render_deferred_dataframe_section(
             "Rule Export Results",
-            export_df,
+            lambda: rule_export_results_to_dataframe(result.rule_export_results),
             empty_message="No rule export results are available.",
             compact=True,
             key_prefix="quality_rule_exports",
@@ -507,9 +516,9 @@ else:
 
     with st.expander("Stored Quality Rule Overrides", expanded=False):
         if stored_overrides:
-            render_lazy_dataframe_section(
+            render_deferred_dataframe_section(
                 "Stored Quality Rule Overrides",
-                pd.DataFrame([record.model_dump() for record in stored_overrides]),
+                lambda: records_to_dataframe(stored_overrides),
                 compact=True,
                 key_prefix="stored_quality_overrides",
             )

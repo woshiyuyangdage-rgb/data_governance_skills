@@ -9,7 +9,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    get_confirmation_import_file_path,
+    get_confirmation_template_diagnosis,
+    get_confirmation_validation_result,
+    ensure_project_root_on_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_confirmation_import_file_path,
+    set_confirmation_template_diagnosis,
+    set_confirmation_validation_result,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
@@ -19,6 +30,8 @@ from app.core.delivery.confirmation_template_loader import (
 )
 from app.core.orchestrator.workflow_engine import WorkflowEngine
 from app.core.utils.file_utils import save_uploaded_file
+from app.ui.performance_helpers import render_json_section, render_records_dataframe_section
+from app.ui.status_blocks import render_page_header
 from app.ui.workbench_cache import (
     diagnose_confirmation_template_cached,
     file_cache_key,
@@ -27,8 +40,13 @@ from app.ui.workbench_cache import (
 
 initialize_session_state()
 
-st.title("Confirmation Import")
-st.write("Validate, diagnose templates, import, merge, and prepare changed-object rerun scope from filled confirmation workbooks.")
+render_page_header(
+    "Confirmation Import",
+    (
+        "Validate, diagnose templates, import, merge, and prepare changed-object "
+        "rerun scope from filled confirmation workbooks."
+    ),
+)
 
 uploaded_file = st.file_uploader("Upload confirmation workbook", type=["xlsx", "csv"])
 workbook_type = st.selectbox(
@@ -47,10 +65,10 @@ selected_template = st.selectbox("Confirmation template", template_options)
 
 if uploaded_file is not None:
     saved_path = save_uploaded_file(uploaded_file, PROJECT_ROOT / "outputs" / "confirmation_imports")
-    st.session_state["confirmation_import_file_path"] = saved_path
+    set_confirmation_import_file_path(saved_path)
     st.success(f"Workbook saved: {saved_path}")
 
-file_path = st.session_state.get("confirmation_import_file_path")
+file_path = get_confirmation_import_file_path()
 importer = ConfirmationWorkbookImporter()
 engine = WorkflowEngine()
 
@@ -65,7 +83,7 @@ with col_validate:
                 workbook_type,
                 file_cache_key(file_path),
             )
-            st.session_state["confirmation_validation_result"] = validation.model_dump()
+            set_confirmation_validation_result(validation.model_dump())
 
 with col_diagnose:
     if st.button("Diagnose Confirmation Template"):
@@ -77,7 +95,7 @@ with col_diagnose:
                 workbook_type,
                 file_cache_key(file_path),
             )
-            st.session_state["confirmation_template_diagnosis"] = diagnosis.model_dump()
+            set_confirmation_template_diagnosis(diagnosis.model_dump())
 
 with col_import:
     if st.button("Import and Merge", type="primary"):
@@ -90,7 +108,7 @@ with col_import:
                 template_name=template_name,
                 workbook_type=workbook_type,
             )
-            st.session_state["workflow_result"] = result
+            set_workflow_result_state(result)
             st.success("Workbook imported and merged.")
 
 with col_rerun:
@@ -105,41 +123,45 @@ with col_rerun:
                 workbook_type=workbook_type,
                 rerun_changed_only=True,
             )
-            st.session_state["workflow_result"] = result
+            set_workflow_result_state(result)
             st.success("Workbook imported and rerun scope prepared.")
 
 st.subheader("Validation Result")
-if st.session_state.get("confirmation_validation_result"):
-    st.json(st.session_state["confirmation_validation_result"])
+confirmation_validation_result = get_confirmation_validation_result()
+if confirmation_validation_result:
+    render_json_section("Validation Result", confirmation_validation_result)
 else:
     st.info("Validate a workbook to see the result.")
 
 st.subheader("Template Diagnosis")
-if st.session_state.get("confirmation_template_diagnosis"):
-    st.json(st.session_state["confirmation_template_diagnosis"])
+confirmation_template_diagnosis = get_confirmation_template_diagnosis()
+if confirmation_template_diagnosis:
+    render_json_section("Template Diagnosis", confirmation_template_diagnosis)
 else:
     st.info("Diagnose a workbook template to see matched template and mapping evidence.")
 
-result = st.session_state.get("workflow_result")
+result = get_workflow_result()
 if result is not None and result.workbook_import_summaries:
     st.subheader("Import Summary")
-    st.dataframe(
-        [summary.model_dump() for summary in result.workbook_import_summaries],
-        use_container_width=True,
+    render_records_dataframe_section(
+        "Import Summary",
+        result.workbook_import_summaries,
+        key_prefix="confirmation_import_summary",
     )
     st.subheader("Round-Trip Results")
-    st.dataframe(
-        [roundtrip.model_dump() for roundtrip in result.roundtrip_results],
-        use_container_width=True,
+    render_records_dataframe_section(
+        "Round-Trip Results",
+        result.roundtrip_results,
+        key_prefix="confirmation_roundtrip_results",
     )
     st.subheader("Changed Objects Summary")
-    st.json(result.roundtrip_changed_objects_summary or {})
+    render_json_section("Changed Objects Summary", result.roundtrip_changed_objects_summary)
     if result.confirmation_template_match_result:
         st.subheader("Confirmation Template Match")
-        st.json(result.confirmation_template_match_result.model_dump())
+        render_json_section("Confirmation Template Match", result.confirmation_template_match_result)
     if result.confirmation_template_mapping_result:
         st.subheader("Confirmation Template Mapping")
-        st.json(result.confirmation_template_mapping_result.model_dump())
+        render_json_section("Confirmation Template Mapping", result.confirmation_template_mapping_result)
     st.subheader("Rerun Scope")
-    st.json(result.rerun_scope_summary or {})
+    render_json_section("Rerun Scope", result.rerun_scope_summary)
 

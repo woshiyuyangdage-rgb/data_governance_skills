@@ -1,5 +1,7 @@
 """Shared value formatting helpers for Streamlit UI blocks."""
 
+from __future__ import annotations
+
 from numbers import Real
 
 

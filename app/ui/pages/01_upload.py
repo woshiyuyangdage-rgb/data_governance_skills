@@ -1,10 +1,8 @@
 """Upload page for local metadata files."""
 
-import hashlib
 from pathlib import Path
 import sys
 
-import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -15,12 +13,25 @@ from app.ui.page_utils import (
     INPUT_TEMPLATE_DOC_PATH,
     SAMPLE_METADATA_PATH,
     UPLOAD_OUTPUT_DIR,
+    get_uploaded_file_extension,
+    get_uploaded_file_name,
+    get_uploaded_file_size,
     ensure_agent_shell_session_id,
     ensure_project_root_on_path,
+    get_uploaded_file_path,
+    get_uploaded_file_signature,
     initialize_session_state,
     restore_agent_session_to_state,
+    set_uploaded_file_state,
 )
 from app.ui.performance_helpers import ensure_large_file_runtime_ready
+from app.ui.status_blocks import render_metric_row, render_page_header
+from app.ui.workbench_cache import (
+    content_signature,
+    file_cache_key,
+    read_csv_dataframe_cached,
+    read_file_bytes_cached,
+)
 
 ensure_project_root_on_path()
 
@@ -34,8 +45,14 @@ from app.core.utils.file_utils import get_file_extension, save_uploaded_file
 
 initialize_session_state()
 
-st.title("上传元数据")
-st.write("上传符合模板的本地 CSV 或 Excel 文件，作为后续诊断与评审的入口。")
+render_page_header(
+    "上传元数据",
+    "上传符合模板的本地 CSV 或 Excel 文件，作为后续诊断与评审的入口。",
+)
+
+sample_cache_token = file_cache_key(str(SAMPLE_METADATA_PATH))
+sample_bytes = read_file_bytes_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
+sample_df = read_csv_dataframe_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
 
 left, right = st.columns([2, 1])
 
@@ -53,17 +70,14 @@ with left:
         st.info("当前没有可恢复的会话快照。")
 
     if st.button("载入示例数据", use_container_width=True):
-        sample_bytes = SAMPLE_METADATA_PATH.read_bytes()
-        st.session_state["uploaded_file_path"] = str(SAMPLE_METADATA_PATH)
-        st.session_state["uploaded_file_name"] = SAMPLE_METADATA_PATH.name
-        st.session_state["uploaded_file_size"] = SAMPLE_METADATA_PATH.stat().st_size
-        st.session_state["uploaded_file_extension"] = SAMPLE_METADATA_PATH.suffix.lstrip(".")
-        st.session_state["uploaded_file_signature"] = hashlib.md5(sample_bytes).hexdigest()
-        st.session_state["workflow_result"] = None
-        st.session_state["workflow_result_file_path"] = None
-        st.session_state["latest_report_paths"] = {}
+        sample_signature = content_signature(sample_bytes)
+        set_uploaded_file_state(
+            file_path=SAMPLE_METADATA_PATH,
+            file_signature=sample_signature,
+            source_label="sample_metadata",
+        )
         st.success("示例数据已载入。")
-        ensure_large_file_runtime_ready(str(SAMPLE_METADATA_PATH), hashlib.md5(sample_bytes).hexdigest())
+        ensure_large_file_runtime_ready(str(SAMPLE_METADATA_PATH), sample_signature)
 
 with right:
     st.subheader("模板说明")
@@ -84,13 +98,12 @@ for profile in list_enabled_profiles():
         f"(stages: {', '.join(profile.stages)})"
     )
 
-sample_df = pd.read_csv(SAMPLE_METADATA_PATH)
 with st.expander("示例数据预览", expanded=True):
     st.dataframe(sample_df, use_container_width=True)
     st.caption(f"示例文件: {SAMPLE_METADATA_PATH}")
     st.download_button(
         label="下载示例 CSV",
-        data=SAMPLE_METADATA_PATH.read_bytes(),
+        data=sample_bytes,
         file_name=SAMPLE_METADATA_PATH.name,
         mime="text/csv",
         use_container_width=True,
@@ -103,10 +116,10 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    current_signature = hashlib.md5(uploaded_file.getvalue()).hexdigest()
-    saved_path = st.session_state.get("uploaded_file_path")
+    current_signature = content_signature(uploaded_file.getvalue())
+    saved_path = get_uploaded_file_path()
     should_save = (
-        current_signature != st.session_state.get("uploaded_file_signature")
+        current_signature != get_uploaded_file_signature()
         or not saved_path
         or not Path(saved_path).exists()
     )
@@ -117,28 +130,30 @@ if uploaded_file is not None:
         except Exception as exc:
             st.error(f"保存上传文件失败: {exc}")
         else:
-            st.session_state["uploaded_file_path"] = saved_path
-            st.session_state["uploaded_file_name"] = uploaded_file.name
-            st.session_state["uploaded_file_size"] = uploaded_file.size
-            st.session_state["uploaded_file_extension"] = get_file_extension(uploaded_file.name)
-            st.session_state["uploaded_file_signature"] = current_signature
-            st.session_state["workflow_result"] = None
-            st.session_state["workflow_result_file_path"] = None
-            st.session_state["latest_report_paths"] = {}
+            set_uploaded_file_state(
+                file_path=saved_path,
+                file_name=uploaded_file.name,
+                file_size=uploaded_file.size,
+                file_extension=get_file_extension(uploaded_file.name),
+                file_signature=current_signature,
+            )
             st.success("文件已保存到本地。")
             ensure_large_file_runtime_ready(saved_path, current_signature)
     else:
         ensure_large_file_runtime_ready(saved_path, current_signature)
 
-file_path = st.session_state.get("uploaded_file_path")
+file_path = get_uploaded_file_path()
 if file_path:
     agent_session_id = ensure_agent_shell_session_id()
     set_last_uploaded_file(agent_session_id, file_path)
 
     st.subheader("当前上传文件")
-    metric_col1, metric_col2, metric_col3 = st.columns(3)
-    metric_col1.metric("文件名", st.session_state.get("uploaded_file_name") or "N/A")
-    metric_col2.metric("文件大小(字节)", st.session_state.get("uploaded_file_size") or 0)
-    metric_col3.metric("扩展名", st.session_state.get("uploaded_file_extension") or "N/A")
+    render_metric_row(
+        [
+            ("文件名", get_uploaded_file_name() or "N/A"),
+            ("文件大小(字节)", get_uploaded_file_size() or 0),
+            ("扩展名", get_uploaded_file_extension() or "N/A"),
+        ],
+    )
     st.caption(f"本地路径: {file_path}")
     st.caption(f"共享会话: {agent_session_id}")

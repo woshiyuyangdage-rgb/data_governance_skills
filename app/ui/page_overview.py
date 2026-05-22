@@ -1,5 +1,13 @@
 """Helpers for building page-level result overviews."""
 
+from app.ui.result_overview import (
+    build_agent_shell_overview as _build_agent_shell_overview,
+    build_config_edit_overview as _build_config_edit_overview,
+    build_intent_execution_overview as _build_intent_execution_overview,
+    build_validation_overview as _build_validation_overview,
+    build_workflow_result_overview as _build_workflow_result_overview,
+)
+
 from app.core.models.agent_shell_result import AgentShellResult
 from app.core.models.config_edit_result import ConfigEditResult
 from app.core.models.config_status import ConfigStatus
@@ -29,36 +37,53 @@ def build_status_overview(status: ConfigStatus) -> ResultOverview:
     )
 
 
-def build_validation_overview(result: ValidationResult) -> ResultOverview:
+def build_validation_overview(
+    result: ValidationResult,
+    *,
+    title: str = "校验结果总览",
+) -> ResultOverview:
     """Build a normalized overview for validation output."""
-    from app.ui.result_overview import build_validation_overview as _build
-
-    return _build(result)
+    return _build_validation_overview(result, title=title)
 
 
-def build_config_edit_overview(result: ConfigEditResult) -> ResultOverview:
+def build_config_edit_overview(
+    result: ConfigEditResult,
+    *,
+    title: str = "控制面结果",
+) -> ResultOverview:
     """Build a normalized overview for control-plane edit output."""
-    from app.ui.result_overview import build_config_edit_overview as _build
-
-    return _build(result)
+    return _build_config_edit_overview(result, title=title)
 
 
-def build_workflow_overview(result: WorkflowResult) -> ResultOverview:
+def build_workflow_overview(
+    result: WorkflowResult,
+    *,
+    title: str = "结果总览",
+    summary: str | None = None,
+    next_step: str | None = None,
+) -> ResultOverview:
     """Build a normalized overview for workflow output."""
-    from app.ui.result_overview import build_workflow_result_overview as _build
+    return _build_workflow_result_overview(
+        result,
+        title=title,
+        summary=summary,
+        next_step=next_step,
+    )
 
-    return _build(result)
 
-
-def build_intent_overview(result: IntentExecutionResult) -> ResultOverview:
+def build_intent_overview(
+    result: IntentExecutionResult,
+    *,
+    title: str = "意图解析总览",
+) -> ResultOverview:
     """Build a normalized overview for intent output."""
-    from app.ui.result_overview import build_intent_execution_overview as _build
-
-    return _build(result)
+    return _build_intent_execution_overview(result, title=title)
 
 
-def build_agent_overview(result: AgentShellResult) -> ResultOverview:
+def build_agent_overview(
+    result: AgentShellResult,
+    *,
+    title: str = "Agent Shell 总览",
+) -> ResultOverview:
     """Build a normalized overview for agent shell output."""
-    from app.ui.result_overview import build_agent_shell_overview as _build
-
-    return _build(result)
+    return _build_agent_shell_overview(result, title=title)

@@ -11,15 +11,24 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import ensure_agent_shell_session_id, ensure_project_root_on_path
-from app.ui.page_utils import initialize_session_state
+from app.ui.page_utils import (
+    get_latest_tool_call_response,
+    get_uploaded_file_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_latest_tool_call_response,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
 from app.core.audit.trace_store import get_trace, list_recent_traces
 from app.core.models.execution_ready_package import ExecutionReadyPackage
+from app.ui.status_blocks import render_key_value_block, render_page_header
 from app.core.models.workflow_result import WorkflowResult
 from app.core.tools.tool_service import call_tool
 from app.core.models.tool_call_request import ToolCallRequest
+from app.ui.performance_helpers import render_json_section
 from app.ui.workbench_cache import (
     build_tool_console_default_arguments,
     list_tools_cached,
@@ -28,13 +37,15 @@ from app.ui.workbench_cache import (
 
 initialize_session_state()
 
-st.title("Tool Console")
-st.write(
-    "Call the local governance tool layer directly, inspect normalized tool responses, "
-    "and review recent execution traces."
+render_page_header(
+    "Tool Console",
+    (
+        "Call the local governance tool layer directly, inspect normalized tool responses, "
+        "and review recent execution traces."
+    ),
 )
 
-uploaded_file_path = st.session_state.get("uploaded_file_path")
+uploaded_file_path = get_uploaded_file_path()
 session_id = ensure_agent_shell_session_id()
 tool_definitions = list_tools_cached(tool_registry_cache_key())
 tool_lookup = {tool.name: tool for tool in tool_definitions}
@@ -42,7 +53,7 @@ tool_names = list(tool_lookup.keys())
 
 default_arguments = build_tool_console_default_arguments(
     uploaded_file_path,
-    st.session_state.get("workflow_result"),
+    get_workflow_result(),
     session_id,
 )
 
@@ -53,7 +64,7 @@ def _store_tool_workflow_result(selected_tool_name: str, result: object) -> None
 
     result_payload = result.get("result")
     if result_payload is None and selected_tool_name == "build_execution_ready_package":
-        current_result = st.session_state.get("workflow_result")
+        current_result = get_workflow_result()
         if isinstance(current_result, WorkflowResult):
             package_payload = result.get("execution_ready_package")
             summary_payload = result.get("execution_package_summary")
@@ -63,13 +74,11 @@ def _store_tool_workflow_result(selected_tool_name: str, result: object) -> None
                 )
             if isinstance(summary_payload, dict):
                 current_result.execution_package_summary = summary_payload
-            st.session_state["workflow_result"] = current_result
+            set_workflow_result_state(current_result)
         return
 
     if isinstance(result_payload, dict):
-        st.session_state["workflow_result"] = WorkflowResult.model_validate(
-            result_payload
-        )
+        set_workflow_result_state(WorkflowResult.model_validate(result_payload))
 
 selected_tool_name = st.selectbox(
     "Tool",
@@ -108,7 +117,7 @@ if st.button("Call Tool", type="primary"):
     except Exception as exc:
         st.error(f"Failed to call tool: {exc}")
     else:
-        st.session_state["latest_tool_call_response"] = tool_response
+        set_latest_tool_call_response(tool_response)
         if selected_tool_name in {
             "run_governance_profile",
             "recommend_quality_rules",
@@ -118,15 +127,19 @@ if st.button("Call Tool", type="primary"):
             _store_tool_workflow_result(selected_tool_name, tool_response.result)
         st.success("Tool call completed.")
 
-tool_response = st.session_state.get("latest_tool_call_response")
+tool_response = get_latest_tool_call_response()
 if tool_response is not None:
-    st.subheader("Tool Response")
-    st.write(f"Tool: `{tool_response.tool_name}`")
-    st.write(f"Status: `{tool_response.status}`")
-    st.write(f"Trace ID: `{tool_response.trace_id or 'N/A'}`")
-    st.caption(tool_response.message)
+    render_key_value_block(
+        "Tool Response",
+        summary=tool_response.message,
+        rows=[
+            ("Tool", tool_response.tool_name),
+            ("Status", tool_response.status),
+            ("Trace ID", tool_response.trace_id or "N/A"),
+        ],
+    )
     if tool_response.result is not None:
-        st.json(tool_response.result)
+        render_json_section("Tool Response Payload", tool_response.result, compact=True)
 
 recent_traces = list_recent_traces(limit=20)
 st.subheader("Recent Traces")
@@ -141,11 +154,15 @@ else:
     )
     selected_trace = get_trace(selected_trace_id)
     if selected_trace is not None:
-        st.write(f"Tool: `{selected_trace.tool_name}`")
-        st.write(f"Status: `{selected_trace.status}`")
-        st.write(f"Session ID: `{selected_trace.session_id or 'N/A'}`")
-        st.write(f"Profile: `{selected_trace.profile_name or 'N/A'}`")
-        st.write(f"Stages: `{', '.join(selected_trace.stages_executed) or 'N/A'}`")
-        if selected_trace.message:
-            st.caption(selected_trace.message)
-        st.json(selected_trace.model_dump())
+        render_key_value_block(
+            None,
+            summary=selected_trace.message,
+            rows=[
+                ("Tool", selected_trace.tool_name),
+                ("Status", selected_trace.status),
+                ("Session ID", selected_trace.session_id or "N/A"),
+                ("Profile", selected_trace.profile_name or "N/A"),
+                ("Stages", ", ".join(selected_trace.stages_executed) or "N/A"),
+            ],
+        )
+        render_json_section("Trace Details", selected_trace)

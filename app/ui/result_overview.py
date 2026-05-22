@@ -1,6 +1,7 @@
 """Shared render helpers for normalized result overviews."""
 
 from pathlib import Path
+from typing import Mapping
 
 import streamlit as st
 
@@ -14,31 +15,81 @@ from app.core.models.result_overview import (
 )
 from app.core.models.validation_result import ValidationResult
 from app.core.models.workflow_result import WorkflowResult
-from app.ui.value_formatters import format_value
+from app.ui.status_blocks import render_key_value_block, render_metric_row
+from app.ui.workbench_cache import file_cache_key, read_file_bytes_cached
+
+
+def build_result_artifacts(
+    exported_files: Mapping[str, str] | None,
+    *,
+    mime_by_label: Mapping[str, str] | None = None,
+) -> list[ResultOverviewArtifact]:
+    """Convert exported file paths into normalized result artifacts."""
+    if not exported_files:
+        return []
+
+    return [
+        ResultOverviewArtifact(
+            label=label,
+            path=path,
+            mime=mime_by_label.get(label) if mime_by_label is not None else None,
+        )
+        for label, path in exported_files.items()
+    ]
+
+
+def artifact_download_key(label: str, path: Path) -> str:
+    """Build a stable Streamlit download key for one result artifact."""
+    return f"download_{label}_{path.as_posix()}"
+
+
+def render_result_artifacts(
+    artifacts: list[ResultOverviewArtifact],
+    *,
+    use_container_width: bool = False,
+) -> None:
+    """Render artifact links and download buttons for a result overview."""
+    if not artifacts:
+        return
+
+    st.markdown("**附件**")
+    for artifact in artifacts:
+        if not artifact.path:
+            st.write(f"- {artifact.label}: N/A")
+            continue
+
+        resolved_path = Path(artifact.path)
+        st.write(f"- {artifact.label}: `{resolved_path}`")
+        if resolved_path.exists():
+            mime = artifact.mime or "application/octet-stream"
+            path_text = str(resolved_path)
+            st.download_button(
+                label=f"下载 {artifact.label}",
+                data=read_file_bytes_cached(path_text, file_cache_key(path_text)),
+                file_name=resolved_path.name,
+                mime=mime,
+                key=artifact_download_key(artifact.label, resolved_path),
+                use_container_width=use_container_width,
+            )
 
 
 def render_result_overview(overview: ResultOverview) -> None:
     """Render a consistent result overview block."""
-    st.subheader(overview.title)
-    if overview.summary:
-        st.caption(overview.summary)
-
+    details = list(overview.details)
     if overview.status:
-        st.write(f"- **状态**: `{overview.status}`")
+        details = [("状态", overview.status)] + details
 
-    for label, value in overview.details:
-        formatted_value = format_value(value)
-        if formatted_value:
-            st.write(f"- **{label}**: `{formatted_value}`")
+    render_key_value_block(
+        overview.title,
+        summary=overview.summary,
+        rows=details,
+        empty_message="No details available.",
+    )
 
     if overview.metrics:
-        metric_cols = st.columns(min(4, len(overview.metrics)) or 1)
-        for index, metric in enumerate(overview.metrics):
-            metric_cols[index % len(metric_cols)].metric(
-                metric.label,
-                format_value(metric.value) or "N/A",
-                help=metric.help_text,
-            )
+        render_metric_row(
+            [(metric.label, metric.value, metric.help_text) for metric in overview.metrics]
+        )
 
     if overview.warnings:
         for warning in overview.warnings:
@@ -47,23 +98,7 @@ def render_result_overview(overview: ResultOverview) -> None:
     if overview.next_step:
         st.info(overview.next_step)
 
-    if overview.artifacts:
-        st.markdown("**附件**")
-        for artifact in overview.artifacts:
-            if not artifact.path:
-                st.write(f"- {artifact.label}: N/A")
-                continue
-            resolved_path = Path(artifact.path)
-            st.write(f"- {artifact.label}: `{resolved_path}`")
-            if resolved_path.exists():
-                mime = artifact.mime or "application/octet-stream"
-                st.download_button(
-                    label=f"下载 {artifact.label}",
-                    data=resolved_path.read_bytes(),
-                    file_name=resolved_path.name,
-                    mime=mime,
-                    key=f"download_{artifact.label}_{resolved_path.as_posix()}",
-                )
+    render_result_artifacts(overview.artifacts)
 
 
 def build_workflow_result_overview(
@@ -125,11 +160,7 @@ def build_intent_execution_overview(
                 ("执行状态", task_response.status),
             ]
         )
-        if task_response.exported_files:
-            artifacts = [
-                ResultOverviewArtifact(label=name, path=path)
-                for name, path in task_response.exported_files.items()
-            ]
+        artifacts = build_result_artifacts(task_response.exported_files)
 
     return ResultOverview(
         title=title,
@@ -183,11 +214,8 @@ def build_agent_shell_overview(
         )
 
     artifacts: list[ResultOverviewArtifact] = []
-    if result.task_response is not None and result.task_response.exported_files:
-        artifacts = [
-            ResultOverviewArtifact(label=name, path=path)
-            for name, path in result.task_response.exported_files.items()
-        ]
+    if result.task_response is not None:
+        artifacts = build_result_artifacts(result.task_response.exported_files)
 
     return ResultOverview(
         title=title,

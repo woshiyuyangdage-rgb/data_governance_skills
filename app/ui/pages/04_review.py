@@ -9,11 +9,27 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_current_input_file_path,
+    get_latest_review_summary,
+    get_uploaded_file_signature,
+    get_workflow_result,
+    get_session_value,
+    initialize_session_state,
+    set_latest_review_summary,
+    set_workflow_result_state,
+)
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_workflow_overview
 from app.ui.result_overview import render_result_overview
 from app.ui.performance_helpers import render_lazy_dataframe_section
+from app.ui.status_blocks import render_page_header
+from app.ui.review_form_helpers import (
+    candidate_evidence,
+    collect_mapping_review_inputs,
+    collect_stg_review_inputs,
+)
 
 ensure_project_root_on_path()
 
@@ -42,12 +58,14 @@ from app.ui.workbench_cache import (
 
 initialize_session_state()
 
-st.title("Review Workbench")
-st.write("确认、拒绝、编辑或标记建议，并把覆盖结果写回本地。")
-st.caption("Quality rule review and rule export are available in the Quality Rules page.")
+render_page_header(
+    "Review Workbench",
+    "确认、拒绝、编辑或标记建议，并把覆盖结果写回本地。",
+    caption="Quality rule review and rule export are available in the Quality Rules page.",
+)
 
-result = st.session_state.get("workflow_result")
-uploaded_file_path = st.session_state.get("workflow_result_file_path")
+result = get_workflow_result()
+uploaded_file_path = get_current_input_file_path(prefer_workflow_result=True)
 
 if result is None:
     st.warning("No workflow result is available yet. Please run diagnosis first.")
@@ -55,10 +73,10 @@ else:
     mapping_results = result.mapping_results
     stg_suggestions = result.stg_field_suggestions
     mapping_overrides = load_mapping_overrides_cached(
-        st.session_state.get("uploaded_file_signature")
+        get_uploaded_file_signature()
     )
     stg_overrides = load_stg_overrides_cached(
-        st.session_state.get("uploaded_file_signature")
+        get_uploaded_file_signature()
     )
     mapping_override_lookup = build_mapping_override_lookup(mapping_overrides)
     stg_override_lookup = build_stg_override_lookup(stg_overrides)
@@ -75,18 +93,6 @@ else:
         st.warning("Current result does not include mapping or STG suggestions to review.")
     else:
         review_actions = ["accept", "reject", "edit", "mark_for_manual_review"]
-
-        def _candidate_evidence(top_candidates: list[dict[str, object]]) -> list[str]:
-            evidence: list[str] = []
-            for candidate in top_candidates:
-                standard_code = candidate.get("standard_code") or "N/A"
-                standard_name = candidate.get("standard_name") or "N/A"
-                match_score = candidate.get("match_score")
-                match_reason = candidate.get("match_reason") or "N/A"
-                evidence.append(
-                    f"{standard_code} | {standard_name} | score={match_score} | {match_reason}"
-                )
-            return evidence
 
         with st.form("review_records_form"):
             st.subheader("Mapping Review")
@@ -105,7 +111,7 @@ else:
                                 ("命中分数", mapping_result.match_score),
                                 ("候选数", mapping_result.candidate_count),
                             ],
-                            evidence=_candidate_evidence(mapping_result.top_candidates),
+                            evidence=candidate_evidence(mapping_result.top_candidates),
                             next_step="确认后再保存该条覆盖。",
                         )
                         if existing_override is not None:
@@ -227,37 +233,14 @@ else:
             save_clicked = st.form_submit_button("Save Review Records", type="primary")
 
         if save_clicked:
-            mapping_inputs = {
-                f"{item.table_name}.{item.field_name}": {
-                    "review_action": st.session_state.get(
-                        f"mapping_action_{item.table_name}.{item.field_name}"
-                    ),
-                    "final_standard_code": st.session_state.get(
-                        f"mapping_final_{item.table_name}.{item.field_name}"
-                    ),
-                    "reviewer_note": st.session_state.get(
-                        f"mapping_note_{item.table_name}.{item.field_name}"
-                    ),
-                }
-                for item in mapping_results
-            }
-            stg_inputs = {
-                f"{item.source_table_name}.{item.source_field_name}": {
-                    "review_action": st.session_state.get(
-                        f"stg_action_{item.source_table_name}.{item.source_field_name}"
-                    ),
-                    "final_stg_field_name": st.session_state.get(
-                        f"stg_final_name_{item.source_table_name}.{item.source_field_name}"
-                    ),
-                    "final_data_type": st.session_state.get(
-                        f"stg_final_type_{item.source_table_name}.{item.source_field_name}"
-                    ),
-                    "reviewer_note": st.session_state.get(
-                        f"stg_note_{item.source_table_name}.{item.source_field_name}"
-                    ),
-                }
-                for item in stg_suggestions
-            }
+            mapping_inputs = collect_mapping_review_inputs(
+                mapping_results,
+                get_session_value,
+            )
+            stg_inputs = collect_stg_review_inputs(
+                stg_suggestions,
+                get_session_value,
+            )
 
             mapping_records = build_mapping_review_records_from_results(
                 mapping_results,
@@ -280,7 +263,7 @@ else:
                 st.error(f"Failed to save review records: {exc}")
             else:
                 review_summary = summarize_review_records(mapping_records, stg_records)
-                st.session_state["latest_review_summary"] = review_summary
+                set_latest_review_summary(review_summary)
                 st.success("Review records were saved to local override storage.")
 
         st.subheader("Stored Review Summary")
@@ -314,12 +297,11 @@ else:
                 except Exception as exc:
                     st.error(f"Failed to rerun with overrides: {exc}")
                 else:
-                    st.session_state["workflow_result"] = rerun_result
-                    st.session_state["workflow_result_file_path"] = uploaded_file_path
-                    st.session_state["latest_review_summary"] = rerun_result.review_summary
+                    set_workflow_result_state(rerun_result, file_path=uploaded_file_path)
+                    set_latest_review_summary(rerun_result.review_summary)
                     st.success("Workflow re-ran with saved overrides applied.")
 
-        latest_review_summary = st.session_state.get("latest_review_summary")
+        latest_review_summary = get_latest_review_summary()
         if latest_review_summary is not None:
             st.subheader("Latest Review Summary")
             latest_summary_df = review_summary_to_dataframe(latest_review_summary)

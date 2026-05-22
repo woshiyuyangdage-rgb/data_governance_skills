@@ -5,14 +5,19 @@ import json
 from pathlib import Path
 import sys
 
-import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.page_utils import (
+    ensure_project_root_on_path,
+    get_current_input_file_path,
+    get_workflow_result,
+    initialize_session_state,
+    set_workflow_result_state,
+)
 
 ensure_project_root_on_path()
 
@@ -27,12 +32,17 @@ from app.ui.workbench_cache import (
     readiness_scores_to_dataframe,
     remediation_actions_to_dataframe,
 )
+from app.ui.performance_helpers import (
+    render_dataframe_multiselect_filter,
+    render_lazy_dataframe_section,
+)
+from app.ui.status_blocks import render_metric_row, render_page_header
 
 initialize_session_state()
 
-st.title("Governance Readiness")
-st.write(
-    "Assess governance readiness, classify gaps, and build a remediation work package."
+render_page_header(
+    "Governance Readiness",
+    "Assess governance readiness, classify gaps, and build a remediation work package.",
 )
 
 
@@ -60,24 +70,8 @@ def _build_readiness_from_result(result: WorkflowResult) -> WorkflowResult:
     return result
 
 
-def _filtered_dataframe(
-    df: pd.DataFrame,
-    column_name: str,
-    label: str,
-) -> pd.DataFrame:
-    if df.empty or column_name not in df.columns:
-        return df
-    options = sorted(str(value) for value in df[column_name].dropna().unique())
-    selected = st.multiselect(label, options=options)
-    if not selected:
-        return df
-    return df[df[column_name].astype(str).isin(selected)]
-
-
-result: WorkflowResult | None = st.session_state.get("workflow_result")
-uploaded_file_path = st.session_state.get("workflow_result_file_path") or st.session_state.get(
-    "uploaded_file_path"
-)
+result: WorkflowResult | None = get_workflow_result()
+uploaded_file_path = get_current_input_file_path()
 
 col_run, col_export = st.columns(2)
 with col_run:
@@ -89,19 +83,18 @@ with col_run:
             except Exception as exc:
                 st.error(f"Failed to run readiness assessment: {exc}")
             else:
-                st.session_state["workflow_result"] = result
-                st.session_state["workflow_result_file_path"] = uploaded_file_path
+                set_workflow_result_state(result, file_path=uploaded_file_path)
                 st.success("Governance readiness assessment completed.")
         elif result is not None:
             result = _build_readiness_from_result(result)
-            st.session_state["workflow_result"] = result
+            set_workflow_result_state(result)
             st.success("Governance readiness assessment completed from current result.")
         else:
             st.warning("Run a workflow or upload a metadata file before assessment.")
 
 with col_export:
     if st.button("Export Governance Work Package"):
-        current_result: WorkflowResult | None = st.session_state.get("workflow_result")
+        current_result: WorkflowResult | None = get_workflow_result()
         if current_result is None or current_result.governance_work_package is None:
             st.warning("Build a governance work package before exporting.")
         else:
@@ -119,7 +112,7 @@ with col_export:
             )
             st.success(f"Governance work package exported to {output_path}")
 
-result = st.session_state.get("workflow_result")
+result = get_workflow_result()
 if result is None:
     st.info("No workflow result is available yet.")
 else:
@@ -131,15 +124,18 @@ else:
         )
     )
 
-    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-    metric_col1.metric("Readiness Scores", len(result.readiness_scores))
-    metric_col2.metric("Governance Gaps", len(result.governance_gaps))
-    metric_col3.metric("Remediation Actions", len(result.remediation_actions))
-    metric_col4.metric(
-        "Work Package",
-        result.governance_work_package.package_name
-        if result.governance_work_package is not None
-        else "not built",
+    render_metric_row(
+        [
+            ("Readiness Scores", len(result.readiness_scores)),
+            ("Governance Gaps", len(result.governance_gaps)),
+            ("Remediation Actions", len(result.remediation_actions)),
+            (
+                "Work Package",
+                result.governance_work_package.package_name
+                if result.governance_work_package is not None
+                else "not built",
+            ),
+        ],
     )
 
     st.subheader("Work Package Summary")
@@ -148,35 +144,63 @@ else:
         result.readiness_summary,
     )
     if not summary_df.empty:
-        st.dataframe(summary_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Work Package Summary",
+            summary_df,
+            compact=True,
+            key_prefix="readiness_work_package_summary",
+        )
     else:
         st.info("No work package summary is available.")
 
     st.subheader("Table-Level Readiness")
     readiness_df = readiness_scores_to_dataframe(result.readiness_scores)
-    readiness_df = _filtered_dataframe(
+    readiness_df = render_dataframe_multiselect_filter(
         readiness_df,
         "readiness_level",
         "Filter readiness level",
     )
     if not readiness_df.empty:
-        st.dataframe(readiness_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Table-Level Readiness",
+            readiness_df,
+            compact=True,
+            key_prefix="readiness_scores",
+        )
     else:
         st.info("No readiness scores are available.")
 
     st.subheader("Governance Gaps")
     gaps_df = governance_gaps_to_dataframe(result.governance_gaps)
-    gaps_df = _filtered_dataframe(gaps_df, "gap_type", "Filter gap type")
+    gaps_df = render_dataframe_multiselect_filter(gaps_df, "gap_type", "Filter gap type")
     if not gaps_df.empty:
-        st.dataframe(gaps_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Governance Gaps",
+            gaps_df,
+            compact=True,
+            key_prefix="readiness_gaps",
+        )
     else:
         st.info("No governance gaps are available.")
 
     st.subheader("Remediation Actions")
     actions_df = remediation_actions_to_dataframe(result.remediation_actions)
-    actions_df = _filtered_dataframe(actions_df, "owner_role", "Filter owner role")
-    actions_df = _filtered_dataframe(actions_df, "priority", "Filter priority")
+    actions_df = render_dataframe_multiselect_filter(
+        actions_df,
+        "owner_role",
+        "Filter owner role",
+    )
+    actions_df = render_dataframe_multiselect_filter(
+        actions_df,
+        "priority",
+        "Filter priority",
+    )
     if not actions_df.empty:
-        st.dataframe(actions_df, use_container_width=True)
+        render_lazy_dataframe_section(
+            "Remediation Actions",
+            actions_df,
+            compact=True,
+            key_prefix="readiness_actions",
+        )
     else:
         st.info("No remediation actions are available.")
