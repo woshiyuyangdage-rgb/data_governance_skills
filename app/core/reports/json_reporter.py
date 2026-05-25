@@ -63,6 +63,8 @@ def export_workflow_result_to_json(
             result.execution_package_export_results
         ),
         "readiness_scores": _serialize(result.readiness_scores),
+        "ai_ready_scores": _serialize(result.ai_ready_scores),
+        "ai_ready_summary": _serialize(result.ai_ready_summary),
         "governance_gaps": _serialize(result.governance_gaps),
         "remediation_actions": _serialize(result.remediation_actions),
         "governance_work_package": _serialize(result.governance_work_package),

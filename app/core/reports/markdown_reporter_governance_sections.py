@@ -15,6 +15,19 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
     else:
         lines.append("- No governance readiness scores available.")
 
+    lines.extend(["", "# AI-Ready Assessment", ""])
+    if result.ai_ready_scores:
+        for score in result.ai_ready_scores:
+            risk_text = ", ".join(score.risk_flags[:3]) or "N/A"
+            action_text = ", ".join(score.recommended_actions[:3]) or "N/A"
+            lines.append(
+                f"- `{score.object_type}:{score.object_name}` | "
+                f"score={score.overall_score:.0f} | level={score.ai_ready_level} | "
+                f"risks={risk_text} | actions={action_text}"
+            )
+    else:
+        lines.append("- No AI-ready scores available.")
+
     lines.extend(["", "# Governance Gaps", ""])
     if result.governance_gaps:
         for gap in result.governance_gaps:
@@ -31,8 +44,12 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
         for action in result.remediation_actions:
             lines.append(
                 f"- `{action.object_name}` | priority={action.priority} | "
+                f"score={action.priority_score if action.priority_score is not None else 'N/A'} | "
                 f"owner={action.owner_role} | gap={action.gap_type} | "
-                f"action={action.action}"
+                f"cycle={action.suggested_cycle or 'N/A'} | "
+                f"action={action.action} | "
+                f"benefit={action.expected_benefit or 'N/A'} | "
+                f"reason={action.priority_reason or action.reason or 'N/A'}"
             )
     else:
         lines.append("- No remediation actions available.")
@@ -55,7 +72,9 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
             lines.append(
                 f"- `{item.backlog_id}` | `{item.object_name}` | "
                 f"gap={item.gap_type} | status={item.status} | "
-                f"priority={item.priority} | owner={item.owner_role} | "
+                f"priority={item.priority} | "
+                f"score={item.priority_score if item.priority_score is not None else 'N/A'} | "
+                f"cycle={item.suggested_cycle or 'N/A'} | owner={item.owner_role} | "
                 f"action={item.action}"
             )
     else:
@@ -117,4 +136,3 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
     else:
         lines.append("- No progress snapshot available.")
     return lines
-

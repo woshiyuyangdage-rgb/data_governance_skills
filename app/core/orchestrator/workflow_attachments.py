@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.core.adapters.execution_package_builder import ExecutionPackageBuilder
 from app.core.delivery.delivery_service import DeliveryService
+from app.core.governance.ai_ready_assessor import AiReadyAssessor
 from app.core.governance.backlog_builder import GovernanceBacklogBuilder
 from app.core.governance.backlog_sla_calculator import BacklogSlaCalculator
 from app.core.governance.gap_classifier import GapClassifier
@@ -60,9 +61,12 @@ class WorkflowAttachmentMixin:
         assessor = ReadinessAssessor()
         classifier = GapClassifier()
         planner = RemediationPlanner()
+        ai_ready_assessor = AiReadyAssessor()
         readiness_scores = assessor.assess(result)
         governance_gaps = classifier.classify(result)
         remediation_actions = planner.build_actions(readiness_scores, governance_gaps)
+        ai_ready_scores = ai_ready_assessor.assess(result)
+        ai_ready_summary = ai_ready_assessor.summarize(ai_ready_scores)
         work_package = planner.build_work_package(
             readiness_scores,
             governance_gaps,
@@ -81,6 +85,12 @@ class WorkflowAttachmentMixin:
             ],
             "readiness_summary": readiness_summary,
         }
+        skill_outputs["ai_ready_assessment_output"] = {
+            "ai_ready_scores": [
+                self._serialize_model(score) for score in ai_ready_scores
+            ],
+            "ai_ready_summary": ai_ready_summary,
+        }
         skill_outputs["gap_classification_output"] = {
             "governance_gaps": [
                 self._serialize_model(gap) for gap in governance_gaps
@@ -97,6 +107,8 @@ class WorkflowAttachmentMixin:
         result.remediation_actions = remediation_actions
         result.governance_work_package = work_package
         result.readiness_summary = readiness_summary
+        result.ai_ready_scores = ai_ready_scores
+        result.ai_ready_summary = ai_ready_summary
         result.skill_outputs = skill_outputs
         if result.status == "success":
             result.message = (

@@ -172,3 +172,15 @@ def test_run_p0_plus_mapping_plus_stg_with_review_applies_confirmed_results(
         for item in result.confirmed_stg_suggestions
     )
     assert result.review_summary is not None
+
+
+def test_governance_readiness_assessment_includes_ai_ready_scores() -> None:
+    engine = WorkflowEngine()
+    tables = load_metadata_file(str(SAMPLE_METADATA_PATH))
+
+    result = engine.run_governance_readiness_assessment(tables)
+
+    assert result.readiness_scores
+    assert result.ai_ready_scores
+    assert result.ai_ready_summary["ai_ready_score_count"] == len(result.ai_ready_scores)
+    assert "ai_ready_assessment_output" in result.skill_outputs

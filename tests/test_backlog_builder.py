@@ -33,6 +33,15 @@ def test_remediation_actions_can_build_backlog_items_and_summary() -> None:
         action="Review and confirm standard mappings",
         owner_role="fallback_owner",
         priority="key_tracking",
+        priority_score=0.66,
+        business_impact_score=0.7,
+        ai_consumption_risk_score=0.6,
+        governance_risk_score=0.65,
+        severity_score=0.65,
+        remediation_complexity_score=0.55,
+        priority_reason="score test",
+        suggested_cycle="next_1_to_2_cycles",
+        expected_benefit="Improve semantic consistency.",
         expected_output="confirmed standard mappings",
         dependency_notes="Requires steward review.",
         reason="Mapping confidence is low.",
@@ -65,6 +74,15 @@ def test_remediation_actions_can_build_backlog_items_and_summary() -> None:
     assert item.status == "proposed"
     assert item.owner_role == "business_data_steward"
     assert item.priority == "key_tracking"
+    assert item.priority_score == 0.66
+    assert item.business_impact_score == 0.7
+    assert item.ai_consumption_risk_score == 0.6
+    assert item.governance_risk_score == 0.65
+    assert item.severity_score == 0.65
+    assert item.remediation_complexity_score == 0.55
+    assert item.priority_reason == "score test"
+    assert item.suggested_cycle == "next_1_to_2_cycles"
+    assert item.expected_benefit == "Improve semantic consistency."
     assert item.urgency_score == 2
     assert item.category == "mapping"
     assert item.dependency_notes == "Requires steward review."

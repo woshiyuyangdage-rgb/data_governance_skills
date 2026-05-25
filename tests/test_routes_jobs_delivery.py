@@ -42,10 +42,14 @@ def test_governance_readiness_and_work_package_routes(tmp_path: Path) -> None:
     summary_response = governance_readiness_summary_route()
 
     assert readiness_response["readiness_scores"]
+    assert readiness_response["ai_ready_scores"]
+    assert "ai_ready_summary" in readiness_response
     assert readiness_response["governance_gaps"]
     assert work_package_response["governance_work_package"]["package_name"]
+    assert work_package_response["ai_ready_scores"]
     assert work_package_response["remediation_actions"]
     assert Path(
         work_package_response["exported_files"]["governance_work_package"]
     ).exists()
     assert "dimensions" in summary_response
+    assert "ai_ready_dimensions" in summary_response

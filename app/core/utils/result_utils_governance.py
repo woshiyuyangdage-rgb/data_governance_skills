@@ -2,6 +2,7 @@
 
 import pandas as pd
 
+from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.backlog_sla_status import BacklogSlaStatus
 from app.core.models.backlog_summary import BacklogSummary
 from app.core.models.governance_backlog_item import GovernanceBacklogItem
@@ -26,6 +27,28 @@ def readiness_scores_to_dataframe(
             "overall_score": score.overall_score,
             "readiness_level": score.readiness_level,
             "summary": score.summary,
+        }
+        for key, value in score.dimension_scores.items():
+            payload[key] = value
+        records.append(payload)
+    return pd.DataFrame(records)
+
+
+def ai_ready_scores_to_dataframe(
+    ai_ready_scores: list[AiReadyScore],
+) -> pd.DataFrame:
+    """Convert AI-ready scores to a stable dataframe."""
+    records = []
+    for score in ai_ready_scores:
+        payload = {
+            "object_type": score.object_type,
+            "object_name": score.object_name,
+            "overall_score": score.overall_score,
+            "ai_ready_level": score.ai_ready_level,
+            "summary": score.summary,
+            "evidence_joined": " | ".join(score.evidence),
+            "risk_flags_joined": " | ".join(score.risk_flags),
+            "recommended_actions_joined": " | ".join(score.recommended_actions),
         }
         for key, value in score.dimension_scores.items():
             payload[key] = value
@@ -68,6 +91,15 @@ def remediation_actions_to_dataframe(
                 "action": action.action,
                 "owner_role": action.owner_role,
                 "priority": action.priority,
+                "priority_score": action.priority_score,
+                "business_impact_score": action.business_impact_score,
+                "ai_consumption_risk_score": action.ai_consumption_risk_score,
+                "governance_risk_score": action.governance_risk_score,
+                "severity_score": action.severity_score,
+                "remediation_complexity_score": action.remediation_complexity_score,
+                "priority_reason": action.priority_reason,
+                "suggested_cycle": action.suggested_cycle,
+                "expected_benefit": action.expected_benefit,
                 "expected_output": action.expected_output,
                 "dependency_notes": action.dependency_notes,
                 "reason": action.reason,
@@ -114,6 +146,15 @@ def governance_backlog_items_to_dataframe(
                 "action": item.action,
                 "owner_role": item.owner_role,
                 "priority": item.priority,
+                "priority_score": item.priority_score,
+                "business_impact_score": item.business_impact_score,
+                "ai_consumption_risk_score": item.ai_consumption_risk_score,
+                "governance_risk_score": item.governance_risk_score,
+                "severity_score": item.severity_score,
+                "remediation_complexity_score": item.remediation_complexity_score,
+                "priority_reason": item.priority_reason,
+                "suggested_cycle": item.suggested_cycle,
+                "expected_benefit": item.expected_benefit,
                 "status": item.status,
                 "urgency_score": item.urgency_score,
                 "dependency_notes": item.dependency_notes,
@@ -180,4 +221,3 @@ def review_summary_to_dataframe(review_summary: ReviewSummary | None) -> pd.Data
             }
         ]
     )
-

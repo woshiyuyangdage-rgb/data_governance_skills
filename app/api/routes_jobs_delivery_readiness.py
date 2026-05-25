@@ -45,4 +45,20 @@ def governance_readiness_summary_route() -> dict[str, object]:
             "quality_rule_readiness",
             "review_completion_readiness",
         ],
+        "ai_ready_dimensions": [
+            "discoverability",
+            "understandability",
+            "semantic_consistency",
+            "standardization",
+            "quality_controllability",
+            "security_controllability",
+            "traceability",
+            "ai_application_adaptability",
+        ],
+        "ai_ready_levels": [
+            "A_ai_ready",
+            "B_basically_usable",
+            "C_govern_before_use",
+            "D_not_recommended_for_ai",
+        ],
     }

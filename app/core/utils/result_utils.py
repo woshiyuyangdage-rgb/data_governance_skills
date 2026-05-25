@@ -8,6 +8,7 @@ from app.core.utils.result_utils_core import (
     tasks_to_dataframe,
 )
 from app.core.utils.result_utils_governance import (
+    ai_ready_scores_to_dataframe,
     backlog_sla_statuses_to_dataframe,
     backlog_summary_to_dataframe,
     governance_backlog_items_to_dataframe,

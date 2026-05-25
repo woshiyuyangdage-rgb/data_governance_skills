@@ -16,6 +16,7 @@ from app.core.models.confirmation_template_mapping_result import (
 from app.core.models.confirmation_workbook_result import ConfirmationWorkbookResult
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 from app.core.models.cross_field_quality_rule import CrossFieldQualityRule
+from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.domain_pack_match_result import DomainPackMatchResult
 from app.core.models.execution_package_export_result import ExecutionPackageExportResult
 from app.core.models.execution_ready_package import ExecutionReadyPackage
@@ -91,6 +92,8 @@ class WorkflowResult(BaseModel):
     remediation_actions: list[RemediationAction] = Field(default_factory=list)
     governance_work_package: GovernanceWorkPackage | None = None
     readiness_summary: dict[str, Any] = Field(default_factory=dict)
+    ai_ready_scores: list[AiReadyScore] = Field(default_factory=list)
+    ai_ready_summary: dict[str, Any] = Field(default_factory=dict)
     governance_backlog_items: list[GovernanceBacklogItem] = Field(default_factory=list)
     backlog_summary: BacklogSummary | None = None
     backlog_sla_statuses: list[BacklogSlaStatus] = Field(default_factory=list)

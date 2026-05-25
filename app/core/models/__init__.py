@@ -3,6 +3,7 @@
 from app.core.models.agent_session import AgentSession
 from app.core.models.agent_shell_result import AgentShellResult
 from app.core.models.adapter_invocation_result import AdapterInvocationResult
+from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.backlog_summary import BacklogSummary
 from app.core.models.backlog_update_result import BacklogUpdateResult
 from app.core.models.capability_manifest import CapabilityManifest
@@ -58,6 +59,7 @@ __all__ = [
     "AgentSession",
     "AgentShellResult",
     "AdapterInvocationResult",
+    "AiReadyScore",
     "BacklogSummary",
     "BacklogUpdateResult",
     "CapabilityManifest",

@@ -21,6 +21,7 @@ from app.core.delivery.confirmation_workbook_importer import (
 from app.core.domain.domain_pack_matcher import DomainPackMatcher
 from app.core.intake.intake_adapter_service import IntakeAdapterService
 from app.core.models.capability_manifest import CapabilityManifest
+from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.backlog_sla_status import BacklogSlaStatus
 from app.core.models.backlog_summary import BacklogSummary
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
@@ -66,6 +67,7 @@ from app.core.review.quality_override_store import load_quality_rule_overrides
 from app.core.tools.tool_service import list_tools
 from app.core.tools.tool_loader import load_tool_registry
 from app.core.utils.result_utils import (
+    ai_ready_scores_to_dataframe as core_ai_ready_scores_to_dataframe,
     backlog_sla_statuses_to_dataframe as core_backlog_sla_statuses_to_dataframe,
     backlog_summary_to_dataframe as core_backlog_summary_to_dataframe,
     confirmed_quality_rules_to_dataframe as core_confirmed_quality_rules_to_dataframe,
@@ -390,6 +392,7 @@ execution_package_export_results_to_dataframe = _cache_builder(
     core_execution_package_export_results_to_dataframe
 )
 readiness_scores_to_dataframe = _cache_builder(core_readiness_scores_to_dataframe)
+ai_ready_scores_to_dataframe = _cache_builder(core_ai_ready_scores_to_dataframe)
 governance_gaps_to_dataframe = _cache_builder(core_governance_gaps_to_dataframe)
 remediation_actions_to_dataframe = _cache_builder(core_remediation_actions_to_dataframe)
 governance_work_package_summary_to_dataframe = _cache_builder(

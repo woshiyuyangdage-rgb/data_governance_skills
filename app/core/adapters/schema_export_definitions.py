@@ -62,6 +62,8 @@ MODEL_SCHEMA_MAP: dict[str, dict[str, object]] = {
             "execution_package_summary": {"type": "object"},
             "execution_package_export_results": {"type": "array", "items": {"type": "object"}},
             "readiness_scores": {"type": "array", "items": {"type": "object"}},
+            "ai_ready_scores": {"type": "array", "items": {"type": "object"}},
+            "ai_ready_summary": {"type": "object"},
             "governance_gaps": {"type": "array", "items": {"type": "object"}},
             "remediation_actions": {"type": "array", "items": {"type": "object"}},
             "governance_work_package": {"type": "object"},

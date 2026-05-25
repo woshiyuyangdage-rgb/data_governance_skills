@@ -7,6 +7,7 @@ import pandas as pd
 from app.core.models.workflow_result import WorkflowResult
 from app.core.utils.file_utils import ensure_directory
 from app.core.utils.result_utils import (
+    ai_ready_scores_to_dataframe,
     backlog_sla_statuses_to_dataframe,
     backlog_summary_to_dataframe,
     confirmed_quality_rules_to_dataframe,
@@ -80,6 +81,7 @@ def export_workflow_result_to_excel(
                     result.execution_package_export_results
                 ),
                 "readiness_score_count": len(result.readiness_scores),
+                "ai_ready_score_count": len(result.ai_ready_scores),
                 "governance_gap_count": len(result.governance_gaps),
                 "remediation_action_count": len(result.remediation_actions),
                 "governance_backlog_item_count": len(result.governance_backlog_items),
@@ -185,6 +187,7 @@ def export_workflow_result_to_excel(
         result.execution_package_export_results
     )
     readiness_scores_df = readiness_scores_to_dataframe(result.readiness_scores)
+    ai_ready_scores_df = ai_ready_scores_to_dataframe(result.ai_ready_scores)
     governance_gaps_df = governance_gaps_to_dataframe(result.governance_gaps)
     remediation_actions_df = remediation_actions_to_dataframe(
         result.remediation_actions
@@ -366,6 +369,11 @@ def export_workflow_result_to_excel(
         readiness_scores_df.to_excel(
             writer,
             sheet_name="readiness_scores",
+            index=False,
+        )
+        ai_ready_scores_df.to_excel(
+            writer,
+            sheet_name="ai_ready_scores",
             index=False,
         )
         governance_gaps_df.to_excel(

@@ -1,5 +1,6 @@
 """Governance decision-support services."""
 
+from app.core.governance.ai_ready_assessor import AiReadyAssessor
 from app.core.governance.backlog_sla_calculator import BacklogSlaCalculator
 from app.core.governance.backlog_builder import GovernanceBacklogBuilder
 from app.core.governance.backlog_tracking_service import GovernanceBacklogTrackingService
@@ -10,6 +11,7 @@ from app.core.governance.readiness_assessor import ReadinessAssessor
 from app.core.governance.remediation_planner import RemediationPlanner
 
 __all__ = [
+    "AiReadyAssessor",
     "BacklogSlaCalculator",
     "GapClassifier",
     "GovernanceBacklogBuilder",

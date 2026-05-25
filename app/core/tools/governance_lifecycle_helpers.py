@@ -6,6 +6,7 @@ from typing import Protocol
 
 import app.core.governance.backlog_store as backlog_store
 from app.core.governance import (
+    AiReadyAssessor,
     BacklogSlaCalculator,
     GapClassifier,
     GovernanceBacklogTrackingService,
@@ -104,11 +105,18 @@ def resolve_readiness_result_from_arguments(
         raise ValueError("workflow_result or file_path is required.")
 
     assessor = ReadinessAssessor()
+    ai_ready_assessor = AiReadyAssessor()
     classifier = GapClassifier()
     planner = RemediationPlanner()
 
     if not workflow_result.readiness_scores:
         workflow_result.readiness_scores = assessor.assess(workflow_result)
+    if not workflow_result.ai_ready_scores:
+        workflow_result.ai_ready_scores = ai_ready_assessor.assess(workflow_result)
+    if not workflow_result.ai_ready_summary:
+        workflow_result.ai_ready_summary = ai_ready_assessor.summarize(
+            workflow_result.ai_ready_scores
+        )
     if not workflow_result.governance_gaps:
         workflow_result.governance_gaps = classifier.classify(workflow_result)
     if full_work_package or not workflow_result.remediation_actions:

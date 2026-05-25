@@ -12,6 +12,15 @@ class RemediationAction(BaseModel):
     action: str
     owner_role: str
     priority: str
+    priority_score: float | None = None
+    business_impact_score: float | None = None
+    ai_consumption_risk_score: float | None = None
+    governance_risk_score: float | None = None
+    severity_score: float | None = None
+    remediation_complexity_score: float | None = None
+    priority_reason: str | None = None
+    suggested_cycle: str | None = None
+    expected_benefit: str | None = None
     expected_output: str | None = None
     dependency_notes: str | None = None
     reason: str | None = None

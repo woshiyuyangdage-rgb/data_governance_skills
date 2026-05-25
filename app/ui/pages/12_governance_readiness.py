@@ -21,12 +21,18 @@ from app.ui.page_utils import (
 
 ensure_project_root_on_path()
 
-from app.core.governance import GapClassifier, ReadinessAssessor, RemediationPlanner
+from app.core.governance import (
+    AiReadyAssessor,
+    GapClassifier,
+    ReadinessAssessor,
+    RemediationPlanner,
+)
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import run_full_governance_work_package_from_file
 from app.ui.page_overview import build_workflow_overview
 from app.ui.result_overview import render_result_overview
 from app.ui.workbench_cache import (
+    ai_ready_scores_to_dataframe,
     governance_gaps_to_dataframe,
     governance_work_package_summary_to_dataframe,
     readiness_scores_to_dataframe,
@@ -48,9 +54,12 @@ render_page_header(
 
 def _build_readiness_from_result(result: WorkflowResult) -> WorkflowResult:
     assessor = ReadinessAssessor()
+    ai_ready_assessor = AiReadyAssessor()
     classifier = GapClassifier()
     planner = RemediationPlanner()
     result.readiness_scores = assessor.assess(result)
+    result.ai_ready_scores = ai_ready_assessor.assess(result)
+    result.ai_ready_summary = ai_ready_assessor.summarize(result.ai_ready_scores)
     result.governance_gaps = classifier.classify(result)
     result.remediation_actions = planner.build_actions(
         result.readiness_scores,
@@ -127,6 +136,7 @@ else:
     render_metric_row(
         [
             ("Readiness Scores", len(result.readiness_scores)),
+            ("AI-Ready Scores", len(result.ai_ready_scores)),
             ("Governance Gaps", len(result.governance_gaps)),
             ("Remediation Actions", len(result.remediation_actions)),
             (
@@ -169,6 +179,23 @@ else:
         )
     else:
         st.info("No readiness scores are available.")
+
+    st.subheader("AI-Ready Assessment")
+    ai_ready_df = ai_ready_scores_to_dataframe(result.ai_ready_scores)
+    ai_ready_df = render_dataframe_multiselect_filter(
+        ai_ready_df,
+        "ai_ready_level",
+        "Filter AI-ready level",
+    )
+    if not ai_ready_df.empty:
+        render_lazy_dataframe_section(
+            "AI-Ready Assessment",
+            ai_ready_df,
+            compact=True,
+            key_prefix="ai_ready_scores",
+        )
+    else:
+        st.info("No AI-ready scores are available.")
 
     st.subheader("Governance Gaps")
     gaps_df = governance_gaps_to_dataframe(result.governance_gaps)

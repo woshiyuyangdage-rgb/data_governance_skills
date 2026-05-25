@@ -32,10 +32,14 @@ class GovernanceReadinessToolMixin:
                 "readiness_scores": [
                     score.model_dump() for score in workflow_result.readiness_scores
                 ],
+                "ai_ready_scores": [
+                    score.model_dump() for score in workflow_result.ai_ready_scores
+                ],
                 "governance_gaps": [
                     gap.model_dump() for gap in workflow_result.governance_gaps
                 ],
                 "readiness_summary": dict(workflow_result.readiness_summary or {}),
+                "ai_ready_summary": dict(workflow_result.ai_ready_summary or {}),
             }
             trace = self._finish_trace(
                 trace,
@@ -105,6 +109,9 @@ class GovernanceReadinessToolMixin:
                 "readiness_scores": [
                     score.model_dump() for score in workflow_result.readiness_scores
                 ],
+                "ai_ready_scores": [
+                    score.model_dump() for score in workflow_result.ai_ready_scores
+                ],
                 "governance_gaps": [
                     gap.model_dump() for gap in workflow_result.governance_gaps
                 ],
@@ -114,6 +121,7 @@ class GovernanceReadinessToolMixin:
                 ],
                 "governance_work_package": work_package_payload,
                 "readiness_summary": dict(workflow_result.readiness_summary or {}),
+                "ai_ready_summary": dict(workflow_result.ai_ready_summary or {}),
                 "exported_files": exported_files,
             }
             trace = self._finish_trace(

@@ -415,6 +415,7 @@ def test_governance_router_routes_readiness_work_package_profile() -> None:
         "remediation_planning",
     ]
     assert response.result.readiness_scores
+    assert response.result.ai_ready_scores
     assert response.result.governance_work_package is not None
 
 

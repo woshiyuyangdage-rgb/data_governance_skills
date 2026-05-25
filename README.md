@@ -1,6 +1,6 @@
 # Data Governance Skills
 
-`data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换为可诊断、可评审、可交付的治理资产，覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、整改待办、组合视图和本地交付物导出。
+`data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换为可诊断、可评审、可交付的治理资产，覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、AI-ready 评分、整改待办、组合视图和本地交付物导出。
 
 项目当前定位是“治理决策支持与交付资产生成工具”，不是线上执行平台。它不直接连接生产数据库执行质量检查，不调用云端 LLM，不创建外部工单，也不集成企业流程系统。
 
@@ -21,7 +21,7 @@
 - 推荐标准字段映射、STG 结构和质量规则。
 - 保存人工评审结果，并在后续流程中回放。
 - 生成确认质量规则、执行准备包、治理工作包和交付包。
-- 评估治理就绪度，生成整改动作、待办、SLA 状态、进度快照和组合汇总。
+- 评估治理就绪度和 AI-ready 水平，生成整改动作、待办、SLA 状态、进度快照和组合汇总。
 
 ### 适合的场景
 
@@ -29,6 +29,7 @@
 - 将源字段映射到本地标准字段体系。
 - 为贴源层或 STG 层生成结构建议。
 - 根据字段、映射、STG 和领域规则生成质量规则草案。
+- 判断表资产是否适合进入 RAG、Text-to-SQL 和智能数据助手。
 - 固化人工确认结果，避免重复评审。
 - 输出治理报告、确认工作簿、执行包和整改待办。
 
@@ -100,7 +101,7 @@ python -m app.maintenance doctor
 ### 常规治理流程
 
 ```text
-上传元数据 -> 解析与规范化 -> 质量诊断 -> 标准映射 -> STG 结构建议 -> 质量规则推荐 -> 人工评审 -> 评审结果回放 -> 确认规则 -> 执行准备包 -> 治理就绪度 -> 整改计划 -> 待办 -> 组合评估 -> 报告和交付资产
+上传元数据 -> 解析与规范化 -> 质量诊断 -> 标准映射 -> STG 结构建议 -> 质量规则推荐 -> 人工评审 -> 评审结果回放 -> 确认规则 -> 执行准备包 -> 治理就绪度 -> AI-ready 评分 -> 整改计划 -> 待办 -> 组合评估 -> 报告和交付资产
 ```
 
 ### 主要入口
@@ -138,7 +139,7 @@ python -m app.maintenance doctor
 | `stg-standardization-skill` | 基于元数据、映射、命名信号和转换规则推荐 STG 表字段结构 | `stg_suggestions`、`stg_field_suggestions`、`confirmed_stg_suggestions`、`stg_summary` |
 | `data-quality-rule-skill` | 推荐字段级、领域感知和跨字段质量规则，并支持确认 | `quality_rule_suggestions`、`cross_field_quality_rules`、`confirmed_quality_rules`、`quality_rule_summary` |
 | `dbt-governance-skill` | 将确认规则打包为执行准备资产和 dbt 兼容 YAML | `execution_ready_package`、`execution_package_export_results`、`dbt_yaml` |
-| `governance-report-skill` | 导出报告、确认工作簿、交付包、待办、组合视图和进度快照 | `exported_files`、`readiness_scores`、`governance_backlog_items`、`progress_snapshot`、`governance_delivery_manifest` |
+| `governance-report-skill` | 导出报告、确认工作簿、交付包、AI-ready 评分、待办、组合视图和进度快照 | `exported_files`、`readiness_scores`、`ai_ready_scores`、`governance_backlog_items`、`progress_snapshot`、`governance_delivery_manifest` |
 
 技能清单由 `app/config/skill_registry.yaml` 配置，读取入口在 `app/core/skills/skill_catalog.py`。
 
@@ -163,8 +164,8 @@ tests/        pytest 自动化测试
 | 模块 | 位置 | 功能 |
 | --- | --- | --- |
 | API 接口层 | `app/api/` | 暴露 FastAPI 路由、请求模型、任务接口、报告接口和工具响应封装。`routes_jobs.py` 是聚合入口，具体任务路由按领域拆分。 |
-| UI 工作台 | `app/ui/` | Streamlit 多页面工作台，覆盖上传、诊断、报告、评审、Agent Shell、工具控制台、配置面板、质量规则、执行包、就绪度、待办、组合视图和交付包。 |
-| 编排引擎 | `app/core/orchestrator/` | 将解析、技能、评审、执行包、就绪度、待办和组合评估串成 workflow profile。 |
+| UI 工作台 | `app/ui/` | Streamlit 多页面工作台，覆盖上传、诊断、报告、评审、Agent Shell、工具控制台、配置面板、质量规则、执行包、就绪度、AI-ready 评分、待办、组合视图和交付包。 |
+| 编排引擎 | `app/core/orchestrator/` | 将解析、技能、评审、执行包、就绪度、AI-ready 评分、待办和组合评估串成 workflow profile。 |
 | 元数据解析 | `app/core/parser/` | 读取 CSV、Excel 和批量输入，转换为内部表字段模型，并处理解析异常。 |
 | 输入适配 | `app/core/intake/` | 诊断企业元数据模板、匹配列别名、选择最佳 sheet，并规范化输入文件。 |
 | 领域与模板 | `app/core/domain/`、`app/core/templates/` | 加载领域治理包和项目模板，根据文本或表结构匹配领域提示，并应用模板默认值。 |
@@ -172,13 +173,13 @@ tests/        pytest 自动化测试
 | 规则与词典 | `app/core/rules/`、`app/core/normalize/`、`app/data/` | 管理命名规则、技术关键词、标准字段、缩写词典、根词词典和文本清洗拆词逻辑。 |
 | 评审与回放 | `app/core/review/` | 保存映射、STG 和质量规则评审记录，管理人工覆盖结果，并在后续流程中回放确认意见。 |
 | 质量与执行包 | `app/core/adapters/`、`app/core/tools/` | 生成确认质量规则、执行准备包、规则导出结果和工具化调用响应。 |
-| 治理度量 | `app/core/governance/` | 评估治理就绪度，分类治理缺口，生成整改动作、工作包、待办、SLA 状态、进度快照和组合汇总。 |
+| 治理度量 | `app/core/governance/` | 评估治理就绪度和表级 AI-ready 水平，分类治理缺口，生成整改动作、工作包、待办、SLA 状态、进度快照和组合汇总。AI-ready 评分覆盖可发现性、可理解性、语义一致性、标准化程度、质量可控性、安全可控性、可追溯性和 AI 应用适配性。 |
 | 交付包 | `app/core/delivery/` | 导出确认工作簿，导入确认结果，构建治理交付 manifest 和本地交付包。 |
 | 意图、上下文与 Agent Shell | `app/core/intent/`、`app/core/context/`、`app/core/agent/` | 将自然语言意图解析为治理任务，解析运行上下文，生成执行计划并保存本地会话。当前为规则 + 本地传统 NLP 能力，不调用云端 LLM。 |
 | 工具注册与适配 | `app/core/tools/`、`app/core/adapters/` | 暴露本地工具注册表、工具调用、OpenAI/MCP/native schema 导出和适配器调用封装。 |
 | 配置控制面 | `app/core/control_plane/`、`app/config/` | 管理 YAML 配置资产、校验、保存、发布和本地状态记录。 |
 | 审计与报告 | `app/core/audit/`、`app/core/reports/` | 记录工具执行 trace，导出 JSON、Markdown、Excel 报告。 |
-| 数据模型 | `app/core/models/` | 定义表字段、诊断问题、映射、STG、质量规则、工作流结果、待办、就绪度和交付包等 Pydantic 模型。 |
+| 数据模型 | `app/core/models/` | 定义表字段、诊断问题、映射、STG、质量规则、工作流结果、待办、就绪度、AI-ready 评分和交付包等 Pydantic 模型。 |
 | 维护工具 | `app/maintenance.py` | 提供 doctor、quick-check、命令清单、本地缓存清理等维护入口。 |
 
 ### 代码边界
@@ -200,7 +201,7 @@ tests/        pytest 自动化测试
 - `diagnosis_mapping_stg_quality`：进一步推荐质量规则。
 - `diagnosis_mapping_stg_quality_with_review`：质量规则推荐后支持评审。
 - `diagnosis_mapping_stg_quality_package_with_review`：生成确认规则和执行准备包。
-- `governance_readiness_assessment`：评估治理就绪度。
+- `governance_readiness_assessment`：评估治理就绪度和 AI-ready 水平。
 - `full_governance_work_package`：构建治理工作包。
 - `governance_backlog_build`：构建治理整改待办。
 - `full_governance_backlog_package`：生成完整待办包。

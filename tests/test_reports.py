@@ -18,6 +18,7 @@ from app.core.models.governance_delivery_package_result import (
     GovernanceDeliveryPackageResult,
 )
 from app.core.models.batch_group_result import BatchGroupResult
+from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.confirmation_roundtrip_result import ConfirmationRoundTripResult
 from app.core.models.incremental_diff_item import IncrementalDiffItem
 from app.core.models.incremental_diff_summary import IncrementalDiffSummary
@@ -448,6 +449,18 @@ def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> No
             dimension_scores={"metadata_readiness": 0.8},
         )
     ]
+    ai_ready_scores = [
+        AiReadyScore(
+            object_type="table",
+            object_name="sales_order",
+            overall_score=76.0,
+            ai_ready_level="B_basically_usable",
+            dimension_scores={"discoverability": 82.0},
+            evidence=["table semantic summary available"],
+            risk_flags=["standardization below 60"],
+            recommended_actions=["Review low-confidence standard mappings."],
+        )
+    ]
     governance_gaps = [
         GovernanceGap(
             object_type="table",
@@ -468,6 +481,15 @@ def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> No
             action="Review and confirm standard mappings",
             owner_role="business_data_steward",
             priority="key_tracking",
+            priority_score=0.68,
+            business_impact_score=0.72,
+            ai_consumption_risk_score=0.74,
+            governance_risk_score=0.70,
+            severity_score=0.65,
+            remediation_complexity_score=0.55,
+            priority_reason="report priority score test",
+            suggested_cycle="next_1_to_2_cycles",
+            expected_benefit="Improve semantic consistency.",
             expected_output="confirmed mappings",
         )
     ]
@@ -482,6 +504,8 @@ def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> No
         status="success",
         message="readiness report test",
         readiness_scores=readiness_scores,
+        ai_ready_scores=ai_ready_scores,
+        ai_ready_summary={"overall_score": 76.0, "overall_ai_ready_level": "B_basically_usable"},
         governance_gaps=governance_gaps,
         remediation_actions=remediation_actions,
         governance_work_package=work_package,
@@ -497,21 +521,42 @@ def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> No
 
     json_payload = json.loads(json_path.read_text(encoding="utf-8"))
     assert "readiness_scores" in json_payload
+    assert "ai_ready_scores" in json_payload
+    assert "ai_ready_summary" in json_payload
     assert "governance_gaps" in json_payload
     assert "remediation_actions" in json_payload
     assert "governance_work_package" in json_payload
 
     markdown_content = markdown_path.read_text(encoding="utf-8")
     assert "# Governance Readiness Assessment" in markdown_content
+    assert "# AI-Ready Assessment" in markdown_content
     assert "# Governance Gaps" in markdown_content
     assert "# Remediation Plan" in markdown_content
+    assert "score=0.68" in markdown_content
+    assert "cycle=next_1_to_2_cycles" in markdown_content
     assert "# Governance Work Package" in markdown_content
 
     workbook = load_workbook(excel_path)
     assert "readiness_scores" in workbook.sheetnames
+    assert "ai_ready_scores" in workbook.sheetnames
     assert "governance_gaps" in workbook.sheetnames
     assert "remediation_actions" in workbook.sheetnames
     assert "governance_work_package_summary" in workbook.sheetnames
+    remediation_headers = [
+        cell.value for cell in next(workbook["remediation_actions"].iter_rows(max_row=1))
+    ]
+    assert "priority_score" in remediation_headers
+    assert "business_impact_score" in remediation_headers
+    assert "ai_consumption_risk_score" in remediation_headers
+    assert "governance_risk_score" in remediation_headers
+    assert "remediation_complexity_score" in remediation_headers
+    assert "expected_benefit" in remediation_headers
+    ai_ready_headers = [
+        cell.value for cell in next(workbook["ai_ready_scores"].iter_rows(max_row=1))
+    ]
+    assert "ai_ready_level" in ai_ready_headers
+    assert "discoverability" in ai_ready_headers
+    assert "risk_flags_joined" in ai_ready_headers
 
 
 def test_reports_include_backlog_outputs(tmp_path: Path) -> None:
