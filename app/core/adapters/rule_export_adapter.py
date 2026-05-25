@@ -89,15 +89,15 @@ class RuleExportAdapter:
         """Build the custom JSON rule package payload from the execution contract."""
         resolved_package = _coerce_package(package)
         field_rule_count = sum(
-            1 for rule in resolved_package.rules if rule.rule_scope != "cross_field"
+            1 for rule in resolved_package.rules if rule.rule_scope == "field"
         )
         cross_field_rule_count = sum(
-            1 for rule in resolved_package.rules if rule.rule_scope == "cross_field"
+            1 for rule in resolved_package.rules if rule.rule_scope in {"cross_field", "cross_table"}
         )
         non_native_rule_count = sum(
             1
             for rule in resolved_package.rules
-            if rule.rule_scope == "cross_field" or not rule.engine_hints.get("dbt")
+            if rule.rule_scope != "field" or not rule.engine_hints.get("dbt")
         )
         return {
             "generated_at": _utc_now(),
@@ -111,7 +111,10 @@ class RuleExportAdapter:
                     "rule_id": rule.rule_id,
                     "table": rule.source_table_name,
                     "field": rule.source_field_name,
+                    "rule_name": rule.rule_name,
+                    "rule_description": rule.rule_description,
                     "field_group": rule.field_group,
+                    "target_table": rule.target_table_name,
                     "target_field": rule.target_field_name,
                     "rule_type": rule.rule_type,
                     "rule_scope": rule.rule_scope,
@@ -121,11 +124,13 @@ class RuleExportAdapter:
                     "execution_mode": rule.execution_mode,
                     "severity": rule.severity,
                     "priority": rule.priority,
+                    "risk_level": rule.risk_level,
                     "confidence": rule.confidence,
                     "review_priority": rule.review_priority,
                     "confirmation_source": rule.confirmation_source,
                     "match_basis": rule.match_basis,
                     "reason": rule.reason,
+                    "export_formats": rule.export_formats,
                     "engine_hints": rule.engine_hints,
                     "notes": rule.notes,
                 }
@@ -165,12 +170,15 @@ class RuleExportAdapter:
     @staticmethod
     def map_execution_rule_to_dbt_test(rule: ExecutionReadyRule) -> Any:
         """Map one execution-ready rule to a first-version dbt test shape."""
-        if rule.rule_scope == "cross_field":
+        if rule.rule_scope != "field":
             return {
                 "quality_rule_meta": {
                     "rule_id": rule.rule_id,
                     "rule_scope": rule.rule_scope,
+                    "rule_name": rule.rule_name,
+                    "rule_description": rule.rule_description,
                     "field_group": rule.field_group,
+                    "target_table_name": rule.target_table_name,
                     "rule_type": rule.rule_type,
                     "semantic_type": rule.semantic_type,
                     "rule_expression": rule.rule_expression,
@@ -178,11 +186,12 @@ class RuleExportAdapter:
                     "execution_mode": rule.execution_mode,
                     "severity": rule.severity,
                     "priority": rule.priority,
+                    "risk_level": rule.risk_level,
                     "confidence": rule.confidence,
                     "review_priority": rule.review_priority,
                     "non_native_test": True,
                     "adapter_note": (
-                        "Cross-field rule is carried as metadata in the first-version dbt adapter."
+                        "Non-field rule is carried as metadata in the first-version dbt adapter."
                     ),
                 }
             }
@@ -239,12 +248,12 @@ class RuleExportAdapter:
         if isinstance(confirmed_rules, (ExecutionReadyPackage, dict)):
             package = _coerce_package(confirmed_rules)
             grouped = cls.group_execution_rules_by_table_and_field(package.rules)
-            field_rule_count = sum(1 for rule in package.rules if rule.rule_scope != "cross_field")
-            cross_field_rule_count = sum(1 for rule in package.rules if rule.rule_scope == "cross_field")
+            field_rule_count = sum(1 for rule in package.rules if rule.rule_scope == "field")
+            cross_field_rule_count = sum(1 for rule in package.rules if rule.rule_scope in {"cross_field", "cross_table"})
             non_native_rule_count = sum(
                 1
                 for rule in package.rules
-                if rule.rule_scope == "cross_field" or not rule.engine_hints.get("dbt")
+                if rule.rule_scope != "field" or not rule.engine_hints.get("dbt")
             )
             models: list[dict[str, object]] = []
             for table_name in sorted(grouped):
@@ -261,12 +270,15 @@ class RuleExportAdapter:
                                     {
                                         "rule_id": rule.rule_id,
                                         "rule_scope": rule.rule_scope,
+                                        "rule_name": rule.rule_name,
                                         "field_group": rule.field_group,
+                                        "target_table_name": rule.target_table_name,
                                         "rule_type": rule.rule_type,
                                         "semantic_type": rule.semantic_type,
                                         "execution_mode": rule.execution_mode,
                                         "severity": rule.severity,
                                         "priority": rule.priority,
+                                        "risk_level": rule.risk_level,
                                     }
                                     for rule in rules
                                 ]
@@ -302,15 +314,15 @@ class RuleExportAdapter:
         """Build a lightweight JSON manifest for one execution-ready package."""
         resolved_package = _coerce_package(package)
         field_rule_count = sum(
-            1 for rule in resolved_package.rules if rule.rule_scope != "cross_field"
+            1 for rule in resolved_package.rules if rule.rule_scope == "field"
         )
         cross_field_rule_count = sum(
-            1 for rule in resolved_package.rules if rule.rule_scope == "cross_field"
+            1 for rule in resolved_package.rules if rule.rule_scope in {"cross_field", "cross_table"}
         )
         non_native_rule_count = sum(
             1
             for rule in resolved_package.rules
-            if rule.rule_scope == "cross_field" or not rule.engine_hints.get("dbt")
+            if rule.rule_scope != "field" or not rule.engine_hints.get("dbt")
         )
         return {
             "generated_at": _utc_now(),
@@ -326,13 +338,17 @@ class RuleExportAdapter:
                 {
                     "rule_id": rule.rule_id,
                     "target": f"{rule.source_table_name}.{rule.source_field_name}",
+                    "rule_name": rule.rule_name,
                     "field_group": rule.field_group,
+                    "target_table_name": rule.target_table_name,
+                    "target_field_name": rule.target_field_name,
                     "rule_scope": rule.rule_scope,
                     "rule_type": rule.rule_type,
                     "semantic_type": rule.semantic_type,
                     "execution_mode": rule.execution_mode,
                     "severity": rule.severity,
                     "priority": rule.priority,
+                    "risk_level": rule.risk_level,
                     "confidence": rule.confidence,
                     "review_priority": rule.review_priority,
                     "engine_hints": rule.engine_hints,

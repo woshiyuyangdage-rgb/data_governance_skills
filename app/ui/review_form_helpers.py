@@ -17,9 +17,12 @@ def candidate_evidence(top_candidates: Iterable[dict[str, object]]) -> list[str]
         standard_name = candidate.get("standard_name") or "N/A"
         match_score = candidate.get("match_score")
         match_reason = candidate.get("match_reason") or "N/A"
-        evidence.append(
-            f"{standard_code} | {standard_name} | score={match_score} | {match_reason}"
-        )
+        line = f"{standard_code} | {standard_name} | score={match_score} | {match_reason}"
+        if candidate.get("risk_hint"):
+            line = f"{line} | risk={candidate['risk_hint']}"
+        if candidate.get("action_suggestion"):
+            line = f"{line} | action={candidate['action_suggestion']}"
+        evidence.append(line)
     return evidence
 
 

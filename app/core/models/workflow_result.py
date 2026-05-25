@@ -43,6 +43,10 @@ from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.models.rule_export_result import RuleExportResult
 from app.core.models.review_summary import ReviewSummary
+from app.core.models.semantic_enrichment_result import (
+    FieldDescriptionSuggestion,
+    TableSemanticSummary,
+)
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_table_suggestion import StgTableSuggestion
 from app.core.models.workbook_import_summary import WorkbookImportSummary
@@ -56,6 +60,11 @@ class WorkflowResult(BaseModel):
     task_count: int = 0
     issues: list[Issue] = Field(default_factory=list)
     tasks: list[GovernanceTask] = Field(default_factory=list)
+    field_description_suggestions: list[FieldDescriptionSuggestion] = Field(
+        default_factory=list
+    )
+    table_semantic_summaries: list[TableSemanticSummary] = Field(default_factory=list)
+    semantic_enrichment_summary: str | None = None
     mapping_results: list[MappingResult] = Field(default_factory=list)
     confirmed_mapping_results: list[MappingResult] = Field(default_factory=list)
     unmapped_fields: list[UnmappedField] = Field(default_factory=list)

@@ -22,6 +22,7 @@ severity_mapping:
   naming_suspected_spelling_error: low
   standard_mapping_missing: medium
   standard_mapping_low_confidence: low
+  standard_mapping_suspected_wrong: high
   stg_field_low_confidence: low
   stg_field_technical_reservation: medium
   stg_table_requires_manual_review: medium

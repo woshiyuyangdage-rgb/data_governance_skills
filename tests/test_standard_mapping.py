@@ -128,3 +128,64 @@ def test_semantic_match_can_promote_low_rule_score_to_mapping(monkeypatch) -> No
     assert all(
         unmapped.field_name != "buyer_name" for unmapped in result.unmapped_fields
     )
+
+
+def test_standard_mapping_flags_type_conflict_for_manual_review() -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="customer_master",
+            business_domain="customer",
+            fields=[
+                FieldMeta(
+                    field_name="customer_id",
+                    field_name_cn="customer id",
+                    data_type="decimal",
+                    business_domain="customer",
+                )
+            ],
+        )
+    ]
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    mapping = result.mapping_results[0]
+    assert mapping.recommended_standard_code == "customer_id"
+    assert mapping.requires_manual_review is True
+    assert mapping.mapping_status == "manual_review"
+    assert "Field type decimal conflicts with standard type string" in (
+        mapping.risk_hint or ""
+    )
+    assert any("data type conflict" in item["match_reason"] for item in mapping.top_candidates)
+
+
+def test_standard_mapping_detects_suspected_wrong_existing_binding() -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="customer_master",
+            business_domain="customer",
+            fields=[
+                FieldMeta(
+                    field_name="cust_no",
+                    field_name_cn="customer number",
+                    field_description="Unique customer number.",
+                    data_type="varchar",
+                    standard_code="customer_name",
+                    standard_name="customer_name",
+                    business_domain="customer",
+                )
+            ],
+        )
+    ]
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    mapping = result.mapping_results[0]
+    assert mapping.recommended_standard_code == "customer_id"
+    assert mapping.mapping_status == "existing_mapping_suspect"
+    assert mapping.requires_manual_review is True
+    assert any(
+        issue.issue_type == "standard_mapping_suspected_wrong"
+        for issue in result.issues
+    )

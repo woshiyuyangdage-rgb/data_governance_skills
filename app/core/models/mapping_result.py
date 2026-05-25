@@ -13,6 +13,11 @@ class MappingResult(BaseModel):
     recommended_standard_name_cn: str | None = None
     match_score: float = 0.0
     match_reason: str = ""
+    risk_hint: str | None = None
+    action_suggestion: str | None = None
+    requires_manual_review: bool = False
+    mapping_status: str | None = None
+    context_evidence: list[str] = Field(default_factory=list)
     candidate_count: int = 0
     confirmed_source: str | None = None
     review_action: str | None = None
@@ -29,4 +34,7 @@ class UnmappedField(BaseModel):
     best_candidate_code: str | None = None
     best_candidate_score: float | None = None
     reason: str = ""
+    risk_hint: str | None = None
+    action_suggestion: str | None = None
+    requires_manual_review: bool = False
     evidence: list[str] = Field(default_factory=list)

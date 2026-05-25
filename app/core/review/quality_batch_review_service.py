@@ -125,6 +125,7 @@ def summarize_review_queue(
         "total_rule_count": len(quality_rule_suggestions),
         "field_rule_count": scope_counts.get("field", 0),
         "cross_field_rule_count": scope_counts.get("cross_field", 0),
+        "cross_table_rule_count": scope_counts.get("cross_table", 0),
         "low_confidence_rule_count": low_confidence_count,
         "review_priority_counts": priority_counts,
         "rule_scope_counts": scope_counts,

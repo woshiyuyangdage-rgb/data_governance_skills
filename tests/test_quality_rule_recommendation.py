@@ -239,6 +239,62 @@ def test_field_level_rules_include_confidence_and_review_priority() -> None:
     assert result.quality_rule_suggestions
     assert all(rule.confidence is not None for rule in result.quality_rule_suggestions)
     assert all(rule.review_priority is not None for rule in result.quality_rule_suggestions)
+    assert all(rule.rule_name for rule in result.quality_rule_suggestions)
+    assert all(rule.rule_description for rule in result.quality_rule_suggestions)
+    assert all(rule.risk_level for rule in result.quality_rule_suggestions)
+    assert all(rule.export_formats for rule in result.quality_rule_suggestions)
+
+
+def test_foreign_key_metadata_recommends_cross_table_reference_rule() -> None:
+    skill = QualityRuleRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="customer_master",
+            primary_key_fields=["customer_id"],
+            fields=[
+                FieldMeta(
+                    field_name="customer_id",
+                    data_type="varchar",
+                    is_primary_key=True,
+                )
+            ],
+        ),
+        TableMeta(
+            table_name="contract_info",
+            foreign_key_fields=["customer_id"],
+            fields=[
+                FieldMeta(
+                    field_name="contract_id",
+                    data_type="varchar",
+                    is_primary_key=True,
+                ),
+                FieldMeta(
+                    field_name="customer_id",
+                    data_type="varchar",
+                    is_foreign_key=True,
+                ),
+            ],
+        ),
+    ]
+
+    result = skill.run(QualityRuleRecommendationInput(tables=tables))
+
+    reference_rules = [
+        rule
+        for rule in result.cross_field_quality_rules
+        if rule.rule_scope == "cross_table"
+        and rule.rule_type == "cross_table_reference"
+    ]
+    assert reference_rules
+    rule = reference_rules[0]
+    assert rule.source_table_name == "contract_info"
+    assert rule.source_field_name == "customer_id"
+    assert rule.target_table_name == "customer_master"
+    assert rule.target_field_name == "customer_id"
+    assert "contract_info.customer_id exists in customer_master.customer_id" == rule.rule_expression
+    assert rule.requires_manual_review is True
+    assert "custom_sql_check" in rule.export_formats
+    assert "cross-table reference rules" in result.summary
 
 
 def test_review_history_association_rules_promote_learned_rule(

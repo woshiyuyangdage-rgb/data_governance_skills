@@ -1,6 +1,7 @@
 gaps:
   - gap_type: metadata_completion_gap
     sources:
+      - missing_metadata_defect
       - missing_table_description
       - missing_field_description
       - missing_field_cn_name
@@ -13,10 +14,31 @@ gaps:
       - naming_not_snake_case
     category: standardization
 
+  - gap_type: business_ownership_gap
+    sources:
+      - business_ownership_defect
+    category: metadata
+
+  - gap_type: semantic_consistency_gap
+    sources:
+      - semantic_consistency_defect
+    category: semantic
+
+  - gap_type: technical_object_gap
+    sources:
+      - technical_object_defect
+    category: technical
+
+  - gap_type: ai_consumption_risk_gap
+    sources:
+      - ai_consumption_risk_defect
+    category: ai
+
   - gap_type: standard_mapping_gap
     sources:
       - standard_mapping_missing
       - standard_mapping_low_confidence
+      - standard_mapping_suspected_wrong
     category: mapping
 
   - gap_type: structural_standardization_gap

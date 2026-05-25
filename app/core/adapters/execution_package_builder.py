@@ -137,24 +137,28 @@ class ExecutionPackageBuilder:
             engine_hints = {}
         engine_hints = dict(engine_hints)
         engine_hints["dbt_native_compatible"] = bool(engine_hints.get("dbt")) and rule.rule_scope == "field"
-        engine_hints["custom_only"] = not bool(engine_hints.get("dbt")) or rule.rule_scope == "cross_field"
+        engine_hints["custom_only"] = not bool(engine_hints.get("dbt")) or rule.rule_scope != "field"
         engine_hints["advisory_only"] = str(self.infer_execution_mode(rule.rule_type)) == "advisory_only"
 
         return ExecutionReadyRule(
             rule_id=self.build_rule_id(rule),
             source_table_name=rule.source_table_name,
             source_field_name=rule.source_field_name,
+            rule_name=rule.rule_name,
+            rule_description=rule.rule_description,
             target_field_name=rule.recommended_field_name,
+            target_table_name=rule.target_table_name,
             rule_type=rule.rule_type,
             semantic_type=template.get("semantic_type"),
             rule_expression=rule.rule_expression,
             execution_expression=rule.rule_expression
-            if rule.rule_scope == "cross_field" and rule.rule_expression
+            if rule.rule_scope != "field" and rule.rule_expression
             else template.get("execution_expression")
             or rule.rule_expression,
             execution_mode=self.infer_execution_mode(rule.rule_type),
             severity=rule.severity,
             priority=rule.priority or self.infer_execution_priority(rule.severity),
+            risk_level=rule.risk_level,
             rule_scope=rule.rule_scope,
             field_group=list(rule.field_group),
             confidence=rule.confidence,
@@ -162,6 +166,7 @@ class ExecutionPackageBuilder:
             confirmation_source=rule.confirmation_source,
             match_basis=rule.match_basis,
             reason=rule.reason,
+            export_formats=list(rule.export_formats),
             engine_hints=engine_hints,
             trace_metadata=self.build_trace_metadata(
                 index=index,
@@ -182,7 +187,7 @@ class ExecutionPackageBuilder:
         cross_field_rule_count = 0
         non_native_rule_count = 0
         for rule in package.rules:
-            if rule.rule_scope == "cross_field":
+            if rule.rule_scope in {"cross_field", "cross_table"}:
                 cross_field_rule_count += 1
             else:
                 field_rule_count += 1

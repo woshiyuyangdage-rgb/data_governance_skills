@@ -13,6 +13,7 @@ from app.core.normalize import (
 )
 from app.core.rules.config_loader import (
     get_issue_severity,
+    get_execution_package_policies_config,
     get_quality_review_policies_config,
     get_quality_rule_policies_config,
     get_quality_rule_templates_config,
@@ -77,6 +78,73 @@ def compute_quality_rule_confidence(match_source: str) -> float:
     )
 
 
+def risk_level_for_severity(severity: str | None) -> str:
+    """Map severity to a review-friendly risk level."""
+    return {
+        "high": "high",
+        "medium": "medium",
+        "low": "low",
+    }.get(str(severity or "").strip().lower(), "medium")
+
+
+def export_formats_for_rule(rule_scope: str, rule_type: str) -> list[str]:
+    """Infer practical export targets for one recommended rule."""
+    formats = ["excel_quality_rule_list", "json_rule_package", "governance_task"]
+    templates = get_execution_package_policies_config()
+    compatibility = templates.get("engine_compatibility", {})
+    dbt_enabled = bool(
+        compatibility.get("dbt", {}).get("enabled")
+        if isinstance(compatibility, dict)
+        and isinstance(compatibility.get("dbt", {}), dict)
+        else False
+    )
+    dbt_native_types = {"not_null", "uniqueness", "value_set"}
+    if dbt_enabled and str(rule_scope) == "field" and rule_type in dbt_native_types:
+        formats.append("dbt_tests_yaml")
+    if str(rule_scope) != "field" or rule_type not in dbt_native_types:
+        formats.append("custom_sql_check")
+    return formats
+
+
+def rule_name_for(
+    *,
+    source_table_name: str,
+    source_field_name: str,
+    rule_type: str,
+    rule_scope: str,
+    field_group: list[str] | None = None,
+    target_table_name: str | None = None,
+    target_field_name: str | None = None,
+) -> str:
+    """Build a readable deterministic rule name."""
+    scope = str(rule_scope or "field")
+    if scope == "cross_table":
+        target = (
+            f"{target_table_name}.{target_field_name}"
+            if target_table_name and target_field_name
+            else "referenced master field"
+        )
+        return (
+            f"{source_table_name}.{source_field_name} references {target}"
+        )
+    if scope == "cross_field":
+        group = ", ".join(field_group or [source_field_name])
+        return f"{source_table_name}: {rule_type} for {group}"
+    return f"{source_table_name}.{source_field_name}: {rule_type}"
+
+
+def rule_description_for(
+    *,
+    rule_type: str,
+    rule_expression: str | None,
+    reason: str | None,
+) -> str:
+    """Build a concise business-facing rule description."""
+    expression = f" Expression: {rule_expression}." if rule_expression else ""
+    reason_text = f" Basis: {reason}" if reason else ""
+    return f"Recommended {rule_type} quality check.{expression}{reason_text}".strip()
+
+
 def infer_review_priority(
     *,
     rule_scope: str,
@@ -98,7 +166,7 @@ def infer_review_priority(
         return "manual_review_preferred"
     if confidence is not None and confidence <= low_threshold:
         return "high_review_priority"
-    if str(rule_scope) == "cross_field" and bool(
+    if str(rule_scope) in {"cross_field", "cross_table"} and bool(
         priority_policy.get("prioritize_cross_field_rules", True)
     ):
         if confidence is not None and confidence < medium_threshold:
@@ -327,25 +395,41 @@ def build_quality_rule_suggestion(
     rule_type = str(rule_template.get("rule_type", ""))
     confidence = compute_quality_rule_confidence(recommendation_source)
     rule_expression = rule_template.get("rule_expression")
+    expression_text = str(rule_expression) if rule_expression is not None else None
+    review_priority = infer_review_priority(
+        rule_scope="field",
+        rule_type=rule_type,
+        confidence=confidence,
+    )
     return QualityRuleSuggestion(
         source_table_name=source_table_name,
         source_field_name=source_field_name,
+        rule_name=rule_name_for(
+            source_table_name=source_table_name,
+            source_field_name=source_field_name,
+            rule_type=rule_type,
+            rule_scope="field",
+        ),
+        rule_description=rule_description_for(
+            rule_type=rule_type,
+            rule_expression=expression_text,
+            reason=reason,
+        ),
         recommended_field_name=recommended_field_name,
         rule_type=rule_type,
-        rule_expression=str(rule_expression) if rule_expression is not None else None,
+        rule_expression=expression_text,
         severity=severity,
         priority=priority_for_severity(severity),
+        risk_level=risk_level_for_severity(severity),
         confidence=confidence,
-        review_priority=infer_review_priority(
-            rule_scope="field",
-            rule_type=rule_type,
-            confidence=confidence,
-        ),
+        requires_manual_review=review_priority != "standard_review_priority",
+        review_priority=review_priority,
         rule_scope="field",
         field_group=[source_field_name],
         recommendation_source=recommendation_source,
         match_basis=match_basis,
         reason=reason,
+        export_formats=export_formats_for_rule("field", rule_type),
         learning_context=learning_context_for_field(
             field_name=source_field_name,
             data_type=source_data_type,

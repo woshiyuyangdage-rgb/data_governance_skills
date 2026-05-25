@@ -67,6 +67,30 @@ def _cross_field_rules() -> list[ConfirmedQualityRule]:
     ]
 
 
+def _cross_table_rules() -> list[ConfirmedQualityRule]:
+    return _rules() + [
+        ConfirmedQualityRule(
+            source_table_name="contract_info",
+            source_field_name="customer_id",
+            rule_name="contract_info.customer_id references customer_master.customer_id",
+            rule_scope="cross_table",
+            field_group=["customer_id"],
+            target_table_name="customer_master",
+            target_field_name="customer_id",
+            rule_type="cross_table_reference",
+            rule_expression="contract_info.customer_id exists in customer_master.customer_id",
+            severity="medium",
+            priority="P2",
+            risk_level="medium",
+            confidence=0.8,
+            review_priority="medium_review_priority",
+            confirmation_source="override_accept",
+            reason="Foreign key should resolve to parent table.",
+            export_formats=["excel_quality_rule_list", "json_rule_package", "custom_sql_check"],
+        )
+    ]
+
+
 def test_export_custom_json_rules_succeeds() -> None:
     adapter = RuleExportAdapter()
     output_path = _output_path("rules.json")
@@ -173,3 +197,30 @@ def test_cross_field_rules_export_to_dbt_as_non_native_metadata() -> None:
     assert payload["meta"]["exported_cross_field_rule_count"] == 1
     assert payload["meta"]["non_native_rule_count"] >= 1
     assert start_column["tests"][0]["quality_rule_meta"]["non_native_test"] is True
+
+
+def test_cross_table_rules_are_preserved_in_json_and_dbt_metadata() -> None:
+    adapter = RuleExportAdapter()
+    package = ExecutionPackageBuilder().build_package(_cross_table_rules())
+    json_path = _output_path("cross_table_rules.json")
+    dbt_path = _output_path("cross_table_dbt.yml")
+
+    json_result = adapter.export_custom_json_rules(_cross_table_rules(), str(json_path))
+    dbt_result = adapter.export_dbt_tests_yaml(package, str(dbt_path))
+    json_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    dbt_payload = yaml.safe_load(dbt_path.read_text(encoding="utf-8"))
+    contract_model = next(
+        model for model in dbt_payload["models"] if model["name"] == "contract_info"
+    )
+    customer_column = next(
+        column for column in contract_model["columns"] if column["name"] == "customer_id"
+    )
+    meta = customer_column["tests"][0]["quality_rule_meta"]
+
+    assert json_result.rule_count == 3
+    assert dbt_result.rule_count == 3
+    assert json_payload["exported_cross_field_rule_count"] == 1
+    assert json_payload["rules"][-1]["target_table"] == "customer_master"
+    assert meta["rule_scope"] == "cross_table"
+    assert meta["target_table_name"] == "customer_master"
+    assert meta["non_native_test"] is True

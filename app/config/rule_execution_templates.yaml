@@ -74,6 +74,12 @@ templates:
     engine_hints:
       custom_json: reference_consistency_hint
 
+  cross_table_reference:
+    semantic_type: cross_table_referential_constraint
+    execution_expression: child field should exist in referenced parent table field
+    engine_hints:
+      custom_json: cross_table_reference_check
+
   identifier_presence_group:
     semantic_type: domain_presence_advisory
     execution_expression: domain identifier/name fields should be reviewed as a group

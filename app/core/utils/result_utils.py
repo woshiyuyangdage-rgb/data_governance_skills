@@ -1,8 +1,10 @@
 """Facade for workflow-result dataframe helpers."""
 
 from app.core.utils.result_utils_core import (
+    field_description_suggestions_to_dataframe,
     issues_to_dataframe,
     skill_outputs_to_dataframe,
+    table_semantic_summaries_to_dataframe,
     tasks_to_dataframe,
 )
 from app.core.utils.result_utils_governance import (

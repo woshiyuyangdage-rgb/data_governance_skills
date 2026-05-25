@@ -9,9 +9,11 @@ from app.core.models.issue import Issue
 from app.core.skills.base_skill import BaseSkill
 
 DIAGNOSIS_DEFECT_TYPES = {
+    "missing_metadata_defect",
     "business_ownership_defect",
-    "semantic_description_defect",
-    "technical_purity_defect",
+    "semantic_consistency_defect",
+    "technical_object_defect",
+    "ai_consumption_risk_defect",
     "naming_standard_defect",
 }
 
@@ -50,11 +52,15 @@ class GovernanceTaskPackagingSkill(BaseSkill):
     @staticmethod
     def infer_owner_role(defect_types: set[str]) -> str:
         """Infer an owner role from grouped defect types."""
+        if "ai_consumption_risk_defect" in defect_types:
+            return "governance_lead"
+        if "technical_object_defect" in defect_types:
+            return "data_architect"
         if "business_ownership_defect" in defect_types:
             return "business_data_steward"
-        if "technical_purity_defect" in defect_types:
-            return "data_architect"
-        if "semantic_description_defect" in defect_types:
+        if "semantic_consistency_defect" in defect_types:
+            return "metadata_manager"
+        if "missing_metadata_defect" in defect_types:
             return "metadata_manager"
         return "data_governance_engineer"
 
@@ -62,14 +68,18 @@ class GovernanceTaskPackagingSkill(BaseSkill):
     def build_action_text(defect_types: set[str]) -> str:
         """Build a concise governance action from defect types."""
         actions: list[str] = []
+        if "missing_metadata_defect" in defect_types:
+            actions.append("Complete missing table, field, domain, lifecycle, and sensitivity metadata.")
         if "naming_standard_defect" in defect_types:
             actions.append("Review naming conventions and update table or field metadata.")
-        if "semantic_description_defect" in defect_types:
-            actions.append("Complete missing business descriptions and improve description quality.")
+        if "semantic_consistency_defect" in defect_types:
+            actions.append("Align descriptions and standard mappings with business semantics.")
         if "business_ownership_defect" in defect_types:
             actions.append("Clarify business meaning, Chinese labels, and ownership metadata.")
-        if "technical_purity_defect" in defect_types:
+        if "technical_object_defect" in defect_types:
             actions.append("Assess whether the table should remain in the business metadata catalog.")
+        if "ai_consumption_risk_defect" in defect_types:
+            actions.append("Add AI consumption guardrails for sensitive or ambiguous metadata.")
         return " ".join(actions) or "Review grouped metadata governance issues."
 
     @staticmethod

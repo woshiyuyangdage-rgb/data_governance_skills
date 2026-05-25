@@ -14,6 +14,7 @@ from app.core.utils.result_utils import (
     execution_package_export_results_to_dataframe,
     execution_package_summary_to_dataframe,
     execution_ready_rules_to_dataframe,
+    field_description_suggestions_to_dataframe,
     governance_backlog_items_to_dataframe,
     governance_gaps_to_dataframe,
     governance_portfolio_summary_to_dataframe,
@@ -31,6 +32,7 @@ from app.core.utils.result_utils import (
     skill_outputs_to_dataframe,
     stg_fields_to_dataframe,
     stg_tables_to_dataframe,
+    table_semantic_summaries_to_dataframe,
     tasks_to_dataframe,
     unmapped_fields_to_dataframe,
 )
@@ -52,6 +54,12 @@ def export_workflow_result_to_excel(
                 "input_table_count": result.input_table_count,
                 "issue_count": result.issue_count,
                 "task_count": result.task_count,
+                "field_description_suggestion_count": len(
+                    result.field_description_suggestions
+                ),
+                "table_semantic_summary_count": len(
+                    result.table_semantic_summaries
+                ),
                 "mapping_result_count": len(result.mapping_results),
                 "confirmed_mapping_result_count": len(result.confirmed_mapping_results),
                 "unmapped_field_count": len(result.unmapped_fields),
@@ -127,6 +135,12 @@ def export_workflow_result_to_excel(
     )
     issues_df = issues_to_dataframe(result.issues)
     tasks_df = tasks_to_dataframe(result.tasks)
+    field_description_suggestions_df = field_description_suggestions_to_dataframe(
+        result.field_description_suggestions
+    )
+    table_semantic_summaries_df = table_semantic_summaries_to_dataframe(
+        result.table_semantic_summaries
+    )
     skill_outputs_df = skill_outputs_to_dataframe(result.skill_outputs)
     mapping_results_df = mapping_results_to_dataframe(result.mapping_results)
     confirmed_mapping_results_df = mapping_results_to_dataframe(
@@ -278,6 +292,16 @@ def export_workflow_result_to_excel(
         summary_df.to_excel(writer, sheet_name="summary", index=False)
         issues_df.to_excel(writer, sheet_name="issues", index=False)
         tasks_df.to_excel(writer, sheet_name="tasks", index=False)
+        field_description_suggestions_df.to_excel(
+            writer,
+            sheet_name="field_descriptions",
+            index=False,
+        )
+        table_semantic_summaries_df.to_excel(
+            writer,
+            sheet_name="table_semantic_summary",
+            index=False,
+        )
         skill_outputs_df.to_excel(writer, sheet_name="skill_outputs_overview", index=False)
         mapping_results_df.to_excel(writer, sheet_name="standard_mapping", index=False)
         confirmed_mapping_results_df.to_excel(

@@ -38,6 +38,10 @@ from app.core.models.readiness_score import ReadinessScore
 from app.core.models.resolved_context import ResolvedContext
 from app.core.models.remediation_action import RemediationAction
 from app.core.models.review_summary import ReviewSummary
+from app.core.models.semantic_enrichment_result import (
+    FieldDescriptionSuggestion,
+    TableSemanticSummary,
+)
 from app.core.models.rule_export_result import RuleExportResult
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_review_record import StgReviewRecord
@@ -91,6 +95,8 @@ __all__ = [
     "RemediationAction",
     "UnmappedField",
     "ReviewSummary",
+    "FieldDescriptionSuggestion",
+    "TableSemanticSummary",
     "RuleExportResult",
     "StgFieldSuggestion",
     "StgReviewRecord",

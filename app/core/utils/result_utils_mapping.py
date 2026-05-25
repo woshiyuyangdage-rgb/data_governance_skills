@@ -20,6 +20,11 @@ def mapping_results_to_dataframe(mapping_results: list[MappingResult]) -> pd.Dat
                 "recommended_standard_name_cn": result.recommended_standard_name_cn,
                 "match_score": result.match_score,
                 "match_reason": result.match_reason,
+                "risk_hint": result.risk_hint,
+                "action_suggestion": result.action_suggestion,
+                "requires_manual_review": result.requires_manual_review,
+                "mapping_status": result.mapping_status,
+                "context_evidence_joined": " | ".join(result.context_evidence),
                 "candidate_count": result.candidate_count,
                 "confirmed_source": result.confirmed_source,
                 "review_action": result.review_action,
@@ -41,6 +46,9 @@ def unmapped_fields_to_dataframe(unmapped_fields: list[UnmappedField]) -> pd.Dat
                 "best_candidate_code": field.best_candidate_code,
                 "best_candidate_score": field.best_candidate_score,
                 "reason": field.reason,
+                "risk_hint": field.risk_hint,
+                "action_suggestion": field.action_suggestion,
+                "requires_manual_review": field.requires_manual_review,
                 "evidence_joined": " | ".join(field.evidence),
             }
         )
@@ -91,4 +99,3 @@ def stg_fields_to_dataframe(
             }
         )
     return pd.DataFrame(records)
-

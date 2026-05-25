@@ -67,7 +67,10 @@ def _load_csv_pack(file_path: Path, required_columns: list[str]) -> pd.DataFrame
             list(dataframe.columns),
         )
 
-    return dataframe[required_columns]
+    ordered_columns = list(required_columns) + [
+        column for column in dataframe.columns if column not in required_columns
+    ]
+    return dataframe[ordered_columns]
 
 
 @lru_cache(maxsize=1)

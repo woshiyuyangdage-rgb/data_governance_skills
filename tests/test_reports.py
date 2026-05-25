@@ -122,16 +122,40 @@ def test_reports_include_mapping_outputs_when_present(tmp_path: Path) -> None:
     export_workflow_result_to_excel(result, str(excel_path))
 
     json_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert "field_description_suggestions" in json_payload
+    assert "table_semantic_summaries" in json_payload
     assert "mapping_results" in json_payload
     assert "unmapped_fields" in json_payload
+    assert "risk_hint" in json_payload["mapping_results"][0]
+    assert "action_suggestion" in json_payload["mapping_results"][0]
 
     markdown_content = markdown_path.read_text(encoding="utf-8")
+    assert "# Semantic Enrichment Suggestions" in markdown_content
+    assert "## Field Description Suggestions" in markdown_content
     assert "# Standard Mapping Recommendations" in markdown_content
     assert "# Unmapped or Low-Confidence Fields" in markdown_content
+    assert "risk=" in markdown_content
+    assert "action=" in markdown_content
 
     workbook = load_workbook(excel_path)
+    assert "field_descriptions" in workbook.sheetnames
+    assert "table_semantic_summary" in workbook.sheetnames
     assert "standard_mapping" in workbook.sheetnames
     assert "unmapped_fields" in workbook.sheetnames
+    table_summary_headers = [
+        cell.value for cell in next(workbook["table_semantic_summary"].iter_rows(max_row=1))
+    ]
+    assert "business_object" in table_summary_headers
+    assert "business_purpose" in table_summary_headers
+    assert "core_fields_joined" in table_summary_headers
+    assert "applicable_scenarios_joined" in table_summary_headers
+    assert "ai_usage_risks_joined" in table_summary_headers
+    assert "recommended_actions_joined" in table_summary_headers
+    standard_mapping_headers = [
+        cell.value for cell in next(workbook["standard_mapping"].iter_rows(max_row=1))
+    ]
+    assert "risk_hint" in standard_mapping_headers
+    assert "action_suggestion" in standard_mapping_headers
 
 
 def test_reports_include_stg_outputs_when_present(tmp_path: Path) -> None:

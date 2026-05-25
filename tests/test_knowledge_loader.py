@@ -47,3 +47,21 @@ def test_missing_knowledge_pack_columns_raise_error(tmp_path: Path) -> None:
         _load_csv_pack(invalid_file, ABBREVIATION_REQUIRED_COLUMNS)
 
     assert "expanded_form" in str(exc_info.value)
+
+
+def test_load_csv_pack_preserves_optional_columns(tmp_path: Path) -> None:
+    pack_file = tmp_path / "standard_fields.csv"
+    pack_file.write_text(
+        (
+            "standard_code,standard_name,standard_name_cn,description,data_type,"
+            "business_domain,aliases,data_length,value_domain\n"
+            "customer_id,customer_id,Customer ID,Identifier,string,customer,"
+            "cust_id,64,CUST001;CUST002\n"
+        ),
+        encoding="utf-8",
+    )
+
+    dataframe = _load_csv_pack(pack_file, STANDARD_FIELDS_REQUIRED_COLUMNS)
+
+    assert "data_length" in dataframe.columns
+    assert "value_domain" in dataframe.columns

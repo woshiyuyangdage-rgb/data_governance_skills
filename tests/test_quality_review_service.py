@@ -131,3 +131,56 @@ def test_cross_field_review_builds_confirmed_rule() -> None:
     assert confirmed_rules[0].field_group == ["start_date", "end_date"]
     assert confirmed_rules[0].confidence == 1.0
     assert summary["cross_field_confirmed_count"] == 1
+
+
+def test_cross_table_review_preserves_reference_metadata() -> None:
+    suggestion = QualityRuleSuggestion(
+        source_table_name="contract_info",
+        source_field_name="customer_id",
+        rule_name="contract_info.customer_id references customer_master.customer_id",
+        rule_description="Recommended cross_table_reference quality check.",
+        rule_scope="cross_table",
+        field_group=["customer_id"],
+        target_table_name="customer_master",
+        target_field_name="customer_id",
+        rule_type="cross_table_reference",
+        rule_expression="contract_info.customer_id exists in customer_master.customer_id",
+        severity="medium",
+        priority="P2",
+        risk_level="medium",
+        confidence=0.8,
+        requires_manual_review=True,
+        review_priority="medium_review_priority",
+        recommendation_source="cross_table_reference_pattern",
+        match_basis="foreign_key=contract_info.customer_id; primary_key=customer_master.customer_id",
+        reason="Foreign-key metadata indicates a parent table reference.",
+        export_formats=["excel_quality_rule_list", "json_rule_package", "custom_sql_check"],
+    )
+    key = build_quality_rule_key(
+        suggestion.source_table_name,
+        suggestion.source_field_name,
+        suggestion.rule_type,
+        rule_scope=suggestion.rule_scope,
+        field_group=suggestion.field_group,
+    )
+
+    records = build_quality_rule_review_records_from_results(
+        [suggestion],
+        {key: {"review_action": "accept"}},
+        source="test",
+    )
+    confirmed_rules = build_confirmed_quality_rules([suggestion], records)
+
+    assert records[0].target_table_name == "customer_master"
+    assert records[0].export_formats == [
+        "excel_quality_rule_list",
+        "json_rule_package",
+        "custom_sql_check",
+    ]
+    assert len(confirmed_rules) == 1
+    confirmed = confirmed_rules[0]
+    assert confirmed.rule_scope == "cross_table"
+    assert confirmed.target_table_name == "customer_master"
+    assert confirmed.target_field_name == "customer_id"
+    assert confirmed.rule_name == suggestion.rule_name
+    assert confirmed.export_formats == suggestion.export_formats

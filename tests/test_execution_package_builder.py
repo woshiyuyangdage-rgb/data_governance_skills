@@ -77,3 +77,41 @@ def test_cross_field_confirmed_rule_enters_execution_package() -> None:
     assert cross_rule.field_group == ["start_date", "end_date"]
     assert cross_rule.execution_expression == "start_date <= end_date"
     assert cross_rule.engine_hints["custom_only"] is True
+
+
+def test_cross_table_confirmed_rule_enters_execution_package() -> None:
+    builder = ExecutionPackageBuilder()
+    rules = [
+        ConfirmedQualityRule(
+            source_table_name="contract_info",
+            source_field_name="customer_id",
+            rule_name="contract_info.customer_id references customer_master.customer_id",
+            rule_scope="cross_table",
+            field_group=["customer_id"],
+            target_table_name="customer_master",
+            target_field_name="customer_id",
+            rule_type="cross_table_reference",
+            rule_expression="contract_info.customer_id exists in customer_master.customer_id",
+            severity="medium",
+            priority="P2",
+            risk_level="medium",
+            confidence=0.8,
+            review_priority="medium_review_priority",
+            confirmation_source="override_accept",
+            match_basis="foreign_key=contract_info.customer_id",
+            reason="Foreign key should resolve to parent table.",
+            export_formats=["excel_quality_rule_list", "json_rule_package", "custom_sql_check"],
+        )
+    ]
+
+    package = builder.build_package(rules, profile_name="test_profile")
+    summary = builder.summarize_package(package)
+    rule = package.rules[0]
+
+    assert summary["field_rule_count"] == 0
+    assert summary["cross_field_rule_count"] == 1
+    assert rule.rule_scope == "cross_table"
+    assert rule.target_table_name == "customer_master"
+    assert rule.semantic_type == "cross_table_referential_constraint"
+    assert rule.execution_mode == "batch_validation"
+    assert rule.engine_hints["custom_only"] is True

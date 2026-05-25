@@ -14,6 +14,7 @@ from app.core.skills.data_quality_rule_skill.quality_rule_cross_field import (
     build_cross_field_rule,
     cross_field_rule_to_suggestion,
     deduplicate_cross_field_rules,
+    detect_cross_table_reference_rules,
     detect_cross_field_patterns,
     detect_domain_rule_candidates,
     find_field_by_tokens,
@@ -94,6 +95,10 @@ class QualityRuleRecommendationSkill(BaseSkill):
         match_basis: str,
         reason: str,
         confidence_source: str,
+        rule_scope: str = "cross_field",
+        source_field_name: str | None = None,
+        target_table_name: str | None = None,
+        target_field_name: str | None = None,
         notes: str | None = None,
     ) -> CrossFieldQualityRule:
         return build_cross_field_rule(
@@ -105,6 +110,10 @@ class QualityRuleRecommendationSkill(BaseSkill):
             priority_for_severity=cls._priority_for_severity,
             compute_quality_rule_confidence=cls.compute_quality_rule_confidence,
             infer_review_priority=cls.infer_review_priority,
+            rule_scope=rule_scope,
+            source_field_name=source_field_name,
+            target_table_name=target_table_name,
+            target_field_name=target_field_name,
             recommendation_source=recommendation_source,
             match_basis=match_basis,
             reason=reason,
@@ -139,6 +148,18 @@ class QualityRuleRecommendationSkill(BaseSkill):
 
     deduplicate_cross_field_rules = staticmethod(deduplicate_cross_field_rules)
     cross_field_rule_to_suggestion = staticmethod(cross_field_rule_to_suggestion)
+
+    @classmethod
+    def detect_cross_table_reference_rules(
+        cls,
+        tables: list[TableMeta],
+    ) -> list[CrossFieldQualityRule]:
+        """Detect cross-table referential consistency candidates."""
+        return detect_cross_table_reference_rules(
+            tables=tables,
+            build_rule=cls._build_cross_field_rule,
+            deduplicate_rules=cls.deduplicate_cross_field_rules,
+        )
 
     def _select_basis_for_field(
         self,
@@ -283,6 +304,13 @@ class QualityRuleRecommendationSkill(BaseSkill):
                     table_cross_field_rules
                 )
 
+        cross_table_rules = self.detect_cross_table_reference_rules(payload.tables)
+        if cross_table_rules:
+            cross_field_rules.extend(cross_table_rules)
+            source_counter["cross_table_reference_intelligence"] += len(
+                cross_table_rules
+            )
+
         packages = [
             QualityRulePackage(
                 source_table_name=table_name,
@@ -297,7 +325,12 @@ class QualityRuleRecommendationSkill(BaseSkill):
         ]
 
         field_rule_count = len(suggestions)
-        cross_field_rule_count = len(cross_field_rules)
+        cross_field_rule_count = sum(
+            1 for rule in cross_field_rules if rule.rule_scope == "cross_field"
+        )
+        cross_table_rule_count = sum(
+            1 for rule in cross_field_rules if rule.rule_scope == "cross_table"
+        )
         low_confidence_count = sum(
             1
             for rule in list(suggestions)
@@ -306,7 +339,8 @@ class QualityRuleRecommendationSkill(BaseSkill):
         )
         summary_parts = [
             f"Generated {field_rule_count} field-level quality rule suggestions",
-            f"and {cross_field_rule_count} cross-field/domain-aware quality rules",
+            f"{cross_field_rule_count} cross-field/domain-aware quality rules",
+            f"and {cross_table_rule_count} cross-table reference rules",
             f"across {len(packages)} source tables",
             f"and flagged {len(issues)} review issues.",
         ]

@@ -40,7 +40,11 @@ def build_diagnosis_issues_section(result: WorkflowResult) -> list[str]:
             evidence = "; ".join(issue.evidence[:3]) if issue.evidence else "N/A"
             lines.append(
                 f"- `{issue.issue_id}` | {issue.object_type} | `{issue.object_name}` | "
-                f"{issue.issue_type} | severity={issue.severity} | evidence={evidence}"
+                f"{issue.issue_type} | severity={issue.severity} | "
+                f"priority={issue.recommended_priority or 'N/A'} | "
+                f"ai_risk={issue.ai_risk or 'N/A'} | "
+                f"manual_review={issue.requires_manual_review if issue.requires_manual_review is not None else 'N/A'} | "
+                f"evidence={evidence}"
             )
     else:
         lines.append("- No issues generated.")
@@ -59,4 +63,3 @@ def build_governance_tasks_section(result: WorkflowResult) -> list[str]:
     else:
         lines.append("- No tasks generated.")
     return lines
-

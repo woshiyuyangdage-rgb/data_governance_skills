@@ -9,6 +9,26 @@ templates:
     owner_role: data_governance_engineer
     expected_output: normalized names
 
+  business_ownership_gap:
+    action: Complete business domain, lifecycle, ownership, and sensitivity metadata
+    owner_role: metadata_manager
+    expected_output: enriched metadata records
+
+  semantic_consistency_gap:
+    action: Align descriptions, standards, and semantic mappings
+    owner_role: business_data_steward
+    expected_output: aligned semantics
+
+  technical_object_gap:
+    action: Separate technical assets from business catalog entries
+    owner_role: data_architect
+    expected_output: catalog cleanup
+
+  ai_consumption_risk_gap:
+    action: Add AI-facing governance labels and review sensitive assets
+    owner_role: governance_lead
+    expected_output: guarded AI-ready metadata
+
   standard_mapping_gap:
     action: Review and confirm standard field mappings
     owner_role: business_data_steward

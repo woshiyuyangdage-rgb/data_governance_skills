@@ -20,6 +20,7 @@ default_execution_mode:
   reference_hint: advisory_only
   temporal_order: batch_validation
   paired_presence: batch_validation
+  cross_table_reference: batch_validation
   conditional_presence_hint: advisory_only
   reference_consistency_hint: advisory_only
   identifier_presence_group: advisory_only

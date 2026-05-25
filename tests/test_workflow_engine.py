@@ -45,6 +45,10 @@ def test_run_p0_pipeline_from_file_returns_workflow_result() -> None:
     assert result.task_count >= 1
     assert "completeness_output" in result.skill_outputs
     assert "diagnosis_output" in result.skill_outputs
+    assert "semantic_enrichment_output" in result.skill_outputs
+    assert result.field_description_suggestions
+    assert result.table_semantic_summaries
+    assert result.semantic_enrichment_summary
 
 
 def test_run_p0_pipeline_from_missing_file_returns_parser_error() -> None:
@@ -62,6 +66,7 @@ def test_run_p0_plus_mapping_from_file_returns_mapping_results() -> None:
     assert result.status == "success"
     assert result.mapping_results
     assert result.mapping_summary
+    assert result.field_description_suggestions
     assert "standard_mapping_output" in result.skill_outputs
 
 

@@ -14,6 +14,7 @@ from app.core.reports.markdown_reporter_sections import (
     build_project_summary,
     build_quality_sections,
     build_review_section,
+    build_semantic_enrichment_sections,
     build_stg_sections,
     build_template_sections,
     build_workbook_sections,
@@ -32,6 +33,7 @@ def export_workflow_result_to_markdown(
     lines = build_project_summary(result)
     lines.extend(build_diagnosis_issues_section(result))
     lines.extend(build_governance_tasks_section(result))
+    lines.extend(build_semantic_enrichment_sections(result))
     lines.extend(build_mapping_sections(result))
     lines.extend(build_stg_sections(result))
     lines.extend(build_quality_sections(result))

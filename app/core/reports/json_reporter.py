@@ -36,6 +36,11 @@ def export_workflow_result_to_json(
         "task_count": result.task_count,
         "issues": _serialize(result.issues),
         "tasks": _serialize(result.tasks),
+        "field_description_suggestions": _serialize(
+            result.field_description_suggestions
+        ),
+        "table_semantic_summaries": _serialize(result.table_semantic_summaries),
+        "semantic_enrichment_summary": result.semantic_enrichment_summary,
         "mapping_results": _serialize(result.mapping_results),
         "confirmed_mapping_results": _serialize(result.confirmed_mapping_results),
         "unmapped_fields": _serialize(result.unmapped_fields),

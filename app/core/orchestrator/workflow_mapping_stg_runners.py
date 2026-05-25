@@ -6,6 +6,7 @@ from app.core.review.override_store import load_mapping_overrides, load_stg_over
 from app.core.review.review_service import summarize_review_records
 from app.core.skills.data_standard_mapping_skill import StandardMappingInput
 from app.core.skills.metadata_diagnosis_skill import NamingStandardCheckInput
+from app.core.skills.metadata_diagnosis_skill import MetadataSemanticEnrichmentInput
 from app.core.skills.stg_standardization_skill import StgStructureSuggestionInput
 
 
@@ -17,17 +18,30 @@ class WorkflowMappingStgRunnerMixin:
         mapping_output = self.standard_mapping_recommendation.run(
             StandardMappingInput(tables=tables, apply_overrides=False)
         )
+        semantic_enrichment_output = self.metadata_semantic_enrichment.run(
+            MetadataSemanticEnrichmentInput(tables=tables)
+        )
         return WorkflowResult(
             input_table_count=len(tables),
             issue_count=len(mapping_output.issues),
             task_count=0,
             issues=mapping_output.issues,
             tasks=[],
+            field_description_suggestions=(
+                semantic_enrichment_output.field_description_suggestions
+            ),
+            table_semantic_summaries=(
+                semantic_enrichment_output.table_semantic_summaries
+            ),
+            semantic_enrichment_summary=semantic_enrichment_output.summary,
             mapping_results=mapping_output.mapping_results,
             confirmed_mapping_results=[],
             unmapped_fields=mapping_output.unmapped_fields,
             mapping_summary=mapping_output.summary,
             skill_outputs={
+                "semantic_enrichment_output": self._serialize_model(
+                    semantic_enrichment_output
+                ),
                 "standard_mapping_output": self._serialize_model(mapping_output),
             },
             status="success" if tables else "empty",
@@ -64,6 +78,9 @@ class WorkflowMappingStgRunnerMixin:
         mapping_output = self.standard_mapping_recommendation.run(
             StandardMappingInput(tables=tables, apply_overrides=False)
         )
+        semantic_enrichment_output = self.metadata_semantic_enrichment.run(
+            MetadataSemanticEnrichmentInput(tables=tables)
+        )
         stg_output = self.stg_structure_suggestion.run(
             StgStructureSuggestionInput(
                 tables=tables,
@@ -79,6 +96,13 @@ class WorkflowMappingStgRunnerMixin:
             task_count=0,
             issues=mapping_output.issues + stg_output.issues,
             tasks=[],
+            field_description_suggestions=(
+                semantic_enrichment_output.field_description_suggestions
+            ),
+            table_semantic_summaries=(
+                semantic_enrichment_output.table_semantic_summaries
+            ),
+            semantic_enrichment_summary=semantic_enrichment_output.summary,
             mapping_results=mapping_output.mapping_results,
             confirmed_mapping_results=[],
             unmapped_fields=mapping_output.unmapped_fields,
@@ -89,6 +113,9 @@ class WorkflowMappingStgRunnerMixin:
             stg_summary=stg_output.summary,
             skill_outputs={
                 "naming_output": self._serialize_model(naming_output),
+                "semantic_enrichment_output": self._serialize_model(
+                    semantic_enrichment_output
+                ),
                 "standard_mapping_output": self._serialize_model(mapping_output),
                 "stg_structure_output": self._serialize_model(stg_output),
             },
@@ -122,6 +149,9 @@ class WorkflowMappingStgRunnerMixin:
             task_count=p0_result.task_count,
             issues=p0_result.issues + mapping_output.issues,
             tasks=p0_result.tasks,
+            field_description_suggestions=p0_result.field_description_suggestions,
+            table_semantic_summaries=p0_result.table_semantic_summaries,
+            semantic_enrichment_summary=p0_result.semantic_enrichment_summary,
             mapping_results=mapping_output.mapping_results,
             confirmed_mapping_results=[],
             unmapped_fields=mapping_output.unmapped_fields,
@@ -159,6 +189,9 @@ class WorkflowMappingStgRunnerMixin:
             task_count=p0_result.task_count,
             issues=p0_result.issues + mapping_output.issues,
             tasks=p0_result.tasks,
+            field_description_suggestions=p0_result.field_description_suggestions,
+            table_semantic_summaries=p0_result.table_semantic_summaries,
+            semantic_enrichment_summary=p0_result.semantic_enrichment_summary,
             mapping_results=mapping_output.mapping_results,
             confirmed_mapping_results=mapping_output.confirmed_mapping_results,
             unmapped_fields=mapping_output.unmapped_fields,
@@ -201,6 +234,13 @@ class WorkflowMappingStgRunnerMixin:
             task_count=mapping_result.task_count,
             issues=mapping_result.issues + stg_output.issues,
             tasks=mapping_result.tasks,
+            field_description_suggestions=(
+                mapping_result.field_description_suggestions
+            ),
+            table_semantic_summaries=mapping_result.table_semantic_summaries,
+            semantic_enrichment_summary=(
+                mapping_result.semantic_enrichment_summary
+            ),
             mapping_results=mapping_result.mapping_results,
             confirmed_mapping_results=[],
             unmapped_fields=mapping_result.unmapped_fields,
@@ -257,6 +297,13 @@ class WorkflowMappingStgRunnerMixin:
             task_count=mapping_result.task_count,
             issues=mapping_result.issues + stg_output.issues,
             tasks=mapping_result.tasks,
+            field_description_suggestions=(
+                mapping_result.field_description_suggestions
+            ),
+            table_semantic_summaries=mapping_result.table_semantic_summaries,
+            semantic_enrichment_summary=(
+                mapping_result.semantic_enrichment_summary
+            ),
             mapping_results=mapping_result.mapping_results,
             confirmed_mapping_results=mapping_result.confirmed_mapping_results,
             unmapped_fields=mapping_result.unmapped_fields,

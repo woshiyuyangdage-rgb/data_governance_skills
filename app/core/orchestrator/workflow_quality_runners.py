@@ -16,6 +16,7 @@ from app.core.skills.data_quality_rule_skill import (
 )
 from app.core.skills.data_standard_mapping_skill import StandardMappingInput
 from app.core.skills.metadata_diagnosis_skill import NamingStandardCheckInput
+from app.core.skills.metadata_diagnosis_skill import MetadataSemanticEnrichmentInput
 from app.core.skills.stg_standardization_skill import StgStructureSuggestionInput
 
 
@@ -221,6 +222,9 @@ class WorkflowQualityRunnerMixin:
                 override_records=mapping_overrides,
             )
         )
+        semantic_enrichment_output = self.metadata_semantic_enrichment.run(
+            MetadataSemanticEnrichmentInput(tables=tables)
+        )
         stg_overrides = load_stg_overrides()
         effective_mapping_results = (
             mapping_output.confirmed_mapping_results or mapping_output.mapping_results
@@ -261,6 +265,13 @@ class WorkflowQualityRunnerMixin:
             task_count=0,
             issues=mapping_output.issues + stg_output.issues + quality_output.issues,
             tasks=[],
+            field_description_suggestions=(
+                semantic_enrichment_output.field_description_suggestions
+            ),
+            table_semantic_summaries=(
+                semantic_enrichment_output.table_semantic_summaries
+            ),
+            semantic_enrichment_summary=semantic_enrichment_output.summary,
             mapping_results=mapping_output.mapping_results,
             confirmed_mapping_results=mapping_output.confirmed_mapping_results,
             unmapped_fields=mapping_output.unmapped_fields,
@@ -279,6 +290,9 @@ class WorkflowQualityRunnerMixin:
             review_summary=review_summary,
             skill_outputs={
                 "naming_output": self._serialize_model(naming_output),
+                "semantic_enrichment_output": self._serialize_model(
+                    semantic_enrichment_output
+                ),
                 "standard_mapping_output": self._serialize_model(mapping_output),
                 "stg_structure_output": self._serialize_model(stg_output),
                 "quality_rule_output": self._serialize_model(quality_output),

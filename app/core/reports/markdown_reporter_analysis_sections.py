@@ -3,6 +3,45 @@
 from app.core.models.workflow_result import WorkflowResult
 
 
+def build_semantic_enrichment_sections(result: WorkflowResult) -> list[str]:
+    lines = ["", "# Semantic Enrichment Suggestions", ""]
+    if result.semantic_enrichment_summary:
+        lines.append(f"- Summary: {result.semantic_enrichment_summary}")
+
+    lines.extend(["", "## Field Description Suggestions", ""])
+    if result.field_description_suggestions:
+        for suggestion in result.field_description_suggestions:
+            lines.append(
+                f"- `{suggestion.table_name}.{suggestion.field_name}` | "
+                f"confidence={suggestion.confidence} | "
+                f"action={suggestion.governance_action} | "
+                f"manual_review={suggestion.requires_manual_review} | "
+                f"optimized={suggestion.optimized_description} | "
+                f"tags={', '.join(suggestion.quality_tags) or 'none'}"
+            )
+    else:
+        lines.append("- No field description suggestions generated.")
+
+    lines.extend(["", "## Table Semantic Summaries", ""])
+    if result.table_semantic_summaries:
+        for summary in result.table_semantic_summaries:
+            lines.append(
+                f"- `{summary.table_name}` | confidence={summary.confidence} | "
+                f"action={summary.governance_action} | "
+                f"manual_review={summary.requires_manual_review} | "
+                f"object={summary.business_object or 'N/A'} | "
+                f"purpose={summary.business_purpose or 'N/A'} | "
+                f"core_fields={', '.join(summary.core_fields) or 'N/A'} | "
+                f"scenarios={', '.join(summary.applicable_scenarios) or 'N/A'} | "
+                f"risks={'; '.join(summary.ai_usage_risks) or 'N/A'} | "
+                f"actions={'; '.join(summary.recommended_actions) or 'N/A'} | "
+                f"summary={summary.optimized_summary}"
+            )
+    else:
+        lines.append("- No table semantic summaries generated.")
+    return lines
+
+
 def build_mapping_sections(result: WorkflowResult) -> list[str]:
     lines = ["", "# Standard Mapping Recommendations", ""]
     if result.mapping_summary:
@@ -12,7 +51,11 @@ def build_mapping_sections(result: WorkflowResult) -> list[str]:
             lines.append(
                 f"- `{mapping_result.table_name}.{mapping_result.field_name}` -> "
                 f"`{mapping_result.recommended_standard_code}` | score={mapping_result.match_score} | "
-                f"reason={mapping_result.match_reason}"
+                f"status={mapping_result.mapping_status or 'recommended'} | "
+                f"manual_review={mapping_result.requires_manual_review} | "
+                f"reason={mapping_result.match_reason} | "
+                f"risk={mapping_result.risk_hint or 'N/A'} | "
+                f"action={mapping_result.action_suggestion or 'N/A'}"
             )
     else:
         lines.append("- No standard mapping recommendations generated.")
@@ -23,7 +66,9 @@ def build_mapping_sections(result: WorkflowResult) -> list[str]:
             lines.append(
                 f"- `{unmapped_field.table_name}.{unmapped_field.field_name}` | "
                 f"best_candidate={unmapped_field.best_candidate_code or 'N/A'} | "
-                f"score={unmapped_field.best_candidate_score} | reason={unmapped_field.reason}"
+                f"score={unmapped_field.best_candidate_score} | reason={unmapped_field.reason} | "
+                f"risk={unmapped_field.risk_hint or 'N/A'} | "
+                f"action={unmapped_field.action_suggestion or 'N/A'}"
             )
     else:
         lines.append("- No unmapped or low-confidence fields.")
@@ -154,4 +199,3 @@ def build_quality_sections(result: WorkflowResult) -> list[str]:
     else:
         lines.append("- No rule export results available.")
     return lines
-

@@ -28,6 +28,8 @@ from app.core.skills.metadata_diagnosis_skill import (
     MetadataCompletenessInput,
     MetadataQualityDiagnosisInput,
     MetadataQualityDiagnosisSkill,
+    MetadataSemanticEnrichmentInput,
+    MetadataSemanticEnrichmentSkill,
     NamingStandardCheckInput,
     NamingStandardCheckSkill,
     TechnicalObjectIdentificationInput,
@@ -52,6 +54,7 @@ class WorkflowEngine(
         self.technical_object_identification = TechnicalObjectIdentificationSkill()
         self.naming_standard_check = NamingStandardCheckSkill()
         self.metadata_quality_diagnosis = MetadataQualityDiagnosisSkill()
+        self.metadata_semantic_enrichment = MetadataSemanticEnrichmentSkill()
         self.governance_task_packaging = GovernanceTaskPackagingSkill()
         self.standard_mapping_recommendation = StandardMappingRecommendationSkill()
         self.stg_structure_suggestion = StgStructureSuggestionSkill()
@@ -99,6 +102,9 @@ class WorkflowEngine(
         diagnosis_output = self.metadata_quality_diagnosis.run(
             MetadataQualityDiagnosisInput(tables=tables, upstream_issues=raw_issues)
         )
+        semantic_enrichment_output = self.metadata_semantic_enrichment.run(
+            MetadataSemanticEnrichmentInput(tables=tables)
+        )
 
         all_issues = raw_issues + diagnosis_output.issues
         task_output = self.governance_task_packaging.run(
@@ -110,6 +116,9 @@ class WorkflowEngine(
             "technical_output": self._serialize_model(technical_output),
             "naming_output": self._serialize_model(naming_output),
             "diagnosis_output": self._serialize_model(diagnosis_output),
+            "semantic_enrichment_output": self._serialize_model(
+                semantic_enrichment_output
+            ),
             "task_output": self._serialize_model(task_output),
         }
 
@@ -119,6 +128,13 @@ class WorkflowEngine(
             task_count=len(task_output.tasks),
             issues=all_issues,
             tasks=task_output.tasks,
+            field_description_suggestions=(
+                semantic_enrichment_output.field_description_suggestions
+            ),
+            table_semantic_summaries=(
+                semantic_enrichment_output.table_semantic_summaries
+            ),
+            semantic_enrichment_summary=semantic_enrichment_output.summary,
             skill_outputs=skill_outputs,
             status="success",
             message=(

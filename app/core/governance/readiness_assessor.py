@@ -84,7 +84,18 @@ class ReadinessAssessor:
         for issue in issues_by_table.get(table_name, []):
             if issue.issue_type == "missing_table_description":
                 score -= self._rule("missing_table_description_penalty", 0.1)
-            elif issue.issue_type in {"missing_field_description", "missing_field_cn_name"}:
+            elif issue.issue_type in {
+                "missing_field_description",
+                "missing_field_cn_name",
+                "missing_metadata_defect",
+            }:
+                score -= self._rule("missing_field_description_penalty", 0.05)
+            elif issue.issue_type in {
+                "business_ownership_defect",
+                "semantic_consistency_defect",
+                "technical_object_defect",
+                "ai_consumption_risk_defect",
+            }:
                 score -= self._rule("missing_field_description_penalty", 0.05)
         return _clamp(score)
 

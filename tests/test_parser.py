@@ -31,6 +31,33 @@ def test_parse_csv_with_sample_metadata_returns_grouped_tables() -> None:
     assert any(field.field_name == "log_id" for field in user_audit_log.fields)
 
 
+def test_parse_csv_supports_extended_metadata_columns(tmp_path: Path) -> None:
+    csv_path = tmp_path / "extended_metadata.csv"
+    csv_path.write_text(
+        (
+            "table_name,table_description,system_name,business_domain,owner_role,"
+            "lifecycle_status,data_layer,catalog_path,standard_code,standard_name,"
+            "sensitivity_label,primary_key_fields,foreign_key_fields,field_name,"
+            "field_name_cn,field_description,data_type,nullable,field_standard_code,"
+            "field_business_domain,is_sensitive\n"
+            "order_detail,Order details,erp,order,steward,active,dwd,/catalog/order,"
+            "order_detail,order_detail,internal,order_id;line_id,order_id,order_id,"
+            "订单ID,Order identifier,varchar,false,transaction_id,order,true\n"
+        ),
+        encoding="utf-8",
+    )
+
+    tables = parse_csv(str(csv_path))
+
+    assert len(tables) == 1
+    table = tables[0]
+    assert table.business_domain == "order"
+    assert table.owner_role == "steward"
+    assert table.primary_key_fields == ["order_id", "line_id"]
+    assert table.fields[0].standard_code == "transaction_id"
+    assert table.fields[0].is_sensitive is True
+
+
 def test_parse_excel_with_sample_metadata_rows_returns_tables(tmp_path: Path) -> None:
     sample_df = pd.read_csv(SAMPLE_METADATA_PATH)
     excel_path = tmp_path / "sample_metadata.xlsx"

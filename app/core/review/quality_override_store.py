@@ -18,16 +18,22 @@ QUALITY_RULE_OVERRIDES_PATH = OVERRIDES_DIR / "quality_rule_overrides.csv"
 QUALITY_RULE_OVERRIDE_COLUMNS = [
     "source_table_name",
     "source_field_name",
+    "rule_name",
+    "rule_description",
     "rule_scope",
     "field_group",
+    "target_table_name",
+    "target_field_name",
     "rule_type",
     "original_rule_expression",
     "final_rule_expression",
     "original_severity",
     "final_severity",
+    "risk_level",
     "recommended_field_name",
     "recommendation_source",
     "match_basis",
+    "export_formats",
     "learning_context",
     "review_action",
     "confidence",
@@ -61,6 +67,9 @@ def _write_csv(path: Path, records: list[dict[str, object]]) -> str:
         learning_context = payload.get("learning_context")
         if isinstance(learning_context, list):
             payload["learning_context"] = json.dumps(learning_context, ensure_ascii=False)
+        export_formats = payload.get("export_formats")
+        if isinstance(export_formats, list):
+            payload["export_formats"] = json.dumps(export_formats, ensure_ascii=False)
         normalized_records.append(payload)
     dataframe = pd.DataFrame(normalized_records, columns=QUALITY_RULE_OVERRIDE_COLUMNS)
     dataframe.to_csv(path, index=False, encoding="utf-8")
@@ -85,6 +94,23 @@ def _parse_field_group(value: object) -> list[str]:
 
 
 def _parse_learning_context(value: object) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item).strip()]
+    text = str(value).strip()
+    if not text:
+        return []
+    try:
+        parsed = json.loads(text)
+    except Exception:
+        return [item.strip() for item in text.split("|") if item.strip()]
+    if isinstance(parsed, list):
+        return [str(item) for item in parsed if str(item).strip()]
+    return []
+
+
+def _parse_export_formats(value: object) -> list[str]:
     if value is None:
         return []
     if isinstance(value, list):
@@ -154,6 +180,9 @@ def load_quality_rule_overrides() -> list[QualityRuleReviewRecord]:
         payload["field_group"] = _parse_field_group(payload.get("field_group"))
         payload["learning_context"] = _parse_learning_context(
             payload.get("learning_context")
+        )
+        payload["export_formats"] = _parse_export_formats(
+            payload.get("export_formats")
         )
         records.append(QualityRuleReviewRecord(**payload))
     return records
