@@ -64,6 +64,9 @@ MODEL_SCHEMA_MAP: dict[str, dict[str, object]] = {
             "readiness_scores": {"type": "array", "items": {"type": "object"}},
             "ai_ready_scores": {"type": "array", "items": {"type": "object"}},
             "ai_ready_summary": {"type": "object"},
+            "rag_quality_issues": {"type": "array", "items": {"type": "object"}},
+            "rag_quality_summary": {"type": "object"},
+            "rag_quality_assessment": {"type": "object"},
             "governance_gaps": {"type": "array", "items": {"type": "object"}},
             "remediation_actions": {"type": "array", "items": {"type": "object"}},
             "governance_work_package": {"type": "object"},
@@ -333,6 +336,16 @@ MODEL_SCHEMA_MAP: dict[str, dict[str, object]] = {
             "apply_review_replay": {"type": "boolean"},
             "persist": {"type": "boolean"},
             "append": {"type": "boolean"},
+            "session_id": {"type": "string"},
+        },
+    },
+    "RagQualityAssessmentArguments": {
+        "type": "object",
+        "properties": {
+            "documents": {"type": "array", "items": {"type": "object"}},
+            "chunks": {"type": "array", "items": {"type": "object"}},
+            "retrieval_logs": {"type": "array", "items": {"type": "object"}},
+            "answer_evaluations": {"type": "array", "items": {"type": "object"}},
             "session_id": {"type": "string"},
         },
     },
@@ -611,6 +624,28 @@ TOOL_EXAMPLES: dict[str, list[dict[str, object]]] = {
             "file_path": "app/data/samples/sample_metadata.csv",
             "export_package": True,
             "base_filename": "governance_work_package_demo",
+        }
+    ],
+    "assess_rag_quality": [
+        {
+            "documents": [
+                {
+                    "document_id": "std_v1",
+                    "title": "Data Standard Policy",
+                    "source": "governance_portal",
+                    "version": "v1",
+                    "permission_label": "internal",
+                }
+            ],
+            "chunks": [
+                {
+                    "chunk_id": "chunk_1",
+                    "document_id": "std_v1",
+                    "content": "Customer ID is the unique identifier for customers.",
+                    "permission_label": "internal",
+                    "embedding_id": "emb_1",
+                }
+            ],
         }
     ],
     "build_governance_backlog": [

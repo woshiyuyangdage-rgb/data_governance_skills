@@ -30,6 +30,7 @@ from app.api.job_requests_quality import (
     QualityRuleReviewRequest,
     StgReviewSaveRequest,
 )
+from app.api.job_requests_rag import RagQualityAssessmentRequest
 from app.api.job_requests_tools import (
     AgentShellPlanRequest,
     AgentShellRunRequest,

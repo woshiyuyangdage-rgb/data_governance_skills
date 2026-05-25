@@ -145,6 +145,44 @@ def test_executor_can_build_and_export_execution_package(
     assert trace.exported_package_path is not None
 
 
+def test_executor_can_assess_rag_quality_and_record_trace(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_runtime_dirs(tmp_path, monkeypatch)
+    executor = GovernanceToolExecutor()
+
+    response = executor.assess_rag_quality(
+        {
+            "documents": [
+                {
+                    "document_id": "policy_v1",
+                    "title": "Permission Policy",
+                    "source": "wiki",
+                    "version": "v1",
+                    "status": "deprecated",
+                }
+            ],
+            "chunks": [
+                {
+                    "chunk_id": "chunk_1",
+                    "document_id": "policy_v1",
+                    "content": "secret rule",
+                    "permission_label": "public",
+                }
+            ],
+        }
+    )
+
+    assert response.status == "success"
+    assert response.trace_id is not None
+    assert response.result is not None
+    assert response.result["rag_quality_summary"]["issue_count"] >= 1
+    trace = get_trace(response.trace_id)
+    assert trace is not None
+    assert trace.operation == "rag_quality_assessment"
+
+
 def test_executor_can_preview_agent_plan_and_record_trace(
     tmp_path: Path,
     monkeypatch,

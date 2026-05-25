@@ -22,6 +22,7 @@ from app.api.job_requests import (
     OpenAIToolInvokeRequest,
     ProgressSnapshotRequest,
     QualityRuleReviewRequest,
+    RagQualityAssessmentRequest,
 )
 from app.api.routes_jobs_backlog import (
     assess_governance_portfolio_route,
@@ -66,6 +67,10 @@ from app.api.routes_jobs_quality import (
     review_quality_rules_route,
     router as quality_router,
 )
+from app.api.routes_jobs_rag import (
+    assess_rag_quality_route,
+    router as rag_router,
+)
 from app.api.routes_jobs_tools import (
     agent_shell_plan,
     agent_shell_resolve_context,
@@ -90,6 +95,7 @@ router.include_router(core_router)
 router.include_router(tools_router)
 router.include_router(control_plane_router)
 router.include_router(quality_router)
+router.include_router(rag_router)
 router.include_router(delivery_router)
 router.include_router(backlog_router)
 
@@ -110,12 +116,14 @@ __all__ = [
     "OpenAIToolInvokeRequest",
     "ProgressSnapshotRequest",
     "QualityRuleReviewRequest",
+    "RagQualityAssessmentRequest",
     "agent_shell_plan",
     "agent_shell_resolve_context",
     "agent_shell_run",
     "agent_shell_session",
     "assess_governance_portfolio_route",
     "assess_governance_readiness_route",
+    "assess_rag_quality_route",
     "build_execution_ready_package_route",
     "build_governance_backlog_route",
     "build_governance_work_package_route",

@@ -26,6 +26,7 @@ from app.core.utils.result_utils import (
     quality_rules_to_dataframe,
     quality_review_queue_summary_to_dataframe,
     quality_rule_review_summary_to_dataframe,
+    rag_quality_issues_to_dataframe,
     readiness_scores_to_dataframe,
     remediation_actions_to_dataframe,
     review_summary_to_dataframe,
@@ -82,6 +83,7 @@ def export_workflow_result_to_excel(
                 ),
                 "readiness_score_count": len(result.readiness_scores),
                 "ai_ready_score_count": len(result.ai_ready_scores),
+                "rag_quality_issue_count": len(result.rag_quality_issues),
                 "governance_gap_count": len(result.governance_gaps),
                 "remediation_action_count": len(result.remediation_actions),
                 "governance_backlog_item_count": len(result.governance_backlog_items),
@@ -188,6 +190,10 @@ def export_workflow_result_to_excel(
     )
     readiness_scores_df = readiness_scores_to_dataframe(result.readiness_scores)
     ai_ready_scores_df = ai_ready_scores_to_dataframe(result.ai_ready_scores)
+    rag_quality_issues_df = rag_quality_issues_to_dataframe(result.rag_quality_issues)
+    rag_quality_summary_df = pd.DataFrame(
+        [dict(result.rag_quality_summary)] if result.rag_quality_summary else []
+    )
     governance_gaps_df = governance_gaps_to_dataframe(result.governance_gaps)
     remediation_actions_df = remediation_actions_to_dataframe(
         result.remediation_actions
@@ -374,6 +380,16 @@ def export_workflow_result_to_excel(
         ai_ready_scores_df.to_excel(
             writer,
             sheet_name="ai_ready_scores",
+            index=False,
+        )
+        rag_quality_issues_df.to_excel(
+            writer,
+            sheet_name="rag_quality_issues",
+            index=False,
+        )
+        rag_quality_summary_df.to_excel(
+            writer,
+            sheet_name="rag_quality_summary",
             index=False,
         )
         governance_gaps_df.to_excel(

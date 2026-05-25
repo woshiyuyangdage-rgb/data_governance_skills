@@ -28,6 +28,10 @@ from app.core.models.governance_portfolio_summary import GovernancePortfolioSumm
 from app.core.models.governance_work_package import GovernanceWorkPackage
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.models.progress_snapshot import ProgressSnapshot
+from app.core.models.rag_quality import (
+    RagQualityAssessmentResult,
+    RagQualityIssue,
+)
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.models.rule_export_result import RuleExportResult
@@ -437,6 +441,65 @@ def test_reports_include_execution_package_outputs(tmp_path: Path) -> None:
     assert "execution_ready_rules" in workbook.sheetnames
     assert "execution_package_summary" in workbook.sheetnames
     assert "execution_package_exports" in workbook.sheetnames
+
+
+def test_reports_include_rag_quality_outputs(tmp_path: Path) -> None:
+    rag_issue = RagQualityIssue(
+        object_type="document",
+        object_name="standard_doc_v1",
+        issue_type="outdated_duplicate_version",
+        severity="high",
+        evidence=["version=v1", "latest_version=v2"],
+        risk="Answers may cite outdated standards.",
+        suggestion="Exclude older versions from retrieval.",
+        category="document_quality",
+        business_domain="governance",
+        requires_manual_review=True,
+    )
+    assessment = RagQualityAssessmentResult(
+        document_count=1,
+        chunk_count=1,
+        issue_count=1,
+        issues=[rag_issue],
+        summary={
+            "issue_count": 1,
+            "severity_counts": {"high": 1},
+            "category_counts": {"document_quality": 1},
+        },
+    )
+    result = WorkflowResult(
+        status="success",
+        message="rag report test",
+        rag_quality_issues=[rag_issue],
+        rag_quality_summary=assessment.summary,
+        rag_quality_assessment=assessment,
+    )
+    json_path = tmp_path / "rag_result.json"
+    markdown_path = tmp_path / "rag_result.md"
+    excel_path = tmp_path / "rag_result.xlsx"
+
+    export_workflow_result_to_json(result, str(json_path))
+    export_workflow_result_to_markdown(result, str(markdown_path))
+    export_workflow_result_to_excel(result, str(excel_path))
+
+    json_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert "rag_quality_issues" in json_payload
+    assert "rag_quality_summary" in json_payload
+    assert "rag_quality_assessment" in json_payload
+
+    markdown_content = markdown_path.read_text(encoding="utf-8")
+    assert "# RAG Knowledge Quality Assessment" in markdown_content
+    assert "outdated_duplicate_version" in markdown_content
+
+    workbook = load_workbook(excel_path)
+    assert "rag_quality_issues" in workbook.sheetnames
+    assert "rag_quality_summary" in workbook.sheetnames
+    headers = [
+        cell.value for cell in next(workbook["rag_quality_issues"].iter_rows(max_row=1))
+    ]
+    assert "issue_type" in headers
+    assert "risk" in headers
+    assert "suggestion" in headers
 
 
 def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> None:

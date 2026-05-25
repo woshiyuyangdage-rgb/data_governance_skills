@@ -16,6 +16,7 @@ from app.core.utils.result_utils_governance import (
     governance_portfolio_summary_to_dataframe,
     governance_work_package_summary_to_dataframe,
     progress_snapshot_to_dataframe,
+    rag_quality_issues_to_dataframe,
     readiness_scores_to_dataframe,
     remediation_actions_to_dataframe,
     review_summary_to_dataframe,

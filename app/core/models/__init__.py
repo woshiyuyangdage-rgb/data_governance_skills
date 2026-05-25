@@ -35,6 +35,14 @@ from app.core.models.quality_rule_package import QualityRulePackage
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
 from app.core.models.quality_rule_tool_request import QualityRuleToolRequest
+from app.core.models.rag_quality import (
+    RagAnswerEvaluation,
+    RagKnowledgeChunk,
+    RagKnowledgeDocument,
+    RagQualityAssessmentResult,
+    RagQualityIssue,
+    RagRetrievalLog,
+)
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.resolved_context import ResolvedContext
 from app.core.models.remediation_action import RemediationAction
@@ -92,6 +100,12 @@ __all__ = [
     "QualityRuleReviewRecord",
     "QualityRuleSuggestion",
     "QualityRuleToolRequest",
+    "RagAnswerEvaluation",
+    "RagKnowledgeChunk",
+    "RagKnowledgeDocument",
+    "RagQualityAssessmentResult",
+    "RagQualityIssue",
+    "RagRetrievalLog",
     "ReadinessScore",
     "ResolvedContext",
     "RemediationAction",

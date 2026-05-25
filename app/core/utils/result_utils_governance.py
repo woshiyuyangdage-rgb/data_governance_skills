@@ -10,6 +10,7 @@ from app.core.models.governance_gap import GovernanceGap
 from app.core.models.governance_portfolio_summary import GovernancePortfolioSummary
 from app.core.models.governance_work_package import GovernanceWorkPackage
 from app.core.models.progress_snapshot import ProgressSnapshot
+from app.core.models.rag_quality import RagQualityIssue
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.models.review_summary import ReviewSummary
@@ -53,6 +54,29 @@ def ai_ready_scores_to_dataframe(
         for key, value in score.dimension_scores.items():
             payload[key] = value
         records.append(payload)
+    return pd.DataFrame(records)
+
+
+def rag_quality_issues_to_dataframe(
+    rag_quality_issues: list[RagQualityIssue],
+) -> pd.DataFrame:
+    """Convert RAG quality issues to a stable dataframe."""
+    records = []
+    for issue in rag_quality_issues:
+        records.append(
+            {
+                "object_type": issue.object_type,
+                "object_name": issue.object_name,
+                "issue_type": issue.issue_type,
+                "severity": issue.severity,
+                "category": issue.category,
+                "business_domain": issue.business_domain,
+                "risk": issue.risk,
+                "suggestion": issue.suggestion,
+                "requires_manual_review": issue.requires_manual_review,
+                "evidence_joined": " | ".join(issue.evidence),
+            }
+        )
     return pd.DataFrame(records)
 
 

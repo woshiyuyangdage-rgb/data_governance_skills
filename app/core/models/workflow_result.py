@@ -40,6 +40,7 @@ from app.core.models.quality_rule_package import QualityRulePackage
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
 from app.core.models.progress_snapshot import ProgressSnapshot
 from app.core.models.project_template_run_result import ProjectTemplateRunResult
+from app.core.models.rag_quality import RagQualityAssessmentResult, RagQualityIssue
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.models.rule_export_result import RuleExportResult
@@ -94,6 +95,9 @@ class WorkflowResult(BaseModel):
     readiness_summary: dict[str, Any] = Field(default_factory=dict)
     ai_ready_scores: list[AiReadyScore] = Field(default_factory=list)
     ai_ready_summary: dict[str, Any] = Field(default_factory=dict)
+    rag_quality_issues: list[RagQualityIssue] = Field(default_factory=list)
+    rag_quality_summary: dict[str, Any] = Field(default_factory=dict)
+    rag_quality_assessment: RagQualityAssessmentResult | None = None
     governance_backlog_items: list[GovernanceBacklogItem] = Field(default_factory=list)
     backlog_summary: BacklogSummary | None = None
     backlog_sla_statuses: list[BacklogSlaStatus] = Field(default_factory=list)

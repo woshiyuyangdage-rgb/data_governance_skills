@@ -231,6 +231,14 @@ tools:
     handler: governance_tool_executor.export_execution_ready_package
     category: quality
 
+  - name: assess_rag_quality
+    enabled: true
+    description: Assess document, chunk, retrieval, answer, and permission quality for a RAG knowledge base
+    input_model: RagQualityAssessmentArguments
+    output_model: dict
+    handler: governance_tool_executor.assess_rag_quality
+    category: knowledge
+
   - name: assess_governance_readiness
     enabled: true
     description: Assess readiness scores and classify governance gaps from workflow output

@@ -199,3 +199,25 @@ def build_quality_sections(result: WorkflowResult) -> list[str]:
     else:
         lines.append("- No rule export results available.")
     return lines
+
+
+def build_rag_quality_sections(result: WorkflowResult) -> list[str]:
+    lines = ["", "# RAG Knowledge Quality Assessment", ""]
+    if result.rag_quality_summary:
+        for key, value in result.rag_quality_summary.items():
+            lines.append(f"- {key}: {value}")
+    else:
+        lines.append("- No RAG quality summary available.")
+
+    lines.extend(["", "## RAG Quality Issues", ""])
+    if result.rag_quality_issues:
+        for issue in result.rag_quality_issues:
+            lines.append(
+                f"- `{issue.object_type}:{issue.object_name}` | "
+                f"type={issue.issue_type} | severity={issue.severity} | "
+                f"category={issue.category or 'N/A'} | "
+                f"risk={issue.risk or 'N/A'} | suggestion={issue.suggestion or 'N/A'}"
+            )
+    else:
+        lines.append("- No RAG quality issues available.")
+    return lines

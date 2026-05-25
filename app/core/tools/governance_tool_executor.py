@@ -10,6 +10,7 @@ from app.core.tools.dispatch_tools import ToolDispatchMixin
 from app.core.tools.governance_lifecycle_tools import GovernanceLifecycleToolMixin
 from app.core.tools.profile_tools import ProfileToolMixin
 from app.core.tools.quality_tools import QualityToolMixin
+from app.core.tools.rag_quality_tools import RagQualityToolMixin
 from app.core.tools.template_intake_tools import TemplateIntakeToolMixin
 
 
@@ -19,6 +20,7 @@ class GovernanceToolExecutor(
     AgentToolMixin,
     DeliveryToolMixin,
     QualityToolMixin,
+    RagQualityToolMixin,
     TemplateIntakeToolMixin,
     GovernanceLifecycleToolMixin,
     ControlPlaneToolMixin,

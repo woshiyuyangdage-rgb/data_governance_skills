@@ -226,6 +226,12 @@ def build_tool_console_default_arguments(
             "base_filename": "tool_console_execution_package",
             "apply_review_replay": True,
         },
+        "assess_rag_quality": {
+            "documents": [],
+            "chunks": [],
+            "retrieval_logs": [],
+            "answer_evaluations": [],
+        },
         "assess_governance_readiness": {
             "workflow_result": workflow_result_payload_value,
             "file_path": uploaded_file_path or "",
@@ -345,6 +351,12 @@ def build_adapter_console_default_arguments(
             "output_dir": str(PROJECT_ROOT / "outputs" / "execution_packages"),
             "base_filename": "adapter_console_execution_package",
             "apply_review_replay": True,
+        },
+        "assess_rag_quality": {
+            "documents": [],
+            "chunks": [],
+            "retrieval_logs": [],
+            "answer_evaluations": [],
         },
     }
 
