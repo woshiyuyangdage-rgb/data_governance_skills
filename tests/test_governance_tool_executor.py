@@ -183,6 +183,36 @@ def test_executor_can_assess_rag_quality_and_record_trace(
     assert trace.operation == "rag_quality_assessment"
 
 
+def test_executor_can_assess_text_to_sql_readiness_and_record_trace(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_runtime_dirs(tmp_path, monkeypatch)
+    executor = GovernanceToolExecutor()
+
+    response = executor.assess_text_to_sql_readiness(
+        {
+            "tables": [
+                {
+                    "table_name": "tmp_order_log",
+                    "table_description": "tmp",
+                    "fields": [
+                        {"field_name": "status", "field_description": "status"},
+                    ],
+                }
+            ]
+        }
+    )
+
+    assert response.status == "success"
+    assert response.trace_id is not None
+    assert response.result is not None
+    assert response.result["text_to_sql_readiness_summary"]["issue_count"] >= 1
+    trace = get_trace(response.trace_id)
+    assert trace is not None
+    assert trace.operation == "text_to_sql_readiness_assessment"
+
+
 def test_executor_can_preview_agent_plan_and_record_trace(
     tmp_path: Path,
     monkeypatch,

@@ -1,6 +1,6 @@
 # Data Governance Skills
 
-`data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换为可诊断、可评审、可交付的治理资产，并把知识文档、切片、检索日志和问答评测转化为可治理的 RAG 质量问题清单。当前能力覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、AI-ready 评分、RAG 知识库质量检测、整改待办、组合视图和本地交付物导出。
+`data_governance_skills` 是一个本地单用户的数据治理技能 MVP。它以规则和配置为核心，把 Excel/CSV 元数据转换为可诊断、可评审、可交付的治理资产，并把知识文档、切片、检索日志和问答评测转化为可治理的 RAG 质量问题清单。当前能力覆盖元数据质量诊断、标准映射、STG 结构建议、质量规则推荐、人工确认回放、执行包生成、治理就绪度评估、AI-ready 评分、RAG 知识库质量检测、Text-to-SQL 元数据准备度评估、整改待办、组合视图和本地交付物导出。
 
 项目当前定位是“治理决策支持与交付资产生成工具”，不是线上执行平台。它不直接连接生产数据库执行质量检查，不调用云端 LLM，不创建外部工单，也不集成企业流程系统。
 
@@ -31,6 +31,7 @@
 - 根据字段、映射、STG 和领域规则生成质量规则草案。
 - 判断表资产是否适合进入 RAG、Text-to-SQL 和智能数据助手。
 - 检测制度文档、数据标准文档、元数据说明和知识切片是否适合进入 RAG。
+- 评估表、字段、主外键、指标、枚举、权限和样例 SQL 是否足够支撑 Text-to-SQL。
 - 固化人工确认结果，避免重复评审。
 - 输出治理报告、确认工作簿、执行包和整改待办。
 
@@ -131,6 +132,7 @@ python -m app.maintenance doctor
 - `POST /jobs/build-governance-backlog`
 - `POST /jobs/assess-governance-portfolio`
 - `POST /jobs/assess-rag-quality`
+- `POST /jobs/assess-text-to-sql-readiness`
 
 ## 六个产品级 Skills
 
@@ -176,6 +178,7 @@ tests/        pytest 自动化测试
 | 评审与回放 | `app/core/review/` | 保存映射、STG 和质量规则评审记录，管理人工覆盖结果，并在后续流程中回放确认意见。 |
 | 质量与执行包 | `app/core/adapters/`、`app/core/tools/` | 生成确认质量规则、执行准备包、规则导出结果和工具化调用响应。 |
 | 治理度量 | `app/core/governance/` | 评估治理就绪度和表级 AI-ready 水平，分类治理缺口，生成整改动作、工作包、待办、SLA 状态、进度快照和组合汇总。AI-ready 评分覆盖可发现性、可理解性、语义一致性、标准化程度、质量可控性、安全可控性、可追溯性和 AI 应用适配性。 |
+| Text-to-SQL 准备度 | `app/core/governance/text_to_sql_readiness_assessor.py` | 基于本地规则评估表识别、字段理解、关系推断、指标口径、枚举解释、安全权限和样例查询支撑情况，输出准备度分数、等级、短板、风险和建议。 |
 | 知识治理 | `app/core/knowledge/` | 加载本地治理知识包，并基于规则检测 RAG 文档、切片、检索结果、回答评测和权限标签中的质量风险。 |
 | 交付包 | `app/core/delivery/` | 导出确认工作簿，导入确认结果，构建治理交付 manifest 和本地交付包。 |
 | 意图、上下文与 Agent Shell | `app/core/intent/`、`app/core/context/`、`app/core/agent/` | 将自然语言意图解析为治理任务，解析运行上下文，生成执行计划并保存本地会话。当前为规则 + 本地传统 NLP 能力，不调用云端 LLM。 |
@@ -268,6 +271,7 @@ python -m ruff check app tests
 - 云端 LLM 推理和外部在线模型服务。
 - 数据库质量检查的真实执行。
 - 外部向量数据库、在线检索服务或 RAG 编排平台。
+- Text-to-SQL 模型推理、SQL 自动生成、SQL 执行或查询结果校验。
 - 调度器、队列、Docker 或 CI 编排。
 - dbt、Great Expectations、Soda 或自定义 SQL 引擎的运行时执行。
 - 多用户审批、权限体系或数据库持久化状态。

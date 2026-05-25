@@ -18,6 +18,8 @@ from app.core.utils.result_utils import (
     stg_tables_to_dataframe,
     table_semantic_summaries_to_dataframe,
     tasks_to_dataframe,
+    text_to_sql_readiness_issues_to_dataframe,
+    text_to_sql_readiness_scores_to_dataframe,
     unmapped_fields_to_dataframe,
 )
 
@@ -34,6 +36,8 @@ __all__ = [
     "skill_outputs_to_dataframe",
     "mapping_results_to_dataframe",
     "rag_quality_issues_to_dataframe",
+    "text_to_sql_readiness_scores_to_dataframe",
+    "text_to_sql_readiness_issues_to_dataframe",
     "unmapped_fields_to_dataframe",
     "stg_tables_to_dataframe",
     "stg_fields_to_dataframe",

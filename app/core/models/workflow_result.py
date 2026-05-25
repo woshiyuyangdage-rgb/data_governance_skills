@@ -51,6 +51,11 @@ from app.core.models.semantic_enrichment_result import (
 )
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_table_suggestion import StgTableSuggestion
+from app.core.models.text_to_sql_readiness import (
+    TextToSqlReadinessAssessmentResult,
+    TextToSqlReadinessIssue,
+    TextToSqlReadinessScore,
+)
 from app.core.models.workbook_import_summary import WorkbookImportSummary
 
 
@@ -98,6 +103,14 @@ class WorkflowResult(BaseModel):
     rag_quality_issues: list[RagQualityIssue] = Field(default_factory=list)
     rag_quality_summary: dict[str, Any] = Field(default_factory=dict)
     rag_quality_assessment: RagQualityAssessmentResult | None = None
+    text_to_sql_readiness_scores: list[TextToSqlReadinessScore] = Field(
+        default_factory=list
+    )
+    text_to_sql_readiness_issues: list[TextToSqlReadinessIssue] = Field(
+        default_factory=list
+    )
+    text_to_sql_readiness_summary: dict[str, Any] = Field(default_factory=dict)
+    text_to_sql_readiness_assessment: TextToSqlReadinessAssessmentResult | None = None
     governance_backlog_items: list[GovernanceBacklogItem] = Field(default_factory=list)
     backlog_summary: BacklogSummary | None = None
     backlog_sla_statuses: list[BacklogSlaStatus] = Field(default_factory=list)

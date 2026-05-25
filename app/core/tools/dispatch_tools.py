@@ -52,6 +52,7 @@ class ToolDispatchMixin:
             "governance_tool_executor.build_execution_ready_package": self.build_execution_ready_package,
             "governance_tool_executor.export_execution_ready_package": self.export_execution_ready_package,
             "governance_tool_executor.assess_rag_quality": self.assess_rag_quality,
+            "governance_tool_executor.assess_text_to_sql_readiness": self.assess_text_to_sql_readiness,
             "governance_tool_executor.assess_governance_readiness": self.assess_governance_readiness,
             "governance_tool_executor.build_governance_work_package": self.build_governance_work_package,
             "governance_tool_executor.build_governance_backlog": self.build_governance_backlog,

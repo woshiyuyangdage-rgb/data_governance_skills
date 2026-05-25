@@ -67,6 +67,10 @@ MODEL_SCHEMA_MAP: dict[str, dict[str, object]] = {
             "rag_quality_issues": {"type": "array", "items": {"type": "object"}},
             "rag_quality_summary": {"type": "object"},
             "rag_quality_assessment": {"type": "object"},
+            "text_to_sql_readiness_scores": {"type": "array", "items": {"type": "object"}},
+            "text_to_sql_readiness_issues": {"type": "array", "items": {"type": "object"}},
+            "text_to_sql_readiness_summary": {"type": "object"},
+            "text_to_sql_readiness_assessment": {"type": "object"},
             "governance_gaps": {"type": "array", "items": {"type": "object"}},
             "remediation_actions": {"type": "array", "items": {"type": "object"}},
             "governance_work_package": {"type": "object"},
@@ -346,6 +350,13 @@ MODEL_SCHEMA_MAP: dict[str, dict[str, object]] = {
             "chunks": {"type": "array", "items": {"type": "object"}},
             "retrieval_logs": {"type": "array", "items": {"type": "object"}},
             "answer_evaluations": {"type": "array", "items": {"type": "object"}},
+            "session_id": {"type": "string"},
+        },
+    },
+    "TextToSqlReadinessAssessmentArguments": {
+        "type": "object",
+        "properties": {
+            "tables": {"type": "array", "items": {"type": "object"}},
             "session_id": {"type": "string"},
         },
     },
@@ -646,6 +657,47 @@ TOOL_EXAMPLES: dict[str, list[dict[str, object]]] = {
                     "embedding_id": "emb_1",
                 }
             ],
+        }
+    ],
+    "assess_text_to_sql_readiness": [
+        {
+            "tables": [
+                {
+                    "table_name": "contract_info",
+                    "table_name_cn": "Contract Info",
+                    "table_description": "Stores contract master information for financing business.",
+                    "business_domain": "finance",
+                    "permission_label": "internal",
+                    "primary_key_fields": ["contract_id"],
+                    "fields": [
+                        {
+                            "field_name": "contract_id",
+                            "field_name_cn": "Contract ID",
+                            "field_description": "Unique contract identifier.",
+                            "data_type": "varchar",
+                            "is_primary_key": True,
+                        },
+                        {
+                            "field_name": "contract_status",
+                            "field_name_cn": "Contract Status",
+                            "field_description": "Status of the contract lifecycle.",
+                            "data_type": "varchar",
+                        },
+                    ],
+                    "enum_definitions": {
+                        "contract_status": {
+                            "active": "Active contract",
+                            "closed": "Closed contract",
+                        }
+                    },
+                    "sample_sql": [
+                        {
+                            "question": "How many active contracts are there?",
+                            "sql": "select count(*) from contract_info where contract_status = 'active'",
+                        }
+                    ],
+                }
+            ]
         }
     ],
     "build_governance_backlog": [

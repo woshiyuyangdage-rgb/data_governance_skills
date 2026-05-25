@@ -14,6 +14,10 @@ from app.core.models.rag_quality import RagQualityIssue
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.models.review_summary import ReviewSummary
+from app.core.models.text_to_sql_readiness import (
+    TextToSqlReadinessIssue,
+    TextToSqlReadinessScore,
+)
 
 
 def readiness_scores_to_dataframe(
@@ -71,6 +75,51 @@ def rag_quality_issues_to_dataframe(
                 "severity": issue.severity,
                 "category": issue.category,
                 "business_domain": issue.business_domain,
+                "risk": issue.risk,
+                "suggestion": issue.suggestion,
+                "requires_manual_review": issue.requires_manual_review,
+                "evidence_joined": " | ".join(issue.evidence),
+            }
+        )
+    return pd.DataFrame(records)
+
+
+def text_to_sql_readiness_scores_to_dataframe(
+    scores: list[TextToSqlReadinessScore],
+) -> pd.DataFrame:
+    """Convert Text-to-SQL readiness scores to a stable dataframe."""
+    records = []
+    for score in scores:
+        payload = {
+            "table_name": score.table_name,
+            "readiness_score": score.readiness_score,
+            "readiness_level": score.readiness_level,
+            "major_gaps_joined": " | ".join(score.major_gaps),
+            "risks_joined": " | ".join(score.risks),
+            "recommendations_joined": " | ".join(score.recommendations),
+            "evidence_joined": " | ".join(score.evidence),
+            "requires_manual_review": score.requires_manual_review,
+        }
+        for key, value in score.dimension_scores.items():
+            payload[key] = value
+        records.append(payload)
+    return pd.DataFrame(records)
+
+
+def text_to_sql_readiness_issues_to_dataframe(
+    issues: list[TextToSqlReadinessIssue],
+) -> pd.DataFrame:
+    """Convert Text-to-SQL readiness issues to a stable dataframe."""
+    records = []
+    for issue in issues:
+        records.append(
+            {
+                "table_name": issue.table_name,
+                "object_type": issue.object_type,
+                "object_name": issue.object_name,
+                "issue_type": issue.issue_type,
+                "severity": issue.severity,
+                "dimension": issue.dimension,
                 "risk": issue.risk,
                 "suggestion": issue.suggestion,
                 "requires_manual_review": issue.requires_manual_review,

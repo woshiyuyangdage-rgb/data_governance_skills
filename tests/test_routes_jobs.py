@@ -51,6 +51,7 @@ def test_jobs_catalog_lists_unified_task_routes() -> None:
     assert "/jobs/build-execution-ready-package" in paths
     assert "/jobs/export-execution-ready-package" in paths
     assert "/jobs/assess-rag-quality" in paths
+    assert "/jobs/assess-text-to-sql-readiness" in paths
     assert "/jobs/assess-governance-readiness" in paths
     assert "/jobs/build-governance-work-package" in paths
     assert "/jobs/governance-readiness-summary" in paths

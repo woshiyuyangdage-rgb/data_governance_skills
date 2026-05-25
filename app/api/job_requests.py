@@ -31,6 +31,7 @@ from app.api.job_requests_quality import (
     StgReviewSaveRequest,
 )
 from app.api.job_requests_rag import RagQualityAssessmentRequest
+from app.api.job_requests_text_to_sql import TextToSqlReadinessAssessmentRequest
 from app.api.job_requests_tools import (
     AgentShellPlanRequest,
     AgentShellRunRequest,

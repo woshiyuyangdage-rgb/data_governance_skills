@@ -18,6 +18,7 @@ from app.core.reports.markdown_reporter_sections import (
     build_semantic_enrichment_sections,
     build_stg_sections,
     build_template_sections,
+    build_text_to_sql_readiness_sections,
     build_workbook_sections,
 )
 from app.core.utils.file_utils import ensure_directory
@@ -39,6 +40,7 @@ def export_workflow_result_to_markdown(
     lines.extend(build_stg_sections(result))
     lines.extend(build_quality_sections(result))
     lines.extend(build_rag_quality_sections(result))
+    lines.extend(build_text_to_sql_readiness_sections(result))
     lines.extend(build_execution_package_sections(result))
     lines.extend(build_governance_sections(result))
     lines.extend(build_delivery_sections(result))

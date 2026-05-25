@@ -56,6 +56,15 @@ from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_review_record import StgReviewRecord
 from app.core.models.stg_table_suggestion import StgTableSuggestion
 from app.core.models.table_meta import TableMeta
+from app.core.models.text_to_sql_readiness import (
+    TextToSqlMetricDefinition,
+    TextToSqlQueryExample,
+    TextToSqlReadinessAssessmentResult,
+    TextToSqlReadinessIssue,
+    TextToSqlReadinessScore,
+    TextToSqlTableMetadata,
+    TextToSqlTableRelationship,
+)
 from app.core.models.tool_call_request import ToolCallRequest
 from app.core.models.tool_call_response import ToolCallResponse
 from app.core.models.tool_definition import ToolDefinition
@@ -85,6 +94,13 @@ __all__ = [
     "FieldMeta",
     "GovernanceBacklogItem",
     "TableMeta",
+    "TextToSqlMetricDefinition",
+    "TextToSqlQueryExample",
+    "TextToSqlReadinessAssessmentResult",
+    "TextToSqlReadinessIssue",
+    "TextToSqlReadinessScore",
+    "TextToSqlTableMetadata",
+    "TextToSqlTableRelationship",
     "Issue",
     "GovernanceTaskRequest",
     "GovernanceTaskResponse",

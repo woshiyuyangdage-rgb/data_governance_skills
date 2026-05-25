@@ -20,6 +20,8 @@ from app.core.utils.result_utils_governance import (
     readiness_scores_to_dataframe,
     remediation_actions_to_dataframe,
     review_summary_to_dataframe,
+    text_to_sql_readiness_issues_to_dataframe,
+    text_to_sql_readiness_scores_to_dataframe,
 )
 from app.core.utils.result_utils_mapping import (
     mapping_results_to_dataframe,

@@ -221,3 +221,36 @@ def build_rag_quality_sections(result: WorkflowResult) -> list[str]:
     else:
         lines.append("- No RAG quality issues available.")
     return lines
+
+
+def build_text_to_sql_readiness_sections(result: WorkflowResult) -> list[str]:
+    lines = ["", "# Text-to-SQL Metadata Readiness", ""]
+    if result.text_to_sql_readiness_summary:
+        for key, value in result.text_to_sql_readiness_summary.items():
+            lines.append(f"- {key}: {value}")
+    else:
+        lines.append("- No Text-to-SQL readiness summary available.")
+
+    lines.extend(["", "## Text-to-SQL Readiness Scores", ""])
+    if result.text_to_sql_readiness_scores:
+        for score in result.text_to_sql_readiness_scores:
+            lines.append(
+                f"- `{score.table_name}` | score={score.readiness_score} | "
+                f"level={score.readiness_level} | "
+                f"major_gaps={', '.join(score.major_gaps) or 'N/A'}"
+            )
+    else:
+        lines.append("- No Text-to-SQL readiness scores available.")
+
+    lines.extend(["", "## Text-to-SQL Readiness Issues", ""])
+    if result.text_to_sql_readiness_issues:
+        for issue in result.text_to_sql_readiness_issues:
+            lines.append(
+                f"- `{issue.object_type}:{issue.object_name}` | "
+                f"type={issue.issue_type} | severity={issue.severity} | "
+                f"dimension={issue.dimension} | "
+                f"risk={issue.risk or 'N/A'} | suggestion={issue.suggestion or 'N/A'}"
+            )
+    else:
+        lines.append("- No Text-to-SQL readiness issues available.")
+    return lines

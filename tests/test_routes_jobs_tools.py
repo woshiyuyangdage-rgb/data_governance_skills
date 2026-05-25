@@ -43,6 +43,7 @@ def test_list_tools_route_returns_enabled_tools() -> None:
     assert any(tool.name == "export_confirmed_quality_rules" for tool in tools)
     assert any(tool.name == "build_execution_ready_package" for tool in tools)
     assert any(tool.name == "export_execution_ready_package" for tool in tools)
+    assert any(tool.name == "assess_text_to_sql_readiness" for tool in tools)
     assert any(tool.name == "assess_governance_readiness" for tool in tools)
     assert any(tool.name == "build_governance_work_package" for tool in tools)
     assert any(tool.name == "build_governance_backlog" for tool in tools)

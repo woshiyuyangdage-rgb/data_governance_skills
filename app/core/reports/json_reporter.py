@@ -68,6 +68,18 @@ def export_workflow_result_to_json(
         "rag_quality_issues": _serialize(result.rag_quality_issues),
         "rag_quality_summary": _serialize(result.rag_quality_summary),
         "rag_quality_assessment": _serialize(result.rag_quality_assessment),
+        "text_to_sql_readiness_scores": _serialize(
+            result.text_to_sql_readiness_scores
+        ),
+        "text_to_sql_readiness_issues": _serialize(
+            result.text_to_sql_readiness_issues
+        ),
+        "text_to_sql_readiness_summary": _serialize(
+            result.text_to_sql_readiness_summary
+        ),
+        "text_to_sql_readiness_assessment": _serialize(
+            result.text_to_sql_readiness_assessment
+        ),
         "governance_gaps": _serialize(result.governance_gaps),
         "remediation_actions": _serialize(result.remediation_actions),
         "governance_work_package": _serialize(result.governance_work_package),

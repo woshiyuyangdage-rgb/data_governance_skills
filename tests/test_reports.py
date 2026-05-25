@@ -36,6 +36,11 @@ from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
 from app.core.models.rule_export_result import RuleExportResult
 from app.core.models.stg_review_record import StgReviewRecord
+from app.core.models.text_to_sql_readiness import (
+    TextToSqlReadinessAssessmentResult,
+    TextToSqlReadinessIssue,
+    TextToSqlReadinessScore,
+)
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import (
     run_p0_plus_mapping_from_file,
@@ -500,6 +505,75 @@ def test_reports_include_rag_quality_outputs(tmp_path: Path) -> None:
     assert "issue_type" in headers
     assert "risk" in headers
     assert "suggestion" in headers
+
+
+def test_reports_include_text_to_sql_readiness_outputs(tmp_path: Path) -> None:
+    readiness_issue = TextToSqlReadinessIssue(
+        table_name="customer_ext",
+        object_type="field",
+        object_name="customer_ext.status",
+        issue_type="missing_enum_value_explanations",
+        severity="high",
+        dimension="enum_explainability",
+        evidence=["missing_enum_fields=status"],
+        risk="The model may filter status with incorrect values.",
+        suggestion="Add value-domain mappings.",
+        requires_manual_review=True,
+    )
+    readiness_score = TextToSqlReadinessScore(
+        table_name="customer_ext",
+        readiness_score=58.0,
+        readiness_level="govern_before_text_to_sql",
+        dimension_scores={"enum_explainability": 45.0},
+        major_gaps=["missing_enum_value_explanations"],
+        risks=["The model may filter status with incorrect values."],
+        recommendations=["Add value-domain mappings."],
+    )
+    assessment = TextToSqlReadinessAssessmentResult(
+        table_count=1,
+        issue_count=1,
+        scores=[readiness_score],
+        issues=[readiness_issue],
+        summary={
+            "table_count": 1,
+            "issue_count": 1,
+            "average_readiness_score": 58.0,
+        },
+    )
+    result = WorkflowResult(
+        status="success",
+        message="text-to-sql report test",
+        text_to_sql_readiness_scores=[readiness_score],
+        text_to_sql_readiness_issues=[readiness_issue],
+        text_to_sql_readiness_summary=assessment.summary,
+        text_to_sql_readiness_assessment=assessment,
+    )
+    json_path = tmp_path / "text_to_sql_result.json"
+    markdown_path = tmp_path / "text_to_sql_result.md"
+    excel_path = tmp_path / "text_to_sql_result.xlsx"
+
+    export_workflow_result_to_json(result, str(json_path))
+    export_workflow_result_to_markdown(result, str(markdown_path))
+    export_workflow_result_to_excel(result, str(excel_path))
+
+    json_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert "text_to_sql_readiness_scores" in json_payload
+    assert "text_to_sql_readiness_issues" in json_payload
+    assert "text_to_sql_readiness_assessment" in json_payload
+
+    markdown_content = markdown_path.read_text(encoding="utf-8")
+    assert "# Text-to-SQL Metadata Readiness" in markdown_content
+    assert "missing_enum_value_explanations" in markdown_content
+
+    workbook = load_workbook(excel_path)
+    assert "text_to_sql_scores" in workbook.sheetnames
+    assert "text_to_sql_issues" in workbook.sheetnames
+    assert "text_to_sql_summary" in workbook.sheetnames
+    headers = [
+        cell.value for cell in next(workbook["text_to_sql_issues"].iter_rows(max_row=1))
+    ]
+    assert "issue_type" in headers
+    assert "dimension" in headers
 
 
 def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> None:

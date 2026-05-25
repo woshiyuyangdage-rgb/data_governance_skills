@@ -232,6 +232,9 @@ def build_tool_console_default_arguments(
             "retrieval_logs": [],
             "answer_evaluations": [],
         },
+        "assess_text_to_sql_readiness": {
+            "tables": [],
+        },
         "assess_governance_readiness": {
             "workflow_result": workflow_result_payload_value,
             "file_path": uploaded_file_path or "",
@@ -357,6 +360,9 @@ def build_adapter_console_default_arguments(
             "chunks": [],
             "retrieval_logs": [],
             "answer_evaluations": [],
+        },
+        "assess_text_to_sql_readiness": {
+            "tables": [],
         },
     }
 

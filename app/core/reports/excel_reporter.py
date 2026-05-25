@@ -36,6 +36,8 @@ from app.core.utils.result_utils import (
     stg_tables_to_dataframe,
     table_semantic_summaries_to_dataframe,
     tasks_to_dataframe,
+    text_to_sql_readiness_issues_to_dataframe,
+    text_to_sql_readiness_scores_to_dataframe,
     unmapped_fields_to_dataframe,
 )
 
@@ -84,6 +86,12 @@ def export_workflow_result_to_excel(
                 "readiness_score_count": len(result.readiness_scores),
                 "ai_ready_score_count": len(result.ai_ready_scores),
                 "rag_quality_issue_count": len(result.rag_quality_issues),
+                "text_to_sql_readiness_score_count": len(
+                    result.text_to_sql_readiness_scores
+                ),
+                "text_to_sql_readiness_issue_count": len(
+                    result.text_to_sql_readiness_issues
+                ),
                 "governance_gap_count": len(result.governance_gaps),
                 "remediation_action_count": len(result.remediation_actions),
                 "governance_backlog_item_count": len(result.governance_backlog_items),
@@ -193,6 +201,17 @@ def export_workflow_result_to_excel(
     rag_quality_issues_df = rag_quality_issues_to_dataframe(result.rag_quality_issues)
     rag_quality_summary_df = pd.DataFrame(
         [dict(result.rag_quality_summary)] if result.rag_quality_summary else []
+    )
+    text_to_sql_readiness_scores_df = text_to_sql_readiness_scores_to_dataframe(
+        result.text_to_sql_readiness_scores
+    )
+    text_to_sql_readiness_issues_df = text_to_sql_readiness_issues_to_dataframe(
+        result.text_to_sql_readiness_issues
+    )
+    text_to_sql_readiness_summary_df = pd.DataFrame(
+        [dict(result.text_to_sql_readiness_summary)]
+        if result.text_to_sql_readiness_summary
+        else []
     )
     governance_gaps_df = governance_gaps_to_dataframe(result.governance_gaps)
     remediation_actions_df = remediation_actions_to_dataframe(
@@ -390,6 +409,21 @@ def export_workflow_result_to_excel(
         rag_quality_summary_df.to_excel(
             writer,
             sheet_name="rag_quality_summary",
+            index=False,
+        )
+        text_to_sql_readiness_scores_df.to_excel(
+            writer,
+            sheet_name="text_to_sql_scores",
+            index=False,
+        )
+        text_to_sql_readiness_issues_df.to_excel(
+            writer,
+            sheet_name="text_to_sql_issues",
+            index=False,
+        )
+        text_to_sql_readiness_summary_df.to_excel(
+            writer,
+            sheet_name="text_to_sql_summary",
             index=False,
         )
         governance_gaps_df.to_excel(

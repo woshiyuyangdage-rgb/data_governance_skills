@@ -26,6 +26,7 @@ def test_schema_exporter_can_export_native_schemas() -> None:
     assert any(schema.tool_name == "export_confirmed_quality_rules" for schema in schemas)
     assert any(schema.tool_name == "build_execution_ready_package" for schema in schemas)
     assert any(schema.tool_name == "export_execution_ready_package" for schema in schemas)
+    assert any(schema.tool_name == "assess_text_to_sql_readiness" for schema in schemas)
     assert any(schema.tool_name == "assess_governance_readiness" for schema in schemas)
     assert any(schema.tool_name == "build_governance_work_package" for schema in schemas)
     assert any(schema.tool_name == "build_governance_backlog" for schema in schemas)
@@ -92,6 +93,10 @@ def test_schema_exporter_can_export_openai_style_schemas() -> None:
     )
     assert any(
         item["function"]["name"] == "export_execution_ready_package" for item in schemas
+    )
+    assert any(
+        item["function"]["name"] == "assess_text_to_sql_readiness"
+        for item in schemas
     )
     assert any(
         item["function"]["name"] == "assess_governance_readiness" for item in schemas
@@ -172,6 +177,7 @@ def test_schema_exporter_can_export_mcp_style_manifest() -> None:
     )
     assert any(tool["name"] == "build_execution_ready_package" for tool in manifest["tools"])
     assert any(tool["name"] == "export_execution_ready_package" for tool in manifest["tools"])
+    assert any(tool["name"] == "assess_text_to_sql_readiness" for tool in manifest["tools"])
     assert any(tool["name"] == "assess_governance_readiness" for tool in manifest["tools"])
     assert any(tool["name"] == "build_governance_work_package" for tool in manifest["tools"])
     assert any(tool["name"] == "build_governance_backlog" for tool in manifest["tools"])

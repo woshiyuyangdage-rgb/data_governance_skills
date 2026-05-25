@@ -9,6 +9,9 @@ from app.core.governance.portfolio_aggregator import GovernancePortfolioAggregat
 from app.core.governance.progress_snapshot_service import ProgressSnapshotService
 from app.core.governance.readiness_assessor import ReadinessAssessor
 from app.core.governance.remediation_planner import RemediationPlanner
+from app.core.governance.text_to_sql_readiness_assessor import (
+    TextToSqlReadinessAssessor,
+)
 
 __all__ = [
     "AiReadyAssessor",
@@ -20,4 +23,5 @@ __all__ = [
     "ProgressSnapshotService",
     "ReadinessAssessor",
     "RemediationPlanner",
+    "TextToSqlReadinessAssessor",
 ]

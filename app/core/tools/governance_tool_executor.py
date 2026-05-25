@@ -12,6 +12,7 @@ from app.core.tools.profile_tools import ProfileToolMixin
 from app.core.tools.quality_tools import QualityToolMixin
 from app.core.tools.rag_quality_tools import RagQualityToolMixin
 from app.core.tools.template_intake_tools import TemplateIntakeToolMixin
+from app.core.tools.text_to_sql_readiness_tools import TextToSqlReadinessToolMixin
 
 
 class GovernanceToolExecutor(
@@ -21,6 +22,7 @@ class GovernanceToolExecutor(
     DeliveryToolMixin,
     QualityToolMixin,
     RagQualityToolMixin,
+    TextToSqlReadinessToolMixin,
     TemplateIntakeToolMixin,
     GovernanceLifecycleToolMixin,
     ControlPlaneToolMixin,
