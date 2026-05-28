@@ -56,19 +56,19 @@ def ensure_large_file_runtime_ready(
         cached_result = get_session_value(LARGE_FILE_RUNTIME_WARMUP_RESULT_KEY)
         return cached_result if isinstance(cached_result, dict) else {}
 
-    with _runtime_status("Warming large-file runtime") as status:
+    with _runtime_status("正在准备大文件运行环境") as status:
         if status is not None and hasattr(status, "write"):
-            status.write("Caching metadata parser results")
+            status.write("正在缓存元数据解析结果")
         load_metadata_file_cached(file_path, signature)
 
         if status is not None and hasattr(status, "write"):
-            status.write("Warming semantic mapping index")
+            status.write("正在预热语义映射索引")
         semantic_ready = True
         if semantic_index_enabled():
             semantic_ready = warm_semantic_mapping_index()
 
         if status is not None and hasattr(status, "write"):
-            status.write("Warming quality-rule learning cache")
+            status.write("正在预热质量规则学习缓存")
         quality_ready = True
         if association_rule_learning_enabled():
             load_quality_rule_associations()
@@ -79,7 +79,7 @@ def ensure_large_file_runtime_ready(
             "quality_rule_learning_ready": quality_ready,
         }
         if status is not None and hasattr(status, "update"):
-            status.update(label="Large-file runtime ready", state="complete")
+            status.update(label="大文件运行环境已准备完成", state="complete")
 
     set_session_value(LARGE_FILE_RUNTIME_WARMUP_KEY, signature)
     set_session_value(LARGE_FILE_RUNTIME_WARMUP_RESULT_KEY, result)
@@ -156,7 +156,7 @@ def render_json_section(
     title: str,
     value: object | None,
     *,
-    empty_message: str = "No data available.",
+    empty_message: str = "暂无数据。",
     caption: str | None = None,
     use_expander: bool = False,
     expanded: bool = False,
@@ -200,7 +200,7 @@ def render_records_dataframe_section(
     title: str,
     records: Iterable[object],
     *,
-    empty_message: str = "No records available.",
+    empty_message: str = "暂无记录。",
     key_prefix: str | None = None,
 ) -> None:
     """Render model/dict records through the lazy dataframe section."""
@@ -218,7 +218,7 @@ def render_lazy_dataframe_section(
     title: str,
     dataframe: pd.DataFrame,
     *,
-    empty_message: str = "No records available.",
+    empty_message: str = "暂无记录。",
     preview_rows: int = 25,
     render_limit: int = 120,
     columns: list[str] | None = None,
@@ -241,12 +241,12 @@ def render_lazy_dataframe_section(
         return
 
     preview_count = min(preview_rows, row_count)
-    st.caption(f"Showing first {preview_count} of {row_count} rows.")
+    st.caption(f"仅预览前 {preview_count} 行，共 {row_count} 行。")
     st.dataframe(dataframe.head(preview_count), use_container_width=True)
-    st.caption("The full table stays hidden until you choose to load it.")
+    st.caption("完整表格会在你选择加载后显示，避免大文件页面反复重算。")
 
     load_key = key_prefix or title
-    if st.checkbox("Load full table", key=f"{load_key}_load_full"):
+    if st.checkbox("加载完整表格", key=f"{load_key}_load_full"):
         st.dataframe(dataframe, use_container_width=True)
 
 
@@ -254,7 +254,7 @@ def render_deferred_dataframe_section(
     title: str,
     dataframe_builder: Callable[[], pd.DataFrame],
     *,
-    empty_message: str = "No records available.",
+    empty_message: str = "暂无记录。",
     preview_rows: int = 25,
     render_limit: int = 120,
     columns: list[str] | None = None,

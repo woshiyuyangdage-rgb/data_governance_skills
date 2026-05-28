@@ -4,6 +4,36 @@ from __future__ import annotations
 
 from numbers import Real
 
+DISPLAY_VALUE_LABELS = {
+    "unknown": "未知",
+    "fallback": "回退解析",
+    "keyword": "关键词",
+    "local_nlp": "本地 NLP",
+    "keyword+local_nlp": "关键词 + 本地 NLP",
+    "preview": "预览",
+    "preview_requires_confirmation": "预览待确认",
+    "interpreted_only": "仅解析",
+    "executed_successfully": "执行成功",
+    "validation_failed": "校验失败",
+    "success": "成功",
+    "failed": "失败",
+    "error": "错误",
+    "valid": "有效",
+    "invalid": "无效",
+    "draft": "草稿",
+    "published": "已发布",
+    "proposed": "待确认",
+    "accepted": "已接受",
+    "in_progress": "处理中",
+    "blocked": "阻塞",
+    "completed": "已完成",
+    "dropped": "已放弃",
+    "accept": "接受",
+    "reject": "拒绝",
+    "edit": "编辑",
+    "manual_review": "人工复核",
+}
+
 
 def format_value(value: object | None) -> str:
     """Convert a Python value into a compact UI-friendly string."""
@@ -17,7 +47,8 @@ def format_value(value: object | None) -> str:
             return str(int(numeric_value))
         return f"{numeric_value:.2f}"
     if isinstance(value, str):
-        return value.strip()
+        text = value.strip()
+        return DISPLAY_VALUE_LABELS.get(text, text)
     if isinstance(value, dict):
         parts: list[str] = []
         for key, item in value.items():

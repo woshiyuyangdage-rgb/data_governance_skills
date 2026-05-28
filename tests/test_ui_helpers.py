@@ -335,7 +335,7 @@ def test_review_form_helpers_collect_quality_inputs_and_evidence() -> None:
                 "match_reason": "name match",
             }
         ]
-    ) == ["CUST_ID | Customer ID | score=0.91 | name match"]
+    ) == ["CUST_ID | Customer ID | 分数=0.91 | name match"]
 
 
 def test_page_utils_control_plane_accessors(monkeypatch) -> None:
@@ -386,6 +386,7 @@ def test_value_formatter_handles_common_values() -> None:
     assert format_value(3.14159) == "3.14"
     assert format_value(["a", "", None, "b"]) == "a, b"
     assert format_value({"enabled": True, "empty": None}) == "enabled=是"
+    assert format_value("success") == "成功"
 
 
 def test_status_block_renders_key_values(monkeypatch) -> None:

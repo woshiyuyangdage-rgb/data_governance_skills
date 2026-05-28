@@ -249,22 +249,22 @@ def build_tool_console_default_arguments(
             "apply_review_replay": True,
         },
         "interpret_governance_intent": {
-            "text": "Run standard mapping and export reports",
+            "text": "运行标准映射并导出报告",
             "file_path": uploaded_file_path or "",
         },
         "preview_agent_plan": {
-            "text": "Help me inspect this file",
+            "text": "快速诊断当前文件",
             "file_path": "",
             "session_id": session_id,
         },
         "run_agent_task": {
-            "text": "Help me inspect this file",
+            "text": "快速诊断当前文件",
             "file_path": "",
             "session_id": session_id,
             "force_run": False,
         },
         "resolve_governance_context": {
-            "text": "Help me inspect this file",
+            "text": "快速诊断当前文件",
             "file_path": "",
             "session_id": session_id,
         },
@@ -287,7 +287,7 @@ def build_tool_console_default_arguments(
                 "profiles:\n"
                 "  - name: metadata_diagnosis_only\n"
                 "    enabled: true\n"
-                "    description: Run metadata diagnosis only\n"
+                "    description: 仅运行元数据诊断\n"
                 "    stages:\n"
                 "      - diagnosis\n"
                 "    supports_review_replay: false\n"
@@ -314,7 +314,7 @@ def build_adapter_console_default_arguments(
         "validate_config_asset": {"asset_name": "workflow_profiles"},
         "list_config_assets": {},
         "run_agent_task": {
-            "text": "Help me inspect this file",
+            "text": "快速诊断当前文件",
             "file_path": uploaded_file_path or "",
             "force_run": True,
         },

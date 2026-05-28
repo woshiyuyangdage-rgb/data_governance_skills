@@ -83,7 +83,7 @@ def render_result_overview(overview: ResultOverview) -> None:
         overview.title,
         summary=overview.summary,
         rows=details,
-        empty_message="No details available.",
+        empty_message="暂无明细。",
     )
 
     if overview.metrics:
@@ -180,7 +180,7 @@ def build_intent_execution_overview(
 def build_agent_shell_overview(
     result: AgentShellResult,
     *,
-    title: str = "Agent Shell 总览",
+    title: str = "Agent 总览",
 ) -> ResultOverview:
     """Build a normalized overview for agent shell results."""
     plan = result.execution_plan

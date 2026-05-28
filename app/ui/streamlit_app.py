@@ -29,7 +29,7 @@ from app.ui.workbench_cache import (
 from app.ui.status_blocks import render_key_value_block, render_page_header
 
 ensure_project_root_on_path()
-st.set_page_config(page_title="Data Governance Skills Workbench", layout="wide")
+st.set_page_config(page_title="数据治理技能工作台", layout="wide")
 initialize_session_state()
 
 from app.core.agent.session_store import load_latest_session_snapshot, list_session_snapshots
@@ -101,10 +101,10 @@ with demo_right:
 st.subheader("维护者入口")
 maintainer_cols = st.columns(4)
 maintainer_links = [
-    ("pages/05_intent_runner.py", "Intent Runner", "🧭"),
-    ("pages/06_agent_shell.py", "Agent Shell", "⌨️"),
-    ("pages/10_quality_rules.py", "Quality Rules", "✅"),
-    ("pages/08_control_plane.py", "Control Plane", "⚙️"),
+    ("pages/05_intent_runner.py", "意图运行器", "🧭"),
+    ("pages/06_agent_shell.py", "Agent 控制台", "⌨️"),
+    ("pages/10_quality_rules.py", "质量规则", "✅"),
+    ("pages/08_control_plane.py", "配置控制面", "⚙️"),
 ]
 for column, (page, label, icon) in zip(maintainer_cols, maintainer_links, strict=True):
     with column:

@@ -32,20 +32,20 @@ from app.ui.status_blocks import render_key_value_block, render_page_header
 initialize_session_state()
 
 render_page_header(
-    "Batch & Incremental Rerun",
-    "Run multi-file governance batches and changed-only reruns from local snapshots.",
+    "批处理与增量重跑",
+    "基于本地快照运行多文件批处理和仅变更对象重跑。",
 )
 
 uploaded_files = st.file_uploader(
-    "Choose metadata files",
+    "选择元数据文件",
     type=["csv", "xlsx"],
     accept_multiple_files=True,
 )
 group_by = st.selectbox(
-    "Group by",
+    "分组字段",
     options=["system_name", "schema_name", "domain_hint"],
 )
-batch_name = st.text_input("Batch name", value="default_batch_governance")
+batch_name = st.text_input("批次名称", value="default_batch_governance")
 upload_dir = PROJECT_ROOT / "outputs" / "batch_uploads"
 
 if uploaded_files:
@@ -54,23 +54,23 @@ if uploaded_files:
         for uploaded_file in uploaded_files
     ]
     set_batch_file_paths(saved_paths)
-    st.success(f"Saved {len(saved_paths)} files for batch processing.")
+    st.success(f"已保存 {len(saved_paths)} 个文件用于批处理。")
 
 file_paths = get_batch_file_paths()
 render_key_value_block(
     None,
-    rows=[("Selected files", len(file_paths))],
+    rows=[("已选文件数", len(file_paths))],
 )
 
 engine = WorkflowEngine()
 col_full, col_incremental, col_export = st.columns(3)
 
 with col_full:
-    if st.button("Full Batch Run", type="primary"):
+    if st.button("完整批处理运行", type="primary"):
         if not file_paths:
-            st.warning("Upload one or more metadata files first.")
+            st.warning("请先上传一个或多个元数据文件。")
         else:
-            with st.spinner("Running full batch governance..."):
+            with st.spinner("正在运行完整批处理治理..."):
                 result = engine.run_batch_governance_workflow(
                     file_paths=file_paths,
                     group_by=group_by,
@@ -78,14 +78,14 @@ with col_full:
                     batch_name=batch_name,
                 )
             set_workflow_result_state(result)
-            st.success("Batch governance run completed.")
+            st.success("批处理治理运行完成。")
 
 with col_incremental:
-    if st.button("Changed-Only Rerun"):
+    if st.button("仅变更对象重跑"):
         if not file_paths:
-            st.warning("Upload one or more metadata files first.")
+            st.warning("请先上传一个或多个元数据文件。")
         else:
-            with st.spinner("Running changed-only rerun..."):
+            with st.spinner("正在运行仅变更对象重跑..."):
                 result = engine.run_batch_governance_workflow(
                     file_paths=file_paths,
                     group_by=group_by,
@@ -93,52 +93,52 @@ with col_incremental:
                     batch_name=batch_name,
                 )
             set_workflow_result_state(result)
-            st.success("Changed-only rerun completed.")
+            st.success("仅变更对象重跑完成。")
 
 with col_export:
-    if st.button("Export Batch Report"):
+    if st.button("导出批处理报告"):
         result = get_workflow_result()
         if result is None:
-            st.warning("Run a batch first.")
+            st.warning("请先运行批处理。")
         else:
             paths = export_all_reports(
                 result,
                 str(PROJECT_ROOT / "outputs" / "reports"),
                 f"{batch_name}_batch_report",
             )
-            st.success(f"Batch report exported: {paths['json']}")
+            st.success(f"批处理报告已导出: {paths['json']}")
 
 result = get_workflow_result()
 if result is None:
-    st.info("Run a batch to see summaries.")
+    st.info("运行批处理后可查看汇总。")
     st.stop()
 
-st.subheader("Batch Group Summary")
+st.subheader("批处理分组汇总")
 if result.batch_group_results:
     render_records_dataframe_section(
-        "Batch Group Summary",
+        "批处理分组汇总",
         result.batch_group_results,
         key_prefix="batch_group_summary",
     )
 else:
-    st.info("No batch groups were processed.")
+    st.info("暂无已处理批次分组。")
 
-st.subheader("Incremental Diff Summary")
+st.subheader("增量差异汇总")
 if result.incremental_diff_summary is not None:
-    render_json_section("Incremental Diff Summary", result.incremental_diff_summary)
+    render_json_section("增量差异汇总", result.incremental_diff_summary)
 else:
-    st.info("No diff summary is available.")
+    st.info("暂无差异汇总。")
 
-st.subheader("Diff Items")
+st.subheader("差异明细")
 if result.incremental_diff_items:
     render_records_dataframe_section(
-        "Diff Items",
+        "差异明细",
         result.incremental_diff_items,
         key_prefix="batch_diff_items",
     )
 else:
-    st.info("No diff items are available.")
+    st.info("暂无差异明细。")
 
-st.subheader("Rerun Scope Summary")
-render_json_section("Rerun Scope Summary", result.rerun_scope_summary)
+st.subheader("重跑范围汇总")
+render_json_section("重跑范围汇总", result.rerun_scope_summary)
 

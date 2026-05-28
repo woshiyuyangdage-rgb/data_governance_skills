@@ -75,8 +75,8 @@ def _render_diff_preview(original_text: str, edited_text: str, asset_name: str) 
         unified_diff(
             original_text.splitlines(),
             edited_text.splitlines(),
-            fromfile=f"{asset_name} (current)",
-            tofile=f"{asset_name} (edited)",
+            fromfile=f"{asset_name} (当前)",
+            tofile=f"{asset_name} (已编辑)",
             lineterm="",
         )
     )
@@ -118,7 +118,7 @@ else:
 
     render_metric_row(
         [
-            ("状态", status.get("current_status") or "unknown"),
+            ("状态", status.get("current_status") or "未知"),
             ("最近校验", status.get("last_validated_at") or "N/A"),
             ("最近发布", status.get("last_published_at") or "N/A"),
         ],

@@ -69,13 +69,17 @@ from app.ui.workbench_cache import (
     rule_export_results_to_dataframe,
 )
 
+EXPORT_FORMAT_LABELS = {
+    "custom JSON": "自定义 JSON",
+    "dbt YAML": "dbt YAML",
+}
+
 initialize_session_state()
 
 render_page_header(
-    "Quality Rules",
+    "质量规则",
     (
-        "Review field-level and cross-field quality rules, replay saved overrides, "
-        "and export confirmed rule assets."
+        "评审字段级和跨字段质量规则，回放已保存覆盖，并导出已确认规则资产。"
     ),
 )
 
@@ -155,7 +159,7 @@ result: WorkflowResult | None = get_workflow_result()
 uploaded_file_path = get_current_input_file_path()
 
 if result is None:
-    st.warning("No workflow result is available yet. Run a quality rule workflow first.")
+    st.warning("当前还没有工作流结果，请先运行质量规则工作流。")
 else:
     render_result_overview(
         build_workflow_overview(
@@ -174,30 +178,30 @@ else:
 
     render_metric_row(
         [
-            ("Field Rules", len(field_suggestions)),
-            ("Cross-Field Rules", len(cross_field_rules)),
-            ("Confirmed Rules", len(confirmed_rules)),
+            ("字段规则", len(field_suggestions)),
+            ("跨字段规则", len(cross_field_rules)),
+            ("已确认规则", len(confirmed_rules)),
             (
-                "Low Confidence",
+                "低置信规则",
                 summarize_review_queue(review_queue).get("low_confidence_rule_count", 0),
             ),
         ],
     )
 
-    st.subheader("Rule Filters")
+    st.subheader("规则筛选")
     all_tables = sorted({rule.source_table_name for rule in review_queue})
     all_rule_types = sorted({rule.rule_type for rule in review_queue})
     all_priorities = sorted({rule.review_priority or "unspecified" for rule in review_queue})
     filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
     with filter_col1:
-        selected_tables = st.multiselect("Table", options=all_tables)
+        selected_tables = st.multiselect("表", options=all_tables)
     with filter_col2:
-        selected_rule_types = st.multiselect("Rule type", options=all_rule_types)
+        selected_rule_types = st.multiselect("规则类型", options=all_rule_types)
     with filter_col3:
-        selected_priorities = st.multiselect("Review priority", options=all_priorities)
+        selected_priorities = st.multiselect("评审优先级", options=all_priorities)
     with filter_col4:
         confidence_range = st.slider(
-            "Confidence",
+            "置信度",
             min_value=0.0,
             max_value=1.0,
             value=(0.0, 1.0),
@@ -224,29 +228,29 @@ else:
         in visible_cross_field_keys
     ]
 
-    with st.expander("Field-Level Quality Rules", expanded=True):
+    with st.expander("字段级质量规则", expanded=True):
         render_deferred_dataframe_section(
-            "Field-Level Quality Rules",
+            "字段级质量规则",
             lambda: quality_rules_to_dataframe(visible_field_suggestions),
-            empty_message="No field-level quality rules match the current filters.",
+            empty_message="当前筛选条件下暂无字段级质量规则。",
             compact=True,
             key_prefix="quality_field_rules",
             auto_render=len(visible_field_suggestions) <= 80,
         )
 
-    with st.expander("Cross-Field Quality Rules", expanded=False):
+    with st.expander("跨字段质量规则", expanded=False):
         render_deferred_dataframe_section(
-            "Cross-Field Quality Rules",
+            "跨字段质量规则",
             lambda: cross_field_quality_rules_to_dataframe(visible_cross_field_rules),
-            empty_message="No cross-field quality rules match the current filters.",
+            empty_message="当前筛选条件下暂无跨字段质量规则。",
             compact=True,
             key_prefix="quality_cross_field_rules",
         )
 
-    st.subheader("Batch Review")
+    st.subheader("批量评审")
     batch_col1, batch_col2 = st.columns(2)
     with batch_col1:
-        if st.button("Accept High-Confidence not_null"):
+        if st.button("接受高置信 not_null 规则"):
             high_confidence_not_null = [
                 rule
                 for rule in review_queue
@@ -258,45 +262,45 @@ else:
                 source="streamlit_batch_review",
             )
             if not records:
-                st.warning("No high-confidence not_null rules were available.")
+                st.warning("暂无高置信 not_null 规则。")
             else:
                 try:
                     save_result, _ = _persist_review_records(records, result, review_queue)
                     clear_review_override_caches()
                     st.success(
-                        f"Saved {save_result['saved_count']} batch accept review records."
+                        f"已保存 {save_result['saved_count']} 条批量接受评审记录。"
                     )
                 except Exception as exc:
-                    st.error(f"Failed to save batch accept records: {exc}")
+                    st.error(f"保存批量接受记录失败: {exc}")
     with batch_col2:
         low_confidence_threshold = st.number_input(
-            "Low-confidence threshold",
+            "低置信阈值",
             min_value=0.0,
             max_value=1.0,
             value=0.4,
             step=0.05,
         )
-        if st.button("Mark Low-Confidence For Manual Review"):
+        if st.button("标记低置信规则为人工复核"):
             records = bulk_mark_manual_review_by_low_confidence(
                 review_queue,
                 threshold=float(low_confidence_threshold),
                 source="streamlit_batch_review",
             )
             if not records:
-                st.warning("No low-confidence rules were available.")
+                st.warning("暂无低置信规则。")
             else:
                 try:
                     save_result, _ = _persist_review_records(records, result, review_queue)
                     clear_review_override_caches()
                     st.success(
-                        f"Saved {save_result['saved_count']} manual review records."
+                        f"已保存 {save_result['saved_count']} 条人工复核记录。"
                     )
                 except Exception as exc:
-                    st.error(f"Failed to save low-confidence review records: {exc}")
+                    st.error(f"保存低置信评审记录失败: {exc}")
 
     review_actions = ["accept", "reject", "edit", "mark_for_manual_review"]
     if visible_review_queue:
-        st.subheader("Manual Review")
+        st.subheader("人工评审")
         with st.form("quality_rule_review_form"):
             for rule in visible_review_queue:
                 key = _rule_key(rule)
@@ -305,7 +309,7 @@ else:
                 with st.expander(label, expanded=False):
                     render_explanation_block(
                         "推荐说明",
-                        summary=rule.reason or "No recommendation reason available.",
+                        summary=rule.reason or "暂无推荐原因。",
                         details=[
                             ("建议表达式", rule.rule_expression or "N/A"),
                             ("严重度", rule.severity),
@@ -323,7 +327,7 @@ else:
                         st.caption(rule.notes)
                     if existing is not None:
                         st.info(
-                            "Saved override: "
+                            "已保存覆盖: "
                             f"`{existing.review_action}` | "
                             f"expression=`{existing.final_rule_expression or 'N/A'}` | "
                             f"severity=`{existing.final_severity or 'N/A'}`"
@@ -334,13 +338,13 @@ else:
                         else "accept"
                     )
                     st.selectbox(
-                        "Review action",
+                        "评审动作",
                         review_actions,
                         index=review_actions.index(default_action),
                         key=f"quality_action_{key}",
                     )
                     st.text_input(
-                        "Final rule expression",
+                        "最终规则表达式",
                         value=(
                             existing.final_rule_expression
                             if existing is not None
@@ -350,7 +354,7 @@ else:
                         key=f"quality_expression_{key}",
                     )
                     st.selectbox(
-                        "Final severity",
+                        "最终严重度",
                         ["high", "medium", "low"],
                         index=["high", "medium", "low"].index(
                             (
@@ -365,7 +369,7 @@ else:
                         key=f"quality_severity_{key}",
                     )
                     st.text_area(
-                        "Reviewer note",
+                        "评审备注",
                         value=(
                             existing.reviewer_note
                             if existing is not None and existing.reviewer_note is not None
@@ -375,7 +379,7 @@ else:
                         key=f"quality_note_{key}",
                     )
 
-            save_clicked = st.form_submit_button("Save Quality Rule Reviews", type="primary")
+            save_clicked = st.form_submit_button("保存质量规则评审", type="primary")
 
         if save_clicked:
             review_inputs = collect_quality_review_inputs(
@@ -393,51 +397,51 @@ else:
                 save_result, _ = _persist_review_records(records, result, review_queue)
                 clear_review_override_caches()
                 st.success(
-                    f"Saved {save_result['saved_count']} quality rule review records."
+                    f"已保存 {save_result['saved_count']} 条质量规则评审记录。"
                 )
             except Exception as exc:
-                st.error(f"Failed to save quality rule reviews: {exc}")
+                st.error(f"保存质量规则评审失败: {exc}")
     elif review_queue:
-        st.info("No reviewable rules match the current filters.")
+        st.info("当前筛选条件下没有可评审规则。")
 
-    st.subheader("Quality Rule Review Summary")
+    st.subheader("质量规则评审汇总")
     summary = result.quality_rule_review_summary or summarize_quality_rule_review_records(
         stored_overrides,
         confirmed_count=len(confirmed_rules),
     )
     summary_df = quality_rule_review_summary_to_dataframe(summary)
-    with st.expander("Quality Rule Review Summary", expanded=False):
+    with st.expander("质量规则评审汇总", expanded=False):
         render_lazy_dataframe_section(
-            "Quality Rule Review Summary",
+            "质量规则评审汇总",
             summary_df,
-            empty_message="No quality rule review summary is available.",
+            empty_message="暂无质量规则评审汇总。",
             compact=True,
             key_prefix="quality_review_summary",
         )
 
-    st.subheader("Quality Review Queue Summary")
+    st.subheader("质量评审队列汇总")
     queue_summary = result.quality_review_queue_summary or summarize_review_queue(review_queue)
     queue_df = quality_review_queue_summary_to_dataframe(queue_summary)
-    with st.expander("Quality Review Queue Summary", expanded=False):
+    with st.expander("质量评审队列汇总", expanded=False):
         render_lazy_dataframe_section(
-            "Quality Review Queue Summary",
+            "质量评审队列汇总",
             queue_df,
-            empty_message="No quality review queue summary is available.",
+            empty_message="暂无质量评审队列汇总。",
             compact=True,
             key_prefix="quality_review_queue",
         )
 
-    st.subheader("Confirmed Quality Rules")
+    st.subheader("已确认质量规则")
     if confirmed_rules:
-        with st.expander("Confirmed Quality Rules", expanded=False):
+        with st.expander("已确认质量规则", expanded=False):
             render_lazy_dataframe_section(
-                "Confirmed Quality Rules",
+                "已确认质量规则",
                 confirmed_quality_rules_to_dataframe(confirmed_rules),
-                empty_message="No confirmed quality rules are available yet.",
+                empty_message="暂无已确认质量规则。",
                 compact=True,
                 key_prefix="confirmed_quality_rules",
             )
-        if st.button("Build Execution Package From Confirmed Rules"):
+        if st.button("基于已确认规则构建执行包"):
             builder = ExecutionPackageBuilder()
             package = builder.build_package(
                 confirmed_rules,
@@ -448,41 +452,42 @@ else:
             result.execution_package_summary = builder.summarize_package(package)
             set_workflow_result_state(result)
             set_latest_execution_ready_package(package)
-            st.success("Execution-ready package was built from confirmed quality rules.")
+            st.success("已基于已确认质量规则构建执行准备包。")
     else:
-        st.info("No confirmed quality rules are available yet.")
+        st.info("暂无已确认质量规则。")
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Re-run With Quality Overrides"):
+        if st.button("带质量规则覆盖重新运行"):
             if not uploaded_file_path:
-                st.warning("No input file path is available. Run a file-based workflow first.")
+                st.warning("当前没有输入文件路径，请先运行基于文件的工作流。")
             else:
                 try:
-                    with st.spinner("Re-running quality workflow with saved overrides..."):
+                    with st.spinner("正在带已保存覆盖重新运行质量规则工作流..."):
                         rerun_result = run_p0_plus_mapping_plus_stg_plus_quality_with_review_from_file(
                             uploaded_file_path
                         )
                 except Exception as exc:
-                    st.error(f"Failed to rerun with quality overrides: {exc}")
+                    st.error(f"带质量规则覆盖重新运行失败: {exc}")
                 else:
                     set_workflow_result_state(rerun_result, file_path=uploaded_file_path)
-                    st.success("Quality workflow re-ran with saved overrides applied.")
+                    st.success("质量规则工作流已应用已保存覆盖并重新运行。")
 
     with col2:
         export_format = st.selectbox(
-            "Export format",
+            "导出格式",
             options=["custom JSON", "dbt YAML"],
+            format_func=lambda value: EXPORT_FORMAT_LABELS.get(value, value),
             key="quality_rule_export_format",
         )
-        if st.button("Export Confirmed Rules"):
+        if st.button("导出已确认规则"):
             current_result: WorkflowResult | None = get_workflow_result()
             if current_result is None:
-                st.warning("No workflow result is available to export.")
+                st.warning("当前没有可导出的工作流结果。")
                 st.stop()
             current_rules = current_result.confirmed_quality_rules
             if not current_rules:
-                st.warning("No confirmed quality rules are available to export.")
+                st.warning("暂无可导出的已确认质量规则。")
             else:
                 adapter = RuleExportAdapter()
                 output_dir = PROJECT_ROOT / "outputs" / "rule_exports"
@@ -500,27 +505,27 @@ else:
                         )
                     current_result.rule_export_results.append(export_result)
                     set_workflow_result_state(current_result)
-                    st.success("Confirmed quality rules were exported.")
+                    st.success("已确认质量规则已导出。")
                 except Exception as exc:
-                    st.error(f"Failed to export confirmed quality rules: {exc}")
+                    st.error(f"导出已确认质量规则失败: {exc}")
 
-    st.subheader("Rule Export Results")
-    with st.expander("Rule Export Results", expanded=False):
+    st.subheader("规则导出结果")
+    with st.expander("规则导出结果", expanded=False):
         render_deferred_dataframe_section(
-            "Rule Export Results",
+            "规则导出结果",
             lambda: rule_export_results_to_dataframe(result.rule_export_results),
-            empty_message="No rule export results are available.",
+            empty_message="暂无规则导出结果。",
             compact=True,
             key_prefix="quality_rule_exports",
         )
 
-    with st.expander("Stored Quality Rule Overrides", expanded=False):
+    with st.expander("已保存质量规则覆盖", expanded=False):
         if stored_overrides:
             render_deferred_dataframe_section(
-                "Stored Quality Rule Overrides",
+                "已保存质量规则覆盖",
                 lambda: records_to_dataframe(stored_overrides),
                 compact=True,
                 key_prefix="stored_quality_overrides",
             )
         else:
-            st.info("No stored quality rule overrides found.")
+            st.info("暂无已保存质量规则覆盖。")

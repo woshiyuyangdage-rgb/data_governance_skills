@@ -34,10 +34,9 @@ from app.ui.workbench_cache import review_summary_to_dataframe
 initialize_session_state()
 
 render_page_header(
-    "Intent Runner",
+    "意图运行器",
     (
-        "Enter a short natural-language governance task, inspect how it maps to a "
-        "workflow profile, and optionally run it through the existing router."
+        "输入一段自然语言治理任务，查看它如何映射到工作流方案，并可选择直接运行。"
     ),
 )
 
@@ -45,26 +44,26 @@ uploaded_file_path = get_uploaded_file_path()
 default_file_path = uploaded_file_path or ""
 
 task_text = st.text_area(
-    "Task Text",
-    value="Help me inspect this metadata file and export reports",
+    "任务文本",
+    value="运行标准映射并导出报告",
     height=120,
-    help="Example: Run standard mapping and export reports",
+    help="示例：运行标准映射并导出报告",
 )
 file_path = st.text_input(
-    "File Path",
+    "文件路径",
     value=default_file_path,
-    help="If you already uploaded a file, its saved local path is prefilled here.",
+    help="如果已经上传文件，这里会自动带入已保存的本地路径。",
 )
 execution_mode = st.radio(
-    "Execution Mode",
-    options=["Interpret only", "Interpret and run"],
+    "执行模式",
+    options=["仅解析", "解析并运行"],
     horizontal=True,
 )
 
-if st.button("Execute Intent", type="primary"):
+if st.button("执行意图", type="primary"):
     try:
-        with st.spinner("Interpreting task request..."):
-            if execution_mode == "Interpret only":
+        with st.spinner("正在解析任务请求..."):
+            if execution_mode == "仅解析":
                 execution_result = interpret_and_build_request(
                     text=task_text,
                     file_path=file_path or None,
@@ -75,7 +74,7 @@ if st.button("Execute Intent", type="primary"):
                     file_path=file_path or None,
                 )
     except Exception as exc:
-        st.error(f"Failed to process natural-language task: {exc}")
+        st.error(f"处理自然语言任务失败: {exc}")
     else:
         set_latest_intent_execution_result(execution_result)
         if execution_result.task_response is not None:
@@ -83,7 +82,7 @@ if st.button("Execute Intent", type="primary"):
                 execution_result.task_response,
                 file_path=execution_result.task_request.file_path,
             )
-        st.success("Intent processing completed.")
+        st.success("意图处理完成。")
 
 execution_result = get_latest_intent_execution_result()
 if execution_result is not None:
@@ -97,7 +96,7 @@ if execution_result is not None:
         "意图解释",
         summary=interpreted_intent.message,
         rows=[
-            ("匹配意图", interpreted_intent.matched_intent_name or "fallback"),
+            ("匹配意图", interpreted_intent.matched_intent_name or "回退解析"),
             ("匹配方案", interpreted_intent.matched_profile_name),
             ("匹配来源", interpreted_intent.match_source),
             ("关键词", interpreted_intent.matched_keywords),
@@ -123,31 +122,31 @@ if execution_result is not None:
                 ("执行阶段", task_response.stages_executed),
                 ("状态", task_response.status),
             ],
-            next_step="下一步可以去 Review 查看人工覆盖，或去 Reports 导出结果。",
+            next_step="下一步可以去评审页查看人工覆盖，或去报告页导出结果。",
         )
 
         workflow_result = task_response.result
         if hasattr(workflow_result, "issue_count"):
             render_metric_row(
                 [
-                    ("Issue Count", workflow_result.issue_count),
-                    ("Mapping Count", len(workflow_result.mapping_results)),
-                    ("STG Count", len(workflow_result.stg_field_suggestions)),
+                    ("问题数", workflow_result.issue_count),
+                    ("映射数", len(workflow_result.mapping_results)),
+                    ("STG 数", len(workflow_result.stg_field_suggestions)),
                 ],
             )
 
             if workflow_result.review_summary is not None:
-                st.subheader("Review Summary")
+                st.subheader("评审汇总")
                 review_summary_df = review_summary_to_dataframe(
                     workflow_result.review_summary
                 )
                 if not review_summary_df.empty:
                     render_lazy_dataframe_section(
-                        "Review Summary",
+                        "评审汇总",
                         review_summary_df,
                         compact=True,
                         key_prefix="intent_review_summary",
                     )
 
         if task_response.exported_files:
-            render_json_section("Exported Files", task_response.exported_files)
+            render_json_section("导出文件", task_response.exported_files)

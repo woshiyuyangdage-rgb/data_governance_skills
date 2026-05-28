@@ -38,10 +38,9 @@ from app.ui.workbench_cache import (
 initialize_session_state()
 
 render_page_header(
-    "Tool Console",
+    "工具控制台",
     (
-        "Call the local governance tool layer directly, inspect normalized tool responses, "
-        "and review recent execution traces."
+        "直接调用本地治理工具层，查看标准化工具响应，并回看最近执行跟踪。"
     ),
 )
 
@@ -81,14 +80,14 @@ def _store_tool_workflow_result(selected_tool_name: str, result: object) -> None
         set_workflow_result_state(WorkflowResult.model_validate(result_payload))
 
 selected_tool_name = st.selectbox(
-    "Tool",
+    "工具",
     options=tool_names,
     format_func=lambda name: f"{name} - {tool_lookup[name].description}",
 )
 selected_tool = tool_lookup[selected_tool_name]
 
 st.caption(
-    f"Category: {selected_tool.category} | input: {selected_tool.input_model} | output: {selected_tool.output_model}"
+    f"分类: {selected_tool.category} | 输入: {selected_tool.input_model} | 输出: {selected_tool.output_model}"
 )
 
 default_arguments_json = json.dumps(
@@ -97,17 +96,17 @@ default_arguments_json = json.dumps(
     indent=2,
 )
 arguments_text = st.text_area(
-    "Tool Arguments (JSON)",
+    "工具参数(JSON)",
     value=default_arguments_json,
     height=220,
     key=f"tool_console_arguments_{selected_tool_name}",
 )
 
-if st.button("Call Tool", type="primary"):
+if st.button("调用工具", type="primary"):
     try:
         arguments = json.loads(arguments_text or "{}")
         if not isinstance(arguments, dict):
-            raise ValueError("Tool arguments must be a JSON object.")
+            raise ValueError("工具参数必须是 JSON 对象。")
         tool_response = call_tool(
             ToolCallRequest(
                 tool_name=selected_tool_name,
@@ -115,7 +114,7 @@ if st.button("Call Tool", type="primary"):
             )
         )
     except Exception as exc:
-        st.error(f"Failed to call tool: {exc}")
+        st.error(f"调用工具失败: {exc}")
     else:
         set_latest_tool_call_response(tool_response)
         if selected_tool_name in {
@@ -125,30 +124,30 @@ if st.button("Call Tool", type="primary"):
             "build_execution_ready_package",
         }:
             _store_tool_workflow_result(selected_tool_name, tool_response.result)
-        st.success("Tool call completed.")
+        st.success("工具调用完成。")
 
 tool_response = get_latest_tool_call_response()
 if tool_response is not None:
     render_key_value_block(
-        "Tool Response",
+        "工具响应",
         summary=tool_response.message,
         rows=[
-            ("Tool", tool_response.tool_name),
-            ("Status", tool_response.status),
-            ("Trace ID", tool_response.trace_id or "N/A"),
+            ("工具", tool_response.tool_name),
+            ("状态", tool_response.status),
+            ("执行跟踪 ID", tool_response.trace_id or "N/A"),
         ],
     )
     if tool_response.result is not None:
-        render_json_section("Tool Response Payload", tool_response.result, compact=True)
+        render_json_section("工具响应内容", tool_response.result, compact=True)
 
 recent_traces = list_recent_traces(limit=20)
-st.subheader("Recent Traces")
+st.subheader("最近执行跟踪")
 if not recent_traces:
-    st.info("No execution traces are available yet.")
+    st.info("暂无执行跟踪。")
 else:
     trace_options = [trace.trace_id for trace in recent_traces]
     selected_trace_id = st.selectbox(
-        "Trace ID",
+        "执行跟踪 ID",
         options=trace_options,
         index=0,
     )
@@ -158,11 +157,11 @@ else:
             None,
             summary=selected_trace.message,
             rows=[
-                ("Tool", selected_trace.tool_name),
-                ("Status", selected_trace.status),
-                ("Session ID", selected_trace.session_id or "N/A"),
-                ("Profile", selected_trace.profile_name or "N/A"),
-                ("Stages", ", ".join(selected_trace.stages_executed) or "N/A"),
+                ("工具", selected_trace.tool_name),
+                ("状态", selected_trace.status),
+                ("会话 ID", selected_trace.session_id or "N/A"),
+                ("方案", selected_trace.profile_name or "N/A"),
+                ("阶段", ", ".join(selected_trace.stages_executed) or "N/A"),
             ],
         )
-        render_json_section("Trace Details", selected_trace)
+        render_json_section("执行跟踪明细", selected_trace)

@@ -13,39 +13,46 @@ from app.ui.workbench_cache import (
 
 
 render_page_header(
-    "Enterprise Metadata Intake",
-    caption="Diagnose structured metadata templates and normalize them into standard input.",
+    "企业元数据接入",
+    caption="诊断结构化元数据模板，并规范化为标准输入。",
 )
 
 profiles = list_enabled_intake_template_profiles()
 profile_options = ["auto_match"] + [profile.profile_name for profile in profiles]
+PROFILE_OPTION_LABELS = {
+    "auto_match": "自动匹配",
+}
 
-st.subheader("Available Intake Profiles")
+st.subheader("可用接入配置")
 render_records_dataframe_section(
-    "Available Intake Profiles",
+    "可用接入配置",
     profiles,
     key_prefix="intake_profiles",
 )
 
-st.subheader("Diagnose & Normalize")
-file_path = st.text_input("Metadata file path")
-sheet_name = st.text_input("Sheet name (optional)")
-selected_profile = st.selectbox("Intake profile", profile_options)
+st.subheader("诊断与规范化")
+file_path = st.text_input("元数据文件路径")
+sheet_name = st.text_input("Sheet 名称（可选）")
+selected_profile = st.selectbox(
+    "接入配置",
+    profile_options,
+    format_func=lambda value: PROFILE_OPTION_LABELS.get(value, value),
+)
 
-if st.button("Diagnose Template"):
+if st.button("诊断模板"):
     if not file_path:
-        st.warning("Please provide a metadata file path first.")
+        st.warning("请先提供元数据文件路径。")
     else:
         result = diagnose_intake_template_cached(
             file_path,
             sheet_name=sheet_name or None,
             file_signature=file_cache_key(file_path),
         )
-        render_json_section("Diagnose Template Result", result)
+        render_json_section("模板诊断结果", result)
 
-if st.button("Normalize Input"):
+if st.button("规范化输入"):
     if not file_path:
-        st.warning("Please provide a metadata file path first.")
+        st.warning("请先提供元数据文件路径。")
     else:
         profile_name = None if selected_profile == "auto_match" else selected_profile
         result = normalize_metadata_input_cached(
@@ -54,9 +61,9 @@ if st.button("Normalize Input"):
             sheet_name=sheet_name or None,
             file_signature=file_cache_key(file_path),
         )
-        render_json_section("Normalize Input Result", result)
+        render_json_section("输入规范化结果", result)
         if result.status == "success":
             st.success(
-                f"Normalized {result.row_count} rows across {result.table_count} tables."
+                f"已规范化 {result.row_count} 行，覆盖 {result.table_count} 张表。"
             )
 

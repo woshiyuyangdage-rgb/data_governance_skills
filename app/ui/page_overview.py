@@ -83,7 +83,7 @@ def build_intent_overview(
 def build_agent_overview(
     result: AgentShellResult,
     *,
-    title: str = "Agent Shell 总览",
+    title: str = "Agent 总览",
 ) -> ResultOverview:
     """Build a normalized overview for agent shell output."""
     return _build_agent_shell_overview(result, title=title)

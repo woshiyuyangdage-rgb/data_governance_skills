@@ -39,27 +39,35 @@ from app.ui.status_blocks import render_metric_row, render_page_header
 initialize_session_state()
 
 render_page_header(
-    "Governance Backlog",
-    "Build, persist, filter, and update local governance backlog items.",
+    "治理待办",
+    "构建、持久化、筛选和更新本地治理待办。",
 )
 
 
 result: WorkflowResult | None = get_workflow_result()
 uploaded_file_path = get_current_input_file_path()
 service = GovernanceBacklogTrackingService()
+BACKLOG_STATUS_LABELS = {
+    "proposed": "待确认",
+    "accepted": "已接受",
+    "in_progress": "处理中",
+    "blocked": "阻塞",
+    "completed": "已完成",
+    "dropped": "已放弃",
+}
 
 col_build, col_persist, col_export = st.columns(3)
 with col_build:
-    if st.button("Build Governance Backlog", type="primary"):
+    if st.button("构建治理待办", type="primary"):
         if uploaded_file_path:
             try:
-                with st.spinner("Running full backlog workflow..."):
+                with st.spinner("正在运行完整待办流程..."):
                     result = run_full_governance_backlog_package_from_file(uploaded_file_path)
             except Exception as exc:
-                st.error(f"Failed to build backlog: {exc}")
+                st.error(f"构建待办失败: {exc}")
             else:
                 set_workflow_result_state(result, file_path=uploaded_file_path)
-                st.success("Governance backlog was built.")
+                st.success("治理待办已构建。")
         elif result is not None:
             items, summary = service.build_backlog_from_work_package(
                 workflow_result=result
@@ -67,24 +75,24 @@ with col_build:
             result.governance_backlog_items = items
             result.backlog_summary = summary
             set_workflow_result_state(result)
-            st.success("Governance backlog was built from current result.")
+            st.success("已基于当前结果构建治理待办。")
         else:
-            st.warning("Run readiness/remediation first or provide an uploaded file.")
+            st.warning("请先运行就绪度/整改流程，或提供已上传文件。")
 
 with col_persist:
-    if st.button("Persist Backlog"):
+    if st.button("保存待办"):
         current_result: WorkflowResult | None = get_workflow_result()
         if current_result is None or not current_result.governance_backlog_items:
-            st.warning("Build backlog items before persisting.")
+            st.warning("请先构建待办再保存。")
         else:
             save_result = service.persist_backlog_items(
                 current_result.governance_backlog_items,
                 append=True,
             )
-            st.success(f"Persisted {save_result['saved_count']} backlog items.")
+            st.success(f"已保存 {save_result['saved_count']} 条待办。")
 
 with col_export:
-    if st.button("Export Backlog JSON"):
+    if st.button("导出待办 JSON"):
         items = backlog_store.list_backlog_items()
         summary = service.summarize_backlog(items)
         output_dir = PROJECT_ROOT / "outputs" / "governance_backlog"
@@ -101,7 +109,7 @@ with col_export:
             ),
             encoding="utf-8",
         )
-        st.success(f"Backlog exported to {output_path}")
+        st.success(f"待办已导出到 {output_path}")
 
 persisted_items = backlog_store.list_backlog_items()
 current_items = (
@@ -120,54 +128,55 @@ if result is not None:
     )
 
 render_metric_row(
-    [
-        ("Backlog Items", summary.total_items),
-        ("Blocked", summary.blocked_count),
-        ("Completed", summary.completed_count),
-        ("Owners", len(summary.by_owner_role)),
+        [
+        ("待办数", summary.total_items),
+        ("阻塞", summary.blocked_count),
+        ("已完成", summary.completed_count),
+        ("责任角色", len(summary.by_owner_role)),
     ],
 )
 
-st.subheader("Backlog Summary")
+st.subheader("待办汇总")
 summary_df = backlog_summary_to_dataframe(summary)
 if not summary_df.empty:
     render_lazy_dataframe_section(
-        "Backlog Summary",
+        "待办汇总",
         summary_df,
         compact=True,
         key_prefix="backlog_summary",
     )
 
-st.subheader("Backlog Items")
+st.subheader("待办明细")
 items_df = governance_backlog_items_to_dataframe(display_items)
-items_df = render_dataframe_multiselect_filter(items_df, "status", "Filter status")
-items_df = render_dataframe_multiselect_filter(items_df, "priority", "Filter priority")
+items_df = render_dataframe_multiselect_filter(items_df, "status", "筛选状态")
+items_df = render_dataframe_multiselect_filter(items_df, "priority", "筛选优先级")
 items_df = render_dataframe_multiselect_filter(
     items_df,
     "owner_role",
-    "Filter owner role",
+    "筛选责任角色",
 )
-items_df = render_dataframe_multiselect_filter(items_df, "gap_type", "Filter gap type")
+items_df = render_dataframe_multiselect_filter(items_df, "gap_type", "筛选缺口类型")
 if not items_df.empty:
     render_lazy_dataframe_section(
-        "Backlog Items",
+        "待办明细",
         items_df,
         compact=True,
         key_prefix="backlog_items",
     )
 else:
-    st.info("No backlog items are available.")
+    st.info("暂无待办。")
 
-st.subheader("Update Backlog Status")
+st.subheader("更新待办状态")
 if display_items:
     backlog_lookup = {item.backlog_id: item for item in display_items}
-    selected_id = st.selectbox("Backlog item", options=sorted(backlog_lookup))
+    selected_id = st.selectbox("待办项", options=sorted(backlog_lookup))
     new_status = st.selectbox(
-        "New status",
+        "新状态",
         options=["proposed", "accepted", "in_progress", "blocked", "completed", "dropped"],
+        format_func=lambda value: BACKLOG_STATUS_LABELS.get(value, value),
     )
-    note = st.text_input("Update note", value="")
-    if st.button("Update Status"):
+    note = st.text_input("更新备注", value="")
+    if st.button("更新状态"):
         result_update = service.update_backlog_status(
             selected_id,
             new_status,
@@ -178,4 +187,4 @@ if display_items:
         else:
             st.error(result_update.message)
 else:
-    st.info("Persist backlog items before updating status.")
+    st.info("请先保存待办，再更新状态。")

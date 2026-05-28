@@ -47,8 +47,8 @@ from app.ui.status_blocks import render_metric_row, render_page_header
 initialize_session_state()
 
 render_page_header(
-    "Governance Readiness",
-    "Assess governance readiness, classify gaps, and build a remediation work package.",
+    "治理就绪度",
+    "评估治理就绪度，分类治理缺口，并构建整改工作包。",
 )
 
 
@@ -84,28 +84,28 @@ uploaded_file_path = get_current_input_file_path()
 
 col_run, col_export = st.columns(2)
 with col_run:
-    if st.button("Run Readiness Assessment", type="primary"):
+    if st.button("运行就绪度评估", type="primary"):
         if uploaded_file_path:
             try:
-                with st.spinner("Running full governance work-package workflow..."):
+                with st.spinner("正在运行完整治理工作包流程..."):
                     result = run_full_governance_work_package_from_file(uploaded_file_path)
             except Exception as exc:
-                st.error(f"Failed to run readiness assessment: {exc}")
+                st.error(f"运行就绪度评估失败: {exc}")
             else:
                 set_workflow_result_state(result, file_path=uploaded_file_path)
-                st.success("Governance readiness assessment completed.")
+                st.success("治理就绪度评估完成。")
         elif result is not None:
             result = _build_readiness_from_result(result)
             set_workflow_result_state(result)
-            st.success("Governance readiness assessment completed from current result.")
+            st.success("已基于当前结果完成治理就绪度评估。")
         else:
-            st.warning("Run a workflow or upload a metadata file before assessment.")
+            st.warning("请先运行工作流或上传元数据文件。")
 
 with col_export:
-    if st.button("Export Governance Work Package"):
+    if st.button("导出治理工作包"):
         current_result: WorkflowResult | None = get_workflow_result()
         if current_result is None or current_result.governance_work_package is None:
-            st.warning("Build a governance work package before exporting.")
+            st.warning("请先构建治理工作包再导出。")
         else:
             output_dir = PROJECT_ROOT / "outputs" / "governance_work_packages"
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -119,11 +119,11 @@ with col_export:
                 ),
                 encoding="utf-8",
             )
-            st.success(f"Governance work package exported to {output_path}")
+            st.success(f"治理工作包已导出到 {output_path}")
 
 result = get_workflow_result()
 if result is None:
-    st.info("No workflow result is available yet.")
+    st.info("当前还没有工作流结果。")
 else:
     render_result_overview(
         build_workflow_overview(
@@ -135,99 +135,99 @@ else:
 
     render_metric_row(
         [
-            ("Readiness Scores", len(result.readiness_scores)),
-            ("AI-Ready Scores", len(result.ai_ready_scores)),
-            ("Governance Gaps", len(result.governance_gaps)),
-            ("Remediation Actions", len(result.remediation_actions)),
+            ("就绪度评分", len(result.readiness_scores)),
+            ("AI-ready 评分", len(result.ai_ready_scores)),
+            ("治理缺口", len(result.governance_gaps)),
+            ("整改动作", len(result.remediation_actions)),
             (
-                "Work Package",
+                "工作包",
                 result.governance_work_package.package_name
                 if result.governance_work_package is not None
-                else "not built",
+                else "未构建",
             ),
         ],
     )
 
-    st.subheader("Work Package Summary")
+    st.subheader("工作包汇总")
     summary_df = governance_work_package_summary_to_dataframe(
         result.governance_work_package,
         result.readiness_summary,
     )
     if not summary_df.empty:
         render_lazy_dataframe_section(
-            "Work Package Summary",
+            "工作包汇总",
             summary_df,
             compact=True,
             key_prefix="readiness_work_package_summary",
         )
     else:
-        st.info("No work package summary is available.")
+        st.info("暂无工作包汇总。")
 
-    st.subheader("Table-Level Readiness")
+    st.subheader("表级就绪度")
     readiness_df = readiness_scores_to_dataframe(result.readiness_scores)
     readiness_df = render_dataframe_multiselect_filter(
         readiness_df,
         "readiness_level",
-        "Filter readiness level",
+        "筛选就绪等级",
     )
     if not readiness_df.empty:
         render_lazy_dataframe_section(
-            "Table-Level Readiness",
+            "表级就绪度",
             readiness_df,
             compact=True,
             key_prefix="readiness_scores",
         )
     else:
-        st.info("No readiness scores are available.")
+        st.info("暂无就绪度评分。")
 
-    st.subheader("AI-Ready Assessment")
+    st.subheader("AI-ready 评估")
     ai_ready_df = ai_ready_scores_to_dataframe(result.ai_ready_scores)
     ai_ready_df = render_dataframe_multiselect_filter(
         ai_ready_df,
         "ai_ready_level",
-        "Filter AI-ready level",
+        "筛选 AI-ready 等级",
     )
     if not ai_ready_df.empty:
         render_lazy_dataframe_section(
-            "AI-Ready Assessment",
+            "AI-ready 评估",
             ai_ready_df,
             compact=True,
             key_prefix="ai_ready_scores",
         )
     else:
-        st.info("No AI-ready scores are available.")
+        st.info("暂无 AI-ready 评分。")
 
-    st.subheader("Governance Gaps")
+    st.subheader("治理缺口")
     gaps_df = governance_gaps_to_dataframe(result.governance_gaps)
-    gaps_df = render_dataframe_multiselect_filter(gaps_df, "gap_type", "Filter gap type")
+    gaps_df = render_dataframe_multiselect_filter(gaps_df, "gap_type", "筛选缺口类型")
     if not gaps_df.empty:
         render_lazy_dataframe_section(
-            "Governance Gaps",
+            "治理缺口",
             gaps_df,
             compact=True,
             key_prefix="readiness_gaps",
         )
     else:
-        st.info("No governance gaps are available.")
+        st.info("暂无治理缺口。")
 
-    st.subheader("Remediation Actions")
+    st.subheader("整改动作")
     actions_df = remediation_actions_to_dataframe(result.remediation_actions)
     actions_df = render_dataframe_multiselect_filter(
         actions_df,
         "owner_role",
-        "Filter owner role",
+        "筛选责任角色",
     )
     actions_df = render_dataframe_multiselect_filter(
         actions_df,
         "priority",
-        "Filter priority",
+        "筛选优先级",
     )
     if not actions_df.empty:
         render_lazy_dataframe_section(
-            "Remediation Actions",
+            "整改动作",
             actions_df,
             compact=True,
             key_prefix="readiness_actions",
         )
     else:
-        st.info("No remediation actions are available.")
+        st.info("暂无整改动作。")

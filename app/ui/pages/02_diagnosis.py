@@ -55,20 +55,18 @@ from app.ui.workbench_cache import (
 initialize_session_state()
 
 render_page_header(
-    "Diagnosis Workbench",
+    "诊断工作台",
     (
-        "Select a workflow profile, run the unified governance task entrypoint, then "
-        "inspect or review the returned results."
+        "选择工作流方案，运行统一治理任务入口，然后查看诊断、映射、STG 和质量规则结果。"
     ),
     info=(
-        "Prefer a natural-language or preview-first entry? Use the Intent Runner or "
-        "Agent Shell page before running a workflow directly here."
+        "如果希望先用自然语言预览执行计划，可以先进入意图运行器或 Agent 控制台。"
     ),
 )
 
 uploaded_file_path = get_uploaded_file_path()
 if not uploaded_file_path:
-    st.warning("No metadata file is available yet. Please upload a CSV or Excel file first.")
+    st.warning("当前还没有元数据文件，请先上传 CSV 或 Excel 文件。")
 else:
     ensure_large_file_runtime_ready(
         uploaded_file_path,
@@ -85,9 +83,9 @@ else:
         selected_profile_name = profile_names[0] if profile_names else "metadata_diagnosis_only"
     selected_index = profile_names.index(selected_profile_name) if profile_names else 0
 
-    st.caption(f"Current input file: {uploaded_file_path}")
+    st.caption(f"当前输入文件: {uploaded_file_path}")
     selected_profile_name = st.selectbox(
-        "Workflow Profile",
+        "工作流方案",
         options=profile_names,
         index=selected_index,
         format_func=lambda name: f"{name} - {profile_lookup[name].description}",
@@ -95,43 +93,43 @@ else:
     set_selected_workflow_profile(selected_profile_name)
     selected_profile = profile_lookup[selected_profile_name]
     st.caption(
-        f"Selected stages: {', '.join(selected_profile.stages)} | "
-        f"supports_review_replay={selected_profile.supports_review_replay}"
+        f"已选阶段: {', '.join(selected_profile.stages)} | "
+        f"支持评审回放={selected_profile.supports_review_replay}"
     )
 
-    with st.expander("Advanced Options", expanded=False):
+    with st.expander("高级选项", expanded=False):
         export_reports = st.checkbox(
-            "Export Reports After Run",
+            "运行后导出报告",
             value=False,
-            help="Automatically export JSON / Markdown / Excel files after a successful run.",
+            help="运行成功后自动导出 JSON / Markdown / Excel 文件。",
         )
         if selected_profile.name in {
             "diagnosis_mapping_stg_with_review",
             "diagnosis_mapping_stg_quality_with_review",
         }:
             apply_review_replay = st.checkbox(
-                "Apply Review Replay",
+                "应用评审回放",
                 value=True,
                 disabled=True,
-                help="This workflow profile always replays saved review overrides.",
+                help="该工作流方案会固定回放已保存的评审覆盖。",
             )
         elif selected_profile.supports_review_replay:
             apply_review_replay = st.checkbox(
-                "Apply Review Replay",
+                "应用评审回放",
                 value=True,
-                help="Replay saved mapping and STG overrides during this run.",
+                help="运行时回放已保存的映射和 STG 覆盖。",
             )
         else:
             apply_review_replay = st.checkbox(
-                "Apply Review Replay",
+                "应用评审回放",
                 value=False,
                 disabled=True,
-                help="This workflow profile does not support review replay.",
+                help="该工作流方案不支持评审回放。",
             )
 
-    if st.button("Run Pipeline", type="primary"):
+    if st.button("运行流程", type="primary"):
         try:
-            with st.spinner("Running governance workflow..."):
+            with st.spinner("正在运行治理工作流..."):
                 task_response = run_governance_task(
                     GovernanceTaskRequest(
                         file_path=uploaded_file_path,
@@ -141,7 +139,7 @@ else:
                     )
                 )
         except Exception as exc:
-            st.error(f"Unexpected error while running diagnosis: {exc}")
+            st.error(f"运行诊断时发生异常: {exc}")
         else:
             task_request = GovernanceTaskRequest(
                 file_path=uploaded_file_path,
@@ -159,7 +157,7 @@ else:
             if task_response.exported_files:
                 set_last_exported_files(agent_session_id, task_response.exported_files)
             if task_response.status == "success":
-                st.success("Pipeline execution completed.")
+                st.success("流程执行完成。")
             else:
                 st.error(task_response.message)
 
@@ -170,35 +168,35 @@ if result is not None:
         build_workflow_overview(
             result,
             title="诊断结果总览",
-            next_step="先看映射、STG 和质量规则建议，再去 Review 页面处理人工确认。",
+            next_step="先看映射、STG 和质量规则建议，再去评审页面处理人工确认。",
         )
     )
     if task_response is not None and task_response.exported_files:
-        st.info("Reports were exported during the run and are available on the Reports page.")
+        st.info("本次运行已导出报告，可以在报告页查看。")
 
-    with st.expander("Skill Summaries", expanded=False):
+    with st.expander("技能输出汇总", expanded=False):
         render_deferred_dataframe_section(
-            "Skill Summaries",
+            "技能输出汇总",
             lambda: skill_outputs_to_dataframe(result.skill_outputs),
-            empty_message="No skill outputs available for display.",
+            empty_message="暂无可展示的技能输出。",
             compact=True,
             key_prefix="diagnosis_skill_summaries",
         )
 
-    with st.expander("Issues", expanded=False):
+    with st.expander("问题清单", expanded=False):
         render_deferred_dataframe_section(
-            "Issues",
+            "问题清单",
             lambda: issues_to_dataframe(result.issues),
-            empty_message="No issues were generated.",
+            empty_message="暂无诊断问题。",
             compact=True,
             key_prefix="diagnosis_issues",
         )
 
-    with st.expander("Tasks", expanded=False):
+    with st.expander("治理任务", expanded=False):
         render_deferred_dataframe_section(
-            "Tasks",
+            "治理任务",
             lambda: tasks_to_dataframe(result.tasks),
-            empty_message="No tasks were generated.",
+            empty_message="暂无治理任务。",
             compact=True,
             key_prefix="diagnosis_tasks",
         )
@@ -206,34 +204,34 @@ if result is not None:
     if result.mapping_results or result.unmapped_fields or result.mapping_summary:
         render_explanation_block(
             "标准映射概览",
-            summary=result.mapping_summary or "No mapping summary available.",
-            next_step="Review mapping suggestions before confirming or exporting downstream assets.",
+            summary=result.mapping_summary or "暂无映射汇总。",
+            next_step="请先评审映射建议，再确认或导出下游资产。",
         )
 
-        with st.expander("Mapping Results", expanded=False):
+        with st.expander("映射结果", expanded=False):
             render_deferred_dataframe_section(
-                "Mapping Results",
+                "映射结果",
                 lambda: mapping_results_to_dataframe(result.mapping_results),
-                empty_message="No standard mapping recommendations were generated.",
+                empty_message="暂无标准映射推荐。",
                 compact=True,
                 key_prefix="diagnosis_mapping_results",
             )
 
-        with st.expander("Unmapped or Low-Confidence Fields", expanded=False):
+        with st.expander("未映射或低置信字段", expanded=False):
             render_deferred_dataframe_section(
-                "Unmapped or Low-Confidence Fields",
+                "未映射或低置信字段",
                 lambda: unmapped_fields_to_dataframe(result.unmapped_fields),
-                empty_message="No low-confidence or unmapped fields were flagged.",
+                empty_message="暂无未映射或低置信字段。",
                 compact=True,
                 key_prefix="diagnosis_unmapped_fields",
             )
 
     if result.confirmed_mapping_results:
-        with st.expander("Confirmed Mapping Results", expanded=False):
+        with st.expander("已确认映射结果", expanded=False):
             render_deferred_dataframe_section(
-                "Confirmed Mapping Results",
+                "已确认映射结果",
                 lambda: mapping_results_to_dataframe(result.confirmed_mapping_results),
-                empty_message="No confirmed mapping results are available.",
+                empty_message="暂无已确认映射结果。",
                 compact=True,
                 key_prefix="diagnosis_confirmed_mapping",
             )
@@ -241,24 +239,24 @@ if result is not None:
     if result.stg_suggestions or result.stg_field_suggestions or result.stg_summary:
         render_explanation_block(
             "STG 概览",
-            summary=result.stg_summary or "No STG summary available.",
-            next_step="Review STG field suggestions before accepting the final structure.",
+            summary=result.stg_summary or "暂无 STG 汇总。",
+            next_step="请先评审 STG 字段建议，再确认最终结构。",
         )
 
-        with st.expander("STG Table Suggestions", expanded=False):
+        with st.expander("STG 表建议", expanded=False):
             render_deferred_dataframe_section(
-                "STG Table Suggestions",
+                "STG 表建议",
                 lambda: stg_tables_to_dataframe(result.stg_suggestions),
-                empty_message="No STG table suggestions were generated.",
+                empty_message="暂无 STG 表建议。",
                 compact=True,
                 key_prefix="diagnosis_stg_tables",
             )
 
-        with st.expander("STG Field Suggestions", expanded=False):
+        with st.expander("STG 字段建议", expanded=False):
             render_deferred_dataframe_section(
-                "STG Field Suggestions",
+                "STG 字段建议",
                 lambda: stg_fields_to_dataframe(result.stg_field_suggestions),
-                empty_message="No STG field suggestions were generated.",
+                empty_message="暂无 STG 字段建议。",
                 columns=[
                     "source_table_name",
                     "source_field_name",
@@ -274,11 +272,11 @@ if result is not None:
             )
 
     if result.confirmed_stg_suggestions:
-        with st.expander("Confirmed STG Suggestions", expanded=False):
+        with st.expander("已确认 STG 建议", expanded=False):
             render_deferred_dataframe_section(
-                "Confirmed STG Suggestions",
+                "已确认 STG 建议",
                 lambda: stg_fields_to_dataframe(result.confirmed_stg_suggestions),
-                empty_message="No confirmed STG suggestions are available.",
+                empty_message="暂无已确认 STG 建议。",
                 compact=True,
                 key_prefix="diagnosis_confirmed_stg",
             )
@@ -286,28 +284,28 @@ if result is not None:
     if result.quality_rule_suggestions or result.quality_rule_summary:
         render_explanation_block(
             "质量规则概览",
-            summary=result.quality_rule_summary or "No quality rule summary available.",
-            next_step="Open the Quality Rules page to confirm, edit, or export the suggested rules.",
+            summary=result.quality_rule_summary or "暂无质量规则汇总。",
+            next_step="进入质量规则页确认、编辑或导出建议规则。",
         )
 
-        with st.expander("Quality Rule Suggestions", expanded=False):
+        with st.expander("质量规则建议", expanded=False):
             render_deferred_dataframe_section(
-                "Quality Rule Suggestions",
+                "质量规则建议",
                 lambda: quality_rules_to_dataframe(result.quality_rule_suggestions),
-                empty_message="No quality rule recommendations were generated.",
+                empty_message="暂无质量规则推荐。",
                 compact=True,
                 key_prefix="diagnosis_quality_rules",
             )
 
     if result.review_summary is not None:
-        with st.expander("Review Summary", expanded=False):
+        with st.expander("评审汇总", expanded=False):
             render_deferred_dataframe_section(
-                "Review Summary",
+                "评审汇总",
                 lambda: review_summary_to_dataframe(result.review_summary),
-                empty_message="No review summary is available.",
+                empty_message="暂无评审汇总。",
                 compact=True,
                 key_prefix="diagnosis_review_summary",
             )
 
     if result.mapping_results or result.stg_field_suggestions or result.quality_rule_suggestions:
-        st.info("Next step: open the Review page to accept, reject, edit, or mark suggestions for manual review.")
+        st.info("下一步：进入评审页，对建议进行接受、拒绝、编辑或标记人工复核。")

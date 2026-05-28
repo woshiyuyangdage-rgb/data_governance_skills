@@ -54,7 +54,7 @@ def render_bullet_list(
     title: str | None,
     items: Sequence[object | None],
     *,
-    empty_message: str = "No items available.",
+    empty_message: str = "暂无条目。",
 ) -> None:
     """Render a short bullet list with consistent empty-state handling."""
     if title is not None:
@@ -75,7 +75,7 @@ def render_key_value_block(
     *,
     summary: str | None = None,
     rows: Mapping[str, object | None] | Sequence[tuple[str, object | None]] | None = None,
-    empty_message: str = "No details available.",
+    empty_message: str = "暂无明细。",
 ) -> None:
     """Render a consistent key-value block for page summaries."""
     if title is not None:

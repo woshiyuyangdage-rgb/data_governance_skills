@@ -41,32 +41,46 @@ from app.ui.workbench_cache import (
 initialize_session_state()
 
 render_page_header(
-    "Confirmation Import",
+    "确认结果导入",
     (
-        "Validate, diagnose templates, import, merge, and prepare changed-object "
-        "rerun scope from filled confirmation workbooks."
+        "校验确认工作簿、诊断模板、导入合并，并准备变更对象重跑范围。"
     ),
 )
 
-uploaded_file = st.file_uploader("Upload confirmation workbook", type=["xlsx", "csv"])
+WORKBOOK_TYPE_LABELS = {
+    "mapping_confirmation": "标准映射确认",
+    "stg_confirmation": "STG 设计确认",
+    "quality_rule_confirmation": "质量规则确认",
+    "backlog_confirmation": "治理待办确认",
+}
+TEMPLATE_LABELS = {
+    "auto_match": "自动匹配",
+}
+
+uploaded_file = st.file_uploader("上传确认工作簿", type=["xlsx", "csv"])
 workbook_type = st.selectbox(
-    "Workbook type",
+    "工作簿类型",
     options=[
         "mapping_confirmation",
         "stg_confirmation",
         "quality_rule_confirmation",
         "backlog_confirmation",
     ],
+    format_func=lambda value: WORKBOOK_TYPE_LABELS.get(value, value),
 )
 template_options = ["auto_match"] + [
     profile.template_name for profile in list_enabled_confirmation_template_profiles()
 ]
-selected_template = st.selectbox("Confirmation template", template_options)
+selected_template = st.selectbox(
+    "确认模板",
+    template_options,
+    format_func=lambda value: TEMPLATE_LABELS.get(value, value),
+)
 
 if uploaded_file is not None:
     saved_path = save_uploaded_file(uploaded_file, PROJECT_ROOT / "outputs" / "confirmation_imports")
     set_confirmation_import_file_path(saved_path)
-    st.success(f"Workbook saved: {saved_path}")
+    st.success(f"工作簿已保存: {saved_path}")
 
 file_path = get_confirmation_import_file_path()
 importer = ConfirmationWorkbookImporter()
@@ -74,9 +88,9 @@ engine = WorkflowEngine()
 
 col_validate, col_diagnose, col_import, col_rerun = st.columns(4)
 with col_validate:
-    if st.button("Validate Workbook"):
+    if st.button("校验工作簿"):
         if not file_path:
-            st.warning("Upload a confirmation workbook first.")
+            st.warning("请先上传确认工作簿。")
         else:
             validation = validate_confirmation_workbook_cached(
                 file_path,
@@ -86,9 +100,9 @@ with col_validate:
             set_confirmation_validation_result(validation.model_dump())
 
 with col_diagnose:
-    if st.button("Diagnose Confirmation Template"):
+    if st.button("诊断确认模板"):
         if not file_path:
-            st.warning("Upload a confirmation workbook first.")
+            st.warning("请先上传确认工作簿。")
         else:
             diagnosis = diagnose_confirmation_template_cached(
                 file_path,
@@ -98,9 +112,9 @@ with col_diagnose:
             set_confirmation_template_diagnosis(diagnosis.model_dump())
 
 with col_import:
-    if st.button("Import and Merge", type="primary"):
+    if st.button("导入并合并", type="primary"):
         if not file_path:
-            st.warning("Upload a confirmation workbook first.")
+            st.warning("请先上传确认工作簿。")
         else:
             template_name = None if selected_template == "auto_match" else selected_template
             result = engine.import_confirmation_with_template(
@@ -109,12 +123,12 @@ with col_import:
                 workbook_type=workbook_type,
             )
             set_workflow_result_state(result)
-            st.success("Workbook imported and merged.")
+            st.success("工作簿已导入并合并。")
 
 with col_rerun:
-    if st.button("Import and Rerun Changed Objects"):
+    if st.button("导入并重跑变更对象"):
         if not file_path:
-            st.warning("Upload a confirmation workbook first.")
+            st.warning("请先上传确认工作簿。")
         else:
             template_name = None if selected_template == "auto_match" else selected_template
             result = engine.import_confirmation_with_template_and_rerun(
@@ -124,44 +138,44 @@ with col_rerun:
                 rerun_changed_only=True,
             )
             set_workflow_result_state(result)
-            st.success("Workbook imported and rerun scope prepared.")
+            st.success("工作簿已导入，重跑范围已准备。")
 
-st.subheader("Validation Result")
+st.subheader("校验结果")
 confirmation_validation_result = get_confirmation_validation_result()
 if confirmation_validation_result:
-    render_json_section("Validation Result", confirmation_validation_result)
+    render_json_section("校验结果", confirmation_validation_result)
 else:
-    st.info("Validate a workbook to see the result.")
+    st.info("校验工作簿后可查看结果。")
 
-st.subheader("Template Diagnosis")
+st.subheader("模板诊断")
 confirmation_template_diagnosis = get_confirmation_template_diagnosis()
 if confirmation_template_diagnosis:
-    render_json_section("Template Diagnosis", confirmation_template_diagnosis)
+    render_json_section("模板诊断", confirmation_template_diagnosis)
 else:
-    st.info("Diagnose a workbook template to see matched template and mapping evidence.")
+    st.info("诊断工作簿模板后可查看匹配模板和映射证据。")
 
 result = get_workflow_result()
 if result is not None and result.workbook_import_summaries:
-    st.subheader("Import Summary")
+    st.subheader("导入汇总")
     render_records_dataframe_section(
-        "Import Summary",
+        "导入汇总",
         result.workbook_import_summaries,
         key_prefix="confirmation_import_summary",
     )
-    st.subheader("Round-Trip Results")
+    st.subheader("回写结果")
     render_records_dataframe_section(
-        "Round-Trip Results",
+        "回写结果",
         result.roundtrip_results,
         key_prefix="confirmation_roundtrip_results",
     )
-    st.subheader("Changed Objects Summary")
-    render_json_section("Changed Objects Summary", result.roundtrip_changed_objects_summary)
+    st.subheader("变更对象汇总")
+    render_json_section("变更对象汇总", result.roundtrip_changed_objects_summary)
     if result.confirmation_template_match_result:
-        st.subheader("Confirmation Template Match")
-        render_json_section("Confirmation Template Match", result.confirmation_template_match_result)
+        st.subheader("确认模板匹配")
+        render_json_section("确认模板匹配", result.confirmation_template_match_result)
     if result.confirmation_template_mapping_result:
-        st.subheader("Confirmation Template Mapping")
-        render_json_section("Confirmation Template Mapping", result.confirmation_template_mapping_result)
-    st.subheader("Rerun Scope")
-    render_json_section("Rerun Scope", result.rerun_scope_summary)
+        st.subheader("确认模板映射")
+        render_json_section("确认模板映射", result.confirmation_template_mapping_result)
+    st.subheader("重跑范围")
+    render_json_section("重跑范围", result.rerun_scope_summary)
 

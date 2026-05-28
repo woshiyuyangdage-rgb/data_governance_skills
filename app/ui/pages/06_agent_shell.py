@@ -44,10 +44,9 @@ initialize_session_state()
 service = AgentShellService()
 
 render_page_header(
-    "Agent Shell",
+    "Agent 控制台",
     (
-        "Preview a rule-based execution plan, validate required parameters, and run "
-        "only after the shell policy allows it."
+        "预览规则化执行计划，校验必需参数，并在策略允许后执行。"
     ),
 )
 
@@ -57,52 +56,52 @@ active_session_id = ensure_agent_shell_session_id()
 if uploaded_file_path:
     set_last_uploaded_file(active_session_id, uploaded_file_path)
     st.caption(
-        f"Current uploaded file is available for session autofill: {uploaded_file_path}"
+        f"当前上传文件可用于会话自动补全: {uploaded_file_path}"
     )
 
 task_text = st.text_area(
-    "Task Text",
-    value="Help me inspect this file",
+    "任务文本",
+    value="快速诊断当前文件",
     height=120,
     key="agent_shell_text_input",
 )
 st.caption(
-    "Examples: Help me inspect this file | Use the uploaded file for standard mapping and export reports | Generate STG suggestions from the last file | Recommend quality rules from the current file | Rerun with confirmed results"
+    "示例：检查当前文件 | 对上传文件做标准映射并导出报告 | 基于最近文件生成 STG 建议 | 为当前文件推荐质量规则 | 使用已确认结果重新运行"
 )
 file_path = st.text_input(
-    "File Path",
+    "文件路径",
     value="",
-    help="Leave blank when you want the context resolver to reuse the current session file safely.",
+    help="留空时会让上下文解析器安全复用当前会话文件。",
     key="agent_shell_file_path_input",
 )
 session_id_input = st.text_input(
-    "Session ID",
+    "会话 ID",
     value=default_session_id or active_session_id,
-    help="Leave blank to create a new local session automatically.",
+    help="留空时会自动创建新的本地会话。",
     key="agent_shell_session_id_input",
 )
 
 preview_col, run_col = st.columns(2)
-preview_clicked = preview_col.button("Preview Plan", type="primary")
-run_clicked = run_col.button("Confirm and Run")
+preview_clicked = preview_col.button("预览计划", type="primary")
+run_clicked = run_col.button("确认并运行")
 
 if preview_clicked:
     try:
-        with st.spinner("Building execution plan..."):
+        with st.spinner("正在生成执行计划..."):
             shell_result = service.interpret_to_plan(
                 text=task_text,
                 file_path=file_path or None,
                 session_id=session_id_input or None,
             )
     except Exception as exc:
-        st.error(f"Failed to build execution plan: {exc}")
+        st.error(f"生成执行计划失败: {exc}")
     else:
         set_latest_agent_shell_result(shell_result)
-        st.success("Execution plan preview generated.")
+        st.success("执行计划预览已生成。")
 
 if run_clicked:
     try:
-        with st.spinner("Evaluating plan and execution policy..."):
+        with st.spinner("正在评估计划和执行策略..."):
             shell_result = service.confirm_and_run(
                 text=task_text,
                 file_path=file_path or None,
@@ -110,7 +109,7 @@ if run_clicked:
                 force_run=False,
             )
     except Exception as exc:
-        st.error(f"Failed to process agent shell request: {exc}")
+        st.error(f"处理 Agent 请求失败: {exc}")
     else:
         set_latest_agent_shell_result(shell_result)
         if shell_result.task_response is not None:
@@ -176,15 +175,15 @@ if shell_result is not None:
     render_bullet_list(
         "验证说明",
         plan.validation_messages,
-        empty_message="No validation warnings.",
+        empty_message="暂无校验提示。",
     )
 
     render_json_section("任务请求", shell_result.task_request)
 
     if plan.requires_confirmation and shell_result.task_response is None:
-        if st.button("Force Run"):
+        if st.button("强制运行"):
             try:
-                with st.spinner("Force running the planned workflow..."):
+                with st.spinner("正在强制运行计划工作流..."):
                     forced_result = service.confirm_and_run(
                         text=get_session_value("agent_shell_text_input", task_text),
                         file_path=get_session_value(
@@ -196,7 +195,7 @@ if shell_result is not None:
                         force_run=True,
                     )
             except Exception as exc:
-                st.error(f"Failed to force run the planned workflow: {exc}")
+                st.error(f"强制运行计划工作流失败: {exc}")
             else:
                 set_latest_agent_shell_result(forced_result)
                 if forced_result.task_response is not None:
@@ -220,15 +219,15 @@ if shell_result is not None:
                 ("状态", task_response.status),
                 ("执行阶段", task_response.stages_executed),
             ],
-            next_step="如果结果已确认，可直接导出或去 Review 页面固化覆盖。",
+            next_step="如果结果已确认，可直接导出或去评审页固化覆盖。",
         )
 
         render_metric_row(
             [
-                ("Issue Count", workflow_result.issue_count),
-                ("Mapping Count", len(workflow_result.mapping_results)),
-                ("STG Count", len(workflow_result.stg_field_suggestions)),
-                ("Quality Rules", len(workflow_result.quality_rule_suggestions)),
+                ("问题数", workflow_result.issue_count),
+                ("映射数", len(workflow_result.mapping_results)),
+                ("STG 数", len(workflow_result.stg_field_suggestions)),
+                ("质量规则", len(workflow_result.quality_rule_suggestions)),
             ],
         )
 
@@ -236,7 +235,7 @@ if shell_result is not None:
             render_explanation_block(
                 "质量规则推荐",
                 summary=workflow_result.quality_rule_summary,
-                next_step="建议先在 Quality Rules 页确认，再构建执行包。",
+                next_step="建议先在质量规则页确认，再构建执行包。",
             )
             quality_rules_df = quality_rules_to_dataframe(
                 workflow_result.quality_rule_suggestions
@@ -250,56 +249,56 @@ if shell_result is not None:
                 )
 
         if workflow_result.review_summary is not None:
-            st.subheader("Review Summary")
+            st.subheader("评审汇总")
             review_summary_df = review_summary_to_dataframe(
                 workflow_result.review_summary
             )
             if not review_summary_df.empty:
                 render_lazy_dataframe_section(
-                    "Review Summary",
+                    "评审汇总",
                     review_summary_df,
                     compact=True,
                     key_prefix="agent_review_summary",
                 )
 
         if task_response.exported_files:
-            render_json_section("Exported Files", task_response.exported_files)
+            render_json_section("导出文件", task_response.exported_files)
 
 resolved_session_id = get_agent_shell_session_id()
 if resolved_session_id:
     session = get_session(resolved_session_id)
     if session is not None:
         render_key_value_block(
-            "Session Overview",
+            "会话总览",
             rows=[
-                ("Current Session ID", session.session_id),
-                ("Recent Requests", len(session.recent_requests)),
-                ("Recent Plans", len(session.recent_plans)),
-                ("Last Trace ID", session.last_trace_id or "N/A"),
-                ("Last Uploaded File", session.last_uploaded_file_path or "N/A"),
+                ("当前会话 ID", session.session_id),
+                ("最近请求数", len(session.recent_requests)),
+                ("最近计划数", len(session.recent_plans)),
+                ("最近执行跟踪 ID", session.last_trace_id or "N/A"),
+                ("最近上传文件", session.last_uploaded_file_path or "N/A"),
                 (
-                    "Recent Uploaded Files",
+                    "最近上传文件列表",
                     ", ".join(session.recent_uploaded_files) or "N/A",
                 ),
-                ("Recent Trace IDs", ", ".join(session.recent_trace_ids) or "N/A"),
+                ("最近执行跟踪 ID 列表", ", ".join(session.recent_trace_ids) or "N/A"),
             ],
         )
         if session.last_exported_files:
-            render_json_section("Last Exported Files", session.last_exported_files)
+            render_json_section("最近导出文件", session.last_exported_files)
 
         if session.recent_plans:
-            st.subheader("Recent Plans")
+            st.subheader("最近计划")
             for index, recent_plan in enumerate(reversed(session.recent_plans), start=1):
                 with st.expander(
-                    f"Plan {index}: {recent_plan.profile_name}",
+                    f"计划 {index}: {recent_plan.profile_name}",
                     expanded=False,
                 ):
                     render_key_value_block(
                         None,
                         summary=recent_plan.summary,
                         rows=[
-                            ("Stages", ", ".join(recent_plan.stages) or "N/A"),
-                            ("Validation Passed", recent_plan.validation_passed),
-                            ("Requires Confirmation", recent_plan.requires_confirmation),
+                            ("阶段", ", ".join(recent_plan.stages) or "N/A"),
+                            ("校验通过", recent_plan.validation_passed),
+                            ("需要确认", recent_plan.requires_confirmation),
                         ],
                     )
