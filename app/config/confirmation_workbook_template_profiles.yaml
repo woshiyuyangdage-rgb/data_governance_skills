@@ -2,7 +2,7 @@ profiles:
   - template_name: standard_mapping_confirmation_template
     enabled: true
     workbook_type: mapping_confirmation
-    description: Standard mapping confirmation workbook exported by system
+    description: 系统导出的标准映射确认工作簿
     file_types: [xlsx, csv]
     sheet_candidates: [mapping_confirmation, mapping, data]
     required_target_fields:
@@ -19,7 +19,7 @@ profiles:
   - template_name: business_mapping_review_template
     enabled: true
     workbook_type: mapping_confirmation
-    description: Business-side simplified mapping review sheet
+    description: 业务侧简化映射评审表
     file_types: [xlsx, csv]
     sheet_candidates: [业务确认, mapping_review, data]
     required_target_fields:
@@ -34,7 +34,7 @@ profiles:
   - template_name: stg_design_review_template
     enabled: true
     workbook_type: stg_confirmation
-    description: STG structure review sheet
+    description: STG 结构评审表
     file_types: [xlsx, csv]
     sheet_candidates: [stg_confirmation, stg_review, data]
     required_target_fields:
@@ -50,7 +50,7 @@ profiles:
   - template_name: quality_rule_review_template
     enabled: true
     workbook_type: quality_rule_confirmation
-    description: Quality rule review sheet
+    description: 质量规则评审表
     file_types: [xlsx, csv]
     sheet_candidates: [quality_rule_confirmation, quality_review, data]
     required_target_fields:
@@ -68,7 +68,7 @@ profiles:
   - template_name: backlog_update_template
     enabled: true
     workbook_type: backlog_confirmation
-    description: Governance backlog status update sheet
+    description: 治理待办状态更新表
     file_types: [xlsx, csv]
     sheet_candidates: [backlog_confirmation, backlog_update, data]
     required_target_fields:

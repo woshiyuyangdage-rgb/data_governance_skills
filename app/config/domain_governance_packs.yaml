@@ -1,7 +1,7 @@
 packs:
   - pack_name: customer_domain_pack
     enabled: true
-    description: Governance pack for customer-related metadata objects
+    description: 面向客户相关元数据对象的治理包
     trigger_tokens: [customer, cust, client]
     preferred_group_by: system_name
     default_owner_roles:
@@ -19,7 +19,7 @@ packs:
 
   - pack_name: transaction_domain_pack
     enabled: true
-    description: Governance pack for transaction/order related metadata objects
+    description: 面向交易和订单相关元数据对象的治理包
     trigger_tokens: [transaction, txn, order, payment]
     preferred_group_by: system_name
     default_owner_roles:
@@ -37,7 +37,7 @@ packs:
 
   - pack_name: reference_code_domain_pack
     enabled: true
-    description: Governance pack for reference code / lookup tables
+    description: 面向码表、字典和枚举表的治理包
     trigger_tokens: [code, dictionary, lookup, enum, type]
     preferred_group_by: schema_name
     default_owner_roles:
@@ -55,7 +55,7 @@ packs:
 
   - pack_name: supply_chain_finance_domain_pack
     enabled: true
-    description: Governance pack for supply chain finance-related metadata objects
+    description: 面向供应链金融相关元数据对象的治理包
     trigger_tokens: [finance, receivable, payable, invoice, settlement, credit, supplier, fund]
     preferred_group_by: system_name
     default_owner_roles:

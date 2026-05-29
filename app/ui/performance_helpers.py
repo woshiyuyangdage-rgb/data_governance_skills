@@ -19,7 +19,9 @@ from app.core.skills.data_standard_mapping_skill.semantic_index import (
     semantic_index_enabled,
     warm_semantic_mapping_index,
 )
+from app.ui.column_labels import localize_dataframe_columns
 from app.ui.page_utils import get_session_value, set_session_value
+from app.ui.value_formatters import format_value
 from app.ui.workbench_cache import file_cache_key, load_metadata_file_cached
 
 LARGE_FILE_RUNTIME_WARMUP_KEY = "large_file_runtime_warmup_signature"
@@ -122,7 +124,7 @@ def render_dataframe_multiselect_filter(
     options = dataframe_filter_options(dataframe, column_name)
     if not options:
         return dataframe
-    selected = st.multiselect(label, options=options)
+    selected = st.multiselect(label, options=options, format_func=format_value)
     return filter_dataframe_by_values(dataframe, column_name, selected)
 
 
@@ -227,6 +229,7 @@ def render_lazy_dataframe_section(
 ) -> None:
     """Render a dataframe with a preview first and full table on demand."""
     dataframe = _subset_dataframe(dataframe, columns)
+    display_dataframe = localize_dataframe_columns(dataframe)
     row_count = len(dataframe)
 
     if not compact:
@@ -237,17 +240,17 @@ def render_lazy_dataframe_section(
         return
 
     if row_count <= render_limit:
-        st.dataframe(dataframe, use_container_width=True)
+        st.dataframe(display_dataframe, use_container_width=True)
         return
 
     preview_count = min(preview_rows, row_count)
     st.caption(f"仅预览前 {preview_count} 行，共 {row_count} 行。")
-    st.dataframe(dataframe.head(preview_count), use_container_width=True)
+    st.dataframe(display_dataframe.head(preview_count), use_container_width=True)
     st.caption("完整表格会在你选择加载后显示，避免大文件页面反复重算。")
 
     load_key = key_prefix or title
     if st.checkbox("加载完整表格", key=f"{load_key}_load_full"):
-        st.dataframe(dataframe, use_container_width=True)
+        st.dataframe(display_dataframe, use_container_width=True)
 
 
 def render_deferred_dataframe_section(

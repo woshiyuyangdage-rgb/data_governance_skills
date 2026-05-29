@@ -1,7 +1,7 @@
 templates:
   - template_name: metadata_inventory_project
     enabled: true
-    description: Focus on metadata diagnosis and readiness discovery
+    description: 聚焦元数据诊断和就绪度发现
     base_workflow_profile: metadata_diagnosis_only
     default_outputs:
       - diagnosis_report
@@ -11,7 +11,7 @@ templates:
 
   - template_name: standard_mapping_confirmation_project
     enabled: true
-    description: Focus on mapping suggestions and mapping confirmation workbook
+    description: 聚焦映射建议和映射确认工作簿
     base_workflow_profile: diagnosis_plus_mapping
     default_outputs:
       - mapping_confirmation_workbook
@@ -21,7 +21,7 @@ templates:
 
   - template_name: stg_structure_design_project
     enabled: true
-    description: Focus on STG structure suggestions and STG confirmation workbook
+    description: 聚焦 STG 结构建议和 STG 确认工作簿
     base_workflow_profile: diagnosis_mapping_stg
     default_outputs:
       - stg_confirmation_workbook
@@ -31,7 +31,7 @@ templates:
 
   - template_name: quality_rule_build_project
     enabled: true
-    description: Focus on quality intelligence, confirmation workbook and execution-ready package
+    description: 聚焦质量智能推荐、确认工作簿和执行准备包
     base_workflow_profile: diagnosis_mapping_stg_quality_package_with_review
     default_outputs:
       - quality_rule_confirmation_workbook
@@ -42,7 +42,7 @@ templates:
 
   - template_name: full_governance_delivery_project
     enabled: true
-    description: Full governance workflow including delivery package
+    description: 包含交付包的完整治理工作流
     base_workflow_profile: governance_delivery_package_with_review
     default_outputs:
       - mapping_confirmation_workbook

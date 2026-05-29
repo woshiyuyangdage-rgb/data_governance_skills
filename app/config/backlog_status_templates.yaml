@@ -1,14 +1,13 @@
 statuses:
   proposed:
-    description: Suggested but not yet accepted
+    description: 已建议但尚未接受
   accepted:
-    description: Accepted for governance handling
+    description: 已接受并进入治理处理
   in_progress:
-    description: Governance action is in progress
+    description: 治理动作正在处理中
   blocked:
-    description: Action is blocked by dependency or unresolved issue
+    description: 动作因依赖或未解决问题被阻塞
   completed:
-    description: Action completed
+    description: 动作已完成
   dropped:
-    description: Action intentionally not pursued
-
+    description: 明确不再继续处理

@@ -1,7 +1,7 @@
 profiles:
   - profile_name: standard_metadata_template
     enabled: true
-    description: Standard normalized metadata table/field input
+    description: 标准化表字段元数据输入
     file_types: [xlsx, csv]
     sheet_candidates: [data, metadata, table_fields]
     required_target_fields:
@@ -20,7 +20,7 @@ profiles:
 
   - profile_name: governance_platform_export_template
     enabled: true
-    description: Typical metadata export from governance platform
+    description: 常见治理平台元数据导出
     file_types: [xlsx, csv]
     sheet_candidates: [导出结果, metadata_export, data]
     required_target_fields:
@@ -39,7 +39,7 @@ profiles:
 
   - profile_name: manual_inventory_template
     enabled: true
-    description: Manual metadata inventory worksheet
+    description: 手工元数据盘点表
     file_types: [xlsx, csv]
     sheet_candidates: [盘点表, inventory, data]
     required_target_fields:
@@ -58,7 +58,7 @@ profiles:
 
   - profile_name: mapping_confirmation_template
     enabled: true
-    description: Mapping confirmation workbook that can provide metadata-like columns
+    description: 可提供元数据类字段的映射确认工作簿
     file_types: [xlsx, csv]
     sheet_candidates: [mapping_confirmation, mapping, data]
     required_target_fields:
@@ -76,7 +76,7 @@ profiles:
 
   - profile_name: quality_rule_confirmation_template
     enabled: true
-    description: Quality rule confirmation workbook that can provide metadata-like columns
+    description: 可提供元数据类字段的质量规则确认工作簿
     file_types: [xlsx, csv]
     sheet_candidates: [quality_rule_confirmation, quality_rules, data]
     required_target_fields:

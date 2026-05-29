@@ -1,7 +1,7 @@
 variants:
   - variant_name: standard_delivery_bundle
     enabled: true
-    description: Standard governance delivery bundle
+    description: 标准治理交付包
     included_outputs:
       - mapping_confirmation_workbook
       - stg_confirmation_workbook
@@ -11,7 +11,7 @@ variants:
 
   - variant_name: business_confirmation_bundle
     enabled: true
-    description: Business-oriented confirmation bundle
+    description: 面向业务确认的交付包
     included_outputs:
       - mapping_confirmation_workbook
       - quality_rule_confirmation_workbook
@@ -19,7 +19,7 @@ variants:
 
   - variant_name: architecture_design_bundle
     enabled: true
-    description: Architecture-oriented design bundle
+    description: 面向架构设计的交付包
     included_outputs:
       - stg_confirmation_workbook
       - execution_ready_package
@@ -27,7 +27,7 @@ variants:
 
   - variant_name: quality_rule_build_bundle
     enabled: true
-    description: Quality rule build bundle
+    description: 面向质量规则建设的交付包
     included_outputs:
       - quality_rule_confirmation_workbook
       - execution_ready_package

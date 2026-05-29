@@ -1,7 +1,7 @@
 profiles:
   - template_name: business_mapping_delivery_template
     enabled: true
-    description: Delivery template for business-side mapping confirmation
+    description: 面向业务侧映射确认的交付模板
     target_artifact_type: mapping_confirmation_workbook
     layout_spec_name: business_mapping_layout
     include_instruction_sheet: true
@@ -10,7 +10,7 @@ profiles:
 
   - template_name: architecture_stg_delivery_template
     enabled: true
-    description: Delivery template for STG structure review
+    description: 面向 STG 结构评审的交付模板
     target_artifact_type: stg_confirmation_workbook
     layout_spec_name: architecture_stg_layout
     include_instruction_sheet: true
@@ -19,7 +19,7 @@ profiles:
 
   - template_name: quality_rule_review_delivery_template
     enabled: true
-    description: Delivery template for quality rule review
+    description: 面向质量规则评审的交付模板
     target_artifact_type: quality_rule_confirmation_workbook
     layout_spec_name: quality_rule_layout
     include_instruction_sheet: true
@@ -28,7 +28,7 @@ profiles:
 
   - template_name: governance_backlog_delivery_template
     enabled: true
-    description: Delivery template for governance backlog handoff
+    description: 面向治理待办交接的交付模板
     target_artifact_type: backlog_delivery_workbook
     layout_spec_name: backlog_layout
     include_instruction_sheet: true
@@ -37,7 +37,7 @@ profiles:
 
   - template_name: full_governance_delivery_bundle_template
     enabled: true
-    description: Full governance delivery bundle template
+    description: 完整治理交付包模板
     target_artifact_type: governance_delivery_package
     layout_spec_name: delivery_bundle_layout
     include_instruction_sheet: false

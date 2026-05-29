@@ -26,6 +26,7 @@ from app.ui.page_utils import (
 )
 from app.ui.performance_helpers import ensure_large_file_runtime_ready
 from app.ui.status_blocks import render_metric_row, render_page_header
+from app.ui.column_labels import localize_dataframe_columns
 from app.ui.workbench_cache import (
     content_signature,
     file_cache_key,
@@ -99,7 +100,7 @@ for profile in list_enabled_profiles():
     )
 
 with st.expander("示例数据预览", expanded=True):
-    st.dataframe(sample_df, use_container_width=True)
+    st.dataframe(localize_dataframe_columns(sample_df), use_container_width=True)
     st.caption(f"示例文件: {SAMPLE_METADATA_PATH}")
     st.download_button(
         label="下载示例 CSV",

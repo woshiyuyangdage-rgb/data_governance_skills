@@ -2,8 +2,8 @@ skills:
   - name: metadata-diagnosis-skill
     version: 1.0.0
     enabled: true
-    description: Diagnose metadata completeness, technical-object risk, naming quality, and governance follow-up tasks.
-    purpose: Turn raw table and field metadata into issue, diagnosis, and task outputs that downstream governance skills can reuse.
+    description: 诊断元数据完整性、技术对象风险、命名质量和后续治理任务。
+    purpose: 将原始表字段元数据转换为问题、诊断和任务输出，供下游治理技能复用。
     primary_profiles:
       - metadata_diagnosis_only
     tools:
@@ -29,8 +29,8 @@ skills:
   - name: data-standard-mapping-skill
     version: 1.0.0
     enabled: true
-    description: Recommend standard-field mappings and support review replay for confirmed mappings.
-    purpose: Convert source metadata fields into standard mapping candidates, unmapped-field lists, and mapping summaries.
+    description: 推荐数据标准字段映射，并支持已确认映射的评审回放。
+    purpose: 将源元数据字段转换为标准映射候选、未映射字段清单和映射汇总。
     primary_profiles:
       - mapping_only
       - diagnosis_plus_mapping
@@ -57,8 +57,8 @@ skills:
   - name: stg-standardization-skill
     version: 1.0.0
     enabled: true
-    description: Suggest STG table and field structures from metadata, mappings, naming signals, and transform rules.
-    purpose: Standardize source-layer structures into STG design recommendations with reviewable table and field suggestions.
+    description: 基于元数据、映射、命名信号和转换规则推荐 STG 表字段结构。
+    purpose: 将源层结构标准化为可评审的 STG 表和字段设计建议。
     primary_profiles:
       - stg_only_from_mapping
       - diagnosis_mapping_stg
@@ -86,8 +86,8 @@ skills:
   - name: data-quality-rule-skill
     version: 1.0.0
     enabled: true
-    description: Recommend, review, and confirm field-level, domain-aware, and cross-field data quality rules.
-    purpose: Turn mapping and STG context into reviewable quality rules and confirmed governance rule assets.
+    description: 推荐、评审并确认字段级、领域感知和跨字段数据质量规则。
+    purpose: 将映射和 STG 上下文转换为可评审质量规则和已确认治理规则资产。
     primary_profiles:
       - quality_only_from_stg
       - quality_only_from_stg_with_review
@@ -122,8 +122,8 @@ skills:
   - name: dbt-governance-skill
     version: 1.0.0
     enabled: true
-    description: Build and export execution-ready governance packages, including dbt-compatible YAML outputs.
-    purpose: Package confirmed quality rules into executable governance artifacts and dbt test YAML for downstream platforms.
+    description: 构建并导出执行准备包，包括兼容 dbt 的 YAML 输出。
+    purpose: 将已确认质量规则打包为可执行治理资产和下游平台可用的 dbt test YAML。
     primary_profiles:
       - diagnosis_mapping_stg_quality_package
       - diagnosis_mapping_stg_quality_package_with_review
@@ -149,8 +149,8 @@ skills:
   - name: governance-report-skill
     version: 1.0.0
     enabled: true
-    description: Export governance reports, confirmation workbooks, delivery packages, readiness outputs, backlog, and portfolio snapshots.
-    purpose: Turn workflow results into local JSON, Markdown, Excel, workbook, backlog, portfolio, and delivery package assets.
+    description: 导出治理报告、确认工作簿、交付包、就绪度结果、待办和组合快照。
+    purpose: 将工作流结果转换为本地 JSON、Markdown、Excel、工作簿、待办、组合和交付包资产。
     primary_profiles:
       - governance_readiness_assessment
       - full_governance_work_package

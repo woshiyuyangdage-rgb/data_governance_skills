@@ -1,7 +1,7 @@
 manifest:
   service_name: data_governance_skills
   version: v1
-  description: Local governance tool platform
+  description: 本地治理工具平台
 
 schema_export:
   include_disabled_tools: false

@@ -1,7 +1,7 @@
 tools:
   - name: run_governance_profile
     enabled: true
-    description: Run a governance workflow profile directly
+    description: 直接运行治理工作流方案
     input_model: GovernanceTaskRequest
     output_model: GovernanceTaskResponse
     handler: governance_tool_executor.run_governance_profile
@@ -9,7 +9,7 @@ tools:
 
   - name: interpret_governance_intent
     enabled: true
-    description: Interpret a natural-language governance task into a structured request
+    description: 将自然语言治理任务解析为结构化请求
     input_model: IntentTextRequest
     output_model: IntentExecutionResult
     handler: governance_tool_executor.interpret_governance_intent
@@ -17,7 +17,7 @@ tools:
 
   - name: preview_agent_plan
     enabled: true
-    description: Preview an execution plan without running it
+    description: 仅预览执行计划，不实际运行
     input_model: AgentShellPlanRequest
     output_model: AgentShellResult
     handler: governance_tool_executor.preview_agent_plan
@@ -25,7 +25,7 @@ tools:
 
   - name: run_agent_task
     enabled: true
-    description: Interpret a task, build a plan, and run it when policy allows
+    description: 解析任务、构建计划，并在策略允许时运行
     input_model: AgentShellRunRequest
     output_model: AgentShellResult
     handler: governance_tool_executor.run_agent_task
@@ -33,7 +33,7 @@ tools:
 
   - name: resolve_governance_context
     enabled: true
-    description: Resolve session context and preview the resulting execution plan
+    description: 解析会话上下文并预览执行计划
     input_model: AgentShellPlanRequest
     output_model: AgentShellResult
     handler: governance_tool_executor.resolve_governance_context
@@ -41,7 +41,7 @@ tools:
 
   - name: export_governance_reports
     enabled: true
-    description: Export governance reports from an existing workflow result
+    description: 基于已有工作流结果导出治理报告
     input_model: ReportExportArguments
     output_model: dict
     handler: governance_tool_executor.export_governance_reports
@@ -49,7 +49,7 @@ tools:
 
   - name: export_confirmation_workbooks
     enabled: true
-    description: Export mapping, STG, quality rule, and backlog confirmation workbooks
+    description: 导出映射、STG、质量规则和待办确认工作簿
     input_model: DeliveryPackageArguments
     output_model: dict
     handler: governance_tool_executor.export_confirmation_workbooks
@@ -57,7 +57,7 @@ tools:
 
   - name: build_governance_delivery_package
     enabled: true
-    description: Build a local governance delivery package with confirmation workbooks and manifest
+    description: 构建包含确认工作簿和清单的本地治理交付包
     input_model: DeliveryPackageArguments
     output_model: dict
     handler: governance_tool_executor.build_governance_delivery_package
@@ -65,7 +65,7 @@ tools:
 
   - name: run_batch_governance
     enabled: true
-    description: Run multi-file batch governance grouped by system, schema, or domain hint
+    description: 按系统、schema 或领域提示分组运行多文件批处理治理
     input_model: BatchGovernanceArguments
     output_model: WorkflowResult
     handler: governance_tool_executor.run_batch_governance
@@ -73,7 +73,7 @@ tools:
 
   - name: run_incremental_rerun
     enabled: true
-    description: Run changed-only batch governance using local fingerprint snapshots
+    description: 基于本地指纹快照仅重跑变更对象
     input_model: BatchGovernanceArguments
     output_model: WorkflowResult
     handler: governance_tool_executor.run_incremental_rerun
@@ -81,7 +81,7 @@ tools:
 
   - name: compare_governance_snapshots
     enabled: true
-    description: Compare local governance batch snapshots and return diff summary
+    description: 对比本地治理批处理快照并返回差异汇总
     input_model: BatchSnapshotCompareArguments
     output_model: dict
     handler: governance_tool_executor.compare_governance_snapshots
@@ -89,7 +89,7 @@ tools:
 
   - name: import_confirmation_workbook
     enabled: true
-    description: Import a filled confirmation workbook and merge local updates
+    description: 导入已填写确认工作簿并合并本地更新
     input_model: WorkbookImportArguments
     output_model: WorkflowResult
     handler: governance_tool_executor.import_confirmation_workbook
@@ -97,7 +97,7 @@ tools:
 
   - name: import_confirmation_and_rerun
     enabled: true
-    description: Import a confirmation workbook and prepare changed-object rerun scope
+    description: 导入确认工作簿并准备变更对象重跑范围
     input_model: WorkbookImportArguments
     output_model: WorkflowResult
     handler: governance_tool_executor.import_confirmation_and_rerun
@@ -105,7 +105,7 @@ tools:
 
   - name: list_domain_governance_packs
     enabled: true
-    description: List enabled domain governance packs
+    description: 列出已启用的领域治理包
     input_model: EmptyArguments
     output_model: dict
     handler: governance_tool_executor.list_domain_governance_packs
@@ -113,7 +113,7 @@ tools:
 
   - name: list_project_templates
     enabled: true
-    description: List enabled project template profiles
+    description: 列出已启用的项目模板
     input_model: EmptyArguments
     output_model: dict
     handler: governance_tool_executor.list_project_templates
@@ -121,7 +121,7 @@ tools:
 
   - name: match_domain_governance_pack
     enabled: true
-    description: Match a domain governance pack from metadata text
+    description: 根据元数据文本匹配领域治理包
     input_model: DomainPackMatchArguments
     output_model: DomainPackMatchResult
     handler: governance_tool_executor.match_domain_governance_pack
@@ -129,7 +129,7 @@ tools:
 
   - name: run_project_template
     enabled: true
-    description: Run a project template with optional domain pack override
+    description: 运行项目模板，可选择覆盖领域治理包
     input_model: ProjectTemplateRunArguments
     output_model: WorkflowResult
     handler: governance_tool_executor.run_project_template
@@ -137,7 +137,7 @@ tools:
 
   - name: diagnose_metadata_intake_template
     enabled: true
-    description: Diagnose a structured metadata intake template and report matching evidence
+    description: 诊断结构化元数据接入模板并输出匹配证据
     input_model: MetadataIntakeDiagnoseArguments
     output_model: IntakeMatchResult
     handler: governance_tool_executor.diagnose_metadata_intake_template
@@ -145,7 +145,7 @@ tools:
 
   - name: normalize_metadata_input
     enabled: true
-    description: Normalize an enterprise metadata intake file into standard metadata records
+    description: 将企业元数据接入文件规范化为标准元数据记录
     input_model: MetadataIntakeNormalizeArguments
     output_model: IntakeNormalizationResult
     handler: governance_tool_executor.normalize_metadata_input
@@ -153,7 +153,7 @@ tools:
 
   - name: run_governance_with_intake_profile
     enabled: true
-    description: Normalize metadata through an intake profile and run a governance workflow
+    description: 通过接入配置规范化元数据并运行治理工作流
     input_model: GovernanceWithIntakeArguments
     output_model: WorkflowResult
     handler: governance_tool_executor.run_governance_with_intake_profile
@@ -161,7 +161,7 @@ tools:
 
   - name: diagnose_confirmation_template
     enabled: true
-    description: Diagnose a confirmation workbook template and report column mapping evidence
+    description: 诊断确认工作簿模板并输出列映射证据
     input_model: ConfirmationTemplateDiagnoseArguments
     output_model: ConfirmationTemplateMatchResult
     handler: governance_tool_executor.diagnose_confirmation_template
@@ -169,7 +169,7 @@ tools:
 
   - name: import_confirmation_with_template
     enabled: true
-    description: Import a confirmation workbook using template-specific field mapping
+    description: 按模板字段映射导入确认工作簿
     input_model: ConfirmationTemplateImportArguments
     output_model: WorkflowResult
     handler: governance_tool_executor.import_confirmation_with_template
@@ -177,7 +177,7 @@ tools:
 
   - name: recommend_quality_rules
     enabled: true
-    description: Run the governance chain up to quality rule recommendation
+    description: 运行治理链路直到质量规则推荐
     input_model: QualityRuleToolRequest
     output_model: GovernanceTaskResponse
     handler: governance_tool_executor.recommend_quality_rules
@@ -185,7 +185,7 @@ tools:
 
   - name: recommend_quality_intelligence
     enabled: true
-    description: Recommend field-level, domain-aware, and cross-field quality rules
+    description: 推荐字段级、领域感知和跨字段质量规则
     input_model: QualityRuleToolRequest
     output_model: GovernanceTaskResponse
     handler: governance_tool_executor.recommend_quality_intelligence
@@ -193,7 +193,7 @@ tools:
 
   - name: review_quality_rules
     enabled: true
-    description: Review suggested quality rules and build confirmed quality rules
+    description: 评审质量规则建议并生成已确认质量规则
     input_model: QualityRuleReviewArguments
     output_model: dict
     handler: governance_tool_executor.review_quality_rules
@@ -201,7 +201,7 @@ tools:
 
   - name: batch_review_quality_rules
     enabled: true
-    description: Build batch quality rule review records from simple filters
+    description: 根据简单筛选条件批量生成质量规则评审记录
     input_model: QualityBatchReviewArguments
     output_model: dict
     handler: governance_tool_executor.batch_review_quality_rules
@@ -209,7 +209,7 @@ tools:
 
   - name: export_confirmed_quality_rules
     enabled: true
-    description: Export confirmed quality rules as a JSON package or dbt tests YAML
+    description: 将已确认质量规则导出为 JSON 包或 dbt tests YAML
     input_model: RuleExportArguments
     output_model: list
     handler: governance_tool_executor.export_confirmed_quality_rules
@@ -217,7 +217,7 @@ tools:
 
   - name: build_execution_ready_package
     enabled: true
-    description: Build an execution-ready governance package from confirmed quality rules
+    description: 基于已确认质量规则构建执行准备包
     input_model: ExecutionPackageBuildArguments
     output_model: dict
     handler: governance_tool_executor.build_execution_ready_package
@@ -225,7 +225,7 @@ tools:
 
   - name: export_execution_ready_package
     enabled: true
-    description: Export an execution-ready governance package as package JSON, manifest, or dbt YAML
+    description: 将执行准备包导出为 JSON、清单或 dbt YAML
     input_model: ExecutionPackageExportArguments
     output_model: list
     handler: governance_tool_executor.export_execution_ready_package
@@ -233,7 +233,7 @@ tools:
 
   - name: assess_rag_quality
     enabled: true
-    description: Assess document, chunk, retrieval, answer, and permission quality for a RAG knowledge base
+    description: 评估 RAG 知识库的文档、切片、检索、回答和权限质量
     input_model: RagQualityAssessmentArguments
     output_model: dict
     handler: governance_tool_executor.assess_rag_quality
@@ -241,7 +241,7 @@ tools:
 
   - name: assess_text_to_sql_readiness
     enabled: true
-    description: Assess table metadata readiness for Text-to-SQL table selection, field selection, joins, metrics, enums, and security
+    description: 评估表元数据对 Text-to-SQL 选表、选字段、关联、指标、枚举和安全的准备度
     input_model: TextToSqlReadinessAssessmentArguments
     output_model: dict
     handler: governance_tool_executor.assess_text_to_sql_readiness
@@ -249,7 +249,7 @@ tools:
 
   - name: assess_governance_readiness
     enabled: true
-    description: Assess readiness scores and classify governance gaps from workflow output
+    description: 基于工作流输出评估就绪度并分类治理缺口
     input_model: GovernanceReadinessAssessmentArguments
     output_model: dict
     handler: governance_tool_executor.assess_governance_readiness
@@ -257,7 +257,7 @@ tools:
 
   - name: build_governance_work_package
     enabled: true
-    description: Build remediation actions and an exportable governance work package
+    description: 构建整改动作和可导出的治理工作包
     input_model: GovernanceWorkPackageArguments
     output_model: dict
     handler: governance_tool_executor.build_governance_work_package
@@ -265,7 +265,7 @@ tools:
 
   - name: build_governance_backlog
     enabled: true
-    description: Build local governance backlog items from remediation actions
+    description: 根据整改动作构建本地治理待办
     input_model: GovernanceBacklogBuildArguments
     output_model: dict
     handler: governance_tool_executor.build_governance_backlog
@@ -273,7 +273,7 @@ tools:
 
   - name: update_governance_backlog_status
     enabled: true
-    description: Update one persisted governance backlog item status
+    description: 更新一个已持久化治理待办的状态
     input_model: GovernanceBacklogStatusUpdateArguments
     output_model: BacklogUpdateResult
     handler: governance_tool_executor.update_governance_backlog_status
@@ -281,7 +281,7 @@ tools:
 
   - name: list_governance_backlog_items
     enabled: true
-    description: List persisted governance backlog items with optional filters
+    description: 列出已持久化治理待办，支持可选筛选
     input_model: GovernanceBacklogListArguments
     output_model: dict
     handler: governance_tool_executor.list_governance_backlog_items
@@ -289,7 +289,7 @@ tools:
 
   - name: assess_governance_portfolio
     enabled: true
-    description: Assess backlog SLA status and governance portfolio summary
+    description: 评估待办 SLA 状态和治理组合汇总
     input_model: GovernancePortfolioAssessmentArguments
     output_model: dict
     handler: governance_tool_executor.assess_governance_portfolio
@@ -297,7 +297,7 @@ tools:
 
   - name: generate_progress_snapshot
     enabled: true
-    description: Generate and optionally save a local governance progress snapshot
+    description: 生成并可选保存本地治理进度快照
     input_model: ProgressSnapshotArguments
     output_model: dict
     handler: governance_tool_executor.generate_progress_snapshot
@@ -305,7 +305,7 @@ tools:
 
   - name: list_governance_progress_snapshots
     enabled: true
-    description: List saved local governance progress snapshots
+    description: 列出已保存的本地治理进度快照
     input_model: dict
     output_model: dict
     handler: governance_tool_executor.list_governance_progress_snapshots
@@ -313,7 +313,7 @@ tools:
 
   - name: list_delivery_template_profiles
     enabled: true
-    description: List enabled enterprise delivery template profiles and bundle variants
+    description: 列出已启用的企业交付模板和交付包变体
     input_model: dict
     output_model: dict
     handler: governance_tool_executor.list_delivery_template_profiles
@@ -321,7 +321,7 @@ tools:
 
   - name: list_config_assets
     enabled: true
-    description: List managed governance configuration assets
+    description: 列出受管治理配置资产
     input_model: dict
     output_model: list
     handler: governance_tool_executor.list_config_assets
@@ -329,7 +329,7 @@ tools:
 
   - name: get_config_asset
     enabled: true
-    description: Get one managed governance configuration asset and its current content
+    description: 获取一个受管治理配置资产及其当前内容
     input_model: ConfigAssetLookupRequest
     output_model: dict
     handler: governance_tool_executor.get_config_asset
@@ -337,7 +337,7 @@ tools:
 
   - name: validate_config_asset
     enabled: true
-    description: Validate one managed governance configuration asset
+    description: 校验一个受管治理配置资产
     input_model: ConfigAssetLookupRequest
     output_model: ValidationResult
     handler: governance_tool_executor.validate_config_asset
@@ -345,7 +345,7 @@ tools:
 
   - name: save_config_asset
     enabled: true
-    description: Save one managed governance configuration asset after validation
+    description: 校验后保存一个受管治理配置资产
     input_model: ConfigAssetSaveRequest
     output_model: ConfigEditResult
     handler: governance_tool_executor.save_config_asset
@@ -353,7 +353,7 @@ tools:
 
   - name: publish_config_asset
     enabled: true
-    description: Publish one managed governance configuration asset
+    description: 发布一个受管治理配置资产
     input_model: ConfigAssetLookupRequest
     output_model: ConfigEditResult
     handler: governance_tool_executor.publish_config_asset

@@ -12,6 +12,7 @@ from app.ui.control_plane_helpers import (
 )
 from app.ui import page_utils
 from app.ui import performance_helpers
+from app.ui.column_labels import localize_dataframe
 from app.ui.page_overview import build_workflow_overview
 from app.ui.review_form_helpers import (
     candidate_evidence,
@@ -387,6 +388,30 @@ def test_value_formatter_handles_common_values() -> None:
     assert format_value(["a", "", None, "b"]) == "a, b"
     assert format_value({"enabled": True, "empty": None}) == "enabled=是"
     assert format_value("success") == "成功"
+
+
+def test_column_labels_localize_dataframe_columns_and_values() -> None:
+    dataframe = performance_helpers.pd.DataFrame(
+        [
+            {
+                "table_name": "customer",
+                "status": "success",
+                "requires_manual_review": True,
+                "confidence": 0.91,
+            }
+        ]
+    )
+
+    localized = localize_dataframe(dataframe)
+
+    assert localized.to_dict("records") == [
+        {
+            "表英文名": "customer",
+            "状态": "成功",
+            "需要人工复核": "是",
+            "置信度": 0.91,
+        }
+    ]
 
 
 def test_status_block_renders_key_values(monkeypatch) -> None:

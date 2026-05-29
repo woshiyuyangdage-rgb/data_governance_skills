@@ -1,6 +1,6 @@
 intents:
   project_template_run:
-    description: Project template run
+    description: 运行项目模板
     profile_name: run_project_template
     keywords:
       - project template
@@ -15,7 +15,7 @@ intents:
       - 启动项目
 
   metadata_intake_template:
-    description: Metadata intake template diagnosis and normalization
+    description: 元数据接入模板诊断与规范化
     profile_name: metadata_diagnosis_only
     keywords:
       - 识别这个模板
@@ -28,7 +28,7 @@ intents:
       - normalize metadata input
 
   confirmation_template_import:
-    description: Template-aware confirmation workbook import
+    description: 按模板导入确认工作簿
     profile_name: import_confirmation_with_template
     keywords:
       - 识别这个确认表模板
@@ -42,7 +42,7 @@ intents:
       - stg design review
 
   quick_scan:
-    description: Metadata diagnosis only
+    description: 仅元数据诊断
     profile_name: metadata_diagnosis_only
     keywords:
       - diagnosis
@@ -57,7 +57,7 @@ intents:
       - 检查问题
 
   standard_recommendation:
-    description: Diagnosis plus mapping
+    description: 诊断并执行标准映射
     profile_name: diagnosis_plus_mapping
     keywords:
       - mapping
@@ -70,7 +70,7 @@ intents:
       - 标准推荐
 
   structure_suggestion:
-    description: Diagnosis mapping stg
+    description: 诊断、映射和 STG 建议
     profile_name: diagnosis_mapping_stg
     keywords:
       - stg
@@ -83,7 +83,7 @@ intents:
       - stg建议
 
   quality_rule_recommendation:
-    description: Diagnosis mapping stg quality
+    description: 诊断、映射、STG 和质量规则推荐
     profile_name: diagnosis_mapping_stg_quality
     keywords:
       - quality rule recommendation
@@ -105,7 +105,7 @@ intents:
       - 领域质量规则
 
   confirmed_quality_rules:
-    description: Diagnosis mapping stg quality with review
+    description: 诊断、映射、STG、质量规则推荐并应用评审
     profile_name: diagnosis_mapping_stg_quality_with_review
     keywords:
       - confirmed quality rules
@@ -122,7 +122,7 @@ intents:
       - 导出质量规则包
 
   execution_ready_package:
-    description: Diagnosis mapping stg quality package with review
+    description: 诊断、映射、STG、质量规则推荐、评审并构建执行包
     profile_name: diagnosis_mapping_stg_quality_package_with_review
     keywords:
       - execution package
@@ -141,7 +141,7 @@ intents:
       - 构建执行规则包
 
   governance_readiness_assessment:
-    description: Governance readiness assessment
+    description: 治理就绪度评估
     profile_name: governance_readiness_assessment
     keywords:
       - readiness assessment
@@ -155,7 +155,7 @@ intents:
       - 治理缺口分析
 
   full_governance_work_package:
-    description: Full governance work package
+    description: 完整治理工作包
     profile_name: full_governance_work_package
     keywords:
       - remediation plan
@@ -169,7 +169,7 @@ intents:
       - 治理行动包
 
   governance_backlog_build:
-    description: Governance backlog build
+    description: 构建治理待办
     profile_name: governance_backlog_build
     keywords:
       - backlog
@@ -187,7 +187,7 @@ intents:
       - 跟踪治理行动
 
   full_governance_backlog_package:
-    description: Full governance backlog package
+    description: 完整治理待办包
     profile_name: full_governance_backlog_package
     keywords:
       - full governance backlog
@@ -200,7 +200,7 @@ intents:
       - 完整整改清单
 
   governance_portfolio_assessment:
-    description: Governance portfolio assessment
+    description: 治理组合评估
     profile_name: governance_portfolio_assessment
     keywords:
       - portfolio
@@ -218,7 +218,7 @@ intents:
       - 负责人工作量
 
   full_governance_portfolio_package:
-    description: Full governance portfolio package
+    description: 完整治理组合包
     profile_name: full_governance_portfolio_package
     keywords:
       - full governance portfolio
@@ -231,7 +231,7 @@ intents:
       - 完整治理进度包
 
   governance_delivery_package:
-    description: Governance delivery package
+    description: 治理交付包
     profile_name: governance_delivery_package_with_review
     keywords:
       - governance delivery package
@@ -244,7 +244,7 @@ intents:
       - 导出治理交付包
 
   confirmation_workbook_only:
-    description: Confirmation workbook only
+    description: 仅导出确认工作簿
     profile_name: confirmation_workbook_only
     keywords:
       - confirmation workbook
@@ -259,7 +259,7 @@ intents:
       - 导出整改清单
 
   batch_governance_run:
-    description: Batch governance run
+    description: 批量治理运行
     profile_name: batch_governance_run
     keywords:
       - batch run
@@ -271,7 +271,7 @@ intents:
       - 多文件处理
 
   batch_incremental_rerun:
-    description: Batch incremental rerun
+    description: 批量增量重跑
     profile_name: batch_incremental_rerun
     keywords:
       - incremental rerun
@@ -283,7 +283,7 @@ intents:
       - 变化对象重跑
 
   batch_delivery_package:
-    description: Batch delivery package
+    description: 批量交付包
     profile_name: batch_delivery_package
     keywords:
       - batch delivery
@@ -293,7 +293,7 @@ intents:
       - 批量治理交付包
 
   import_confirmation_workbook:
-    description: Import confirmation workbook
+    description: 导入确认工作簿
     profile_name: import_confirmation_workbook
     keywords:
       - import workbook
@@ -305,7 +305,7 @@ intents:
       - 导入 backlog 更新
 
   import_and_rerun_changed_objects:
-    description: Import confirmation workbook and rerun changed objects
+    description: 导入确认工作簿并重跑变更对象
     profile_name: import_and_rerun_changed_objects
     keywords:
       - import and rerun
@@ -315,7 +315,7 @@ intents:
       - 导入确认表并重跑
 
   replay_confirmed:
-    description: Replay with review overrides
+    description: 使用评审覆盖回放
     profile_name: diagnosis_mapping_stg_with_review
     keywords:
       - override
@@ -329,7 +329,7 @@ intents:
       - 按已确认结果重跑
 
   mapping_only_request:
-    description: Mapping only
+    description: 仅运行映射
     profile_name: mapping_only
     keywords:
       - mapping only
@@ -340,7 +340,7 @@ intents:
       - 只做映射
 
   stg_only_request:
-    description: STG only from mapping
+    description: 基于映射仅运行 STG
     profile_name: stg_only_from_mapping
     keywords:
       - stg only
@@ -352,7 +352,7 @@ intents:
       - 只做结构建议
 
   quality_only_request:
-    description: Quality rule recommendation only from mapping and stg
+    description: 基于映射和 STG 仅推荐质量规则
     profile_name: quality_only_from_stg
     keywords:
       - quality only

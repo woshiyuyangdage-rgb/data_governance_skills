@@ -1,7 +1,7 @@
 profiles:
   - name: run_project_template
     enabled: true
-    description: Run a project template that applies workflow, output, review, and domain defaults
+    description: 运行项目模板，并应用工作流、输出、评审和领域默认值
     stages:
       - project_template_apply
       - base_workflow_run
@@ -10,7 +10,7 @@ profiles:
 
   - name: diagnose_confirmation_template
     enabled: true
-    description: Diagnose a confirmation workbook template before import
+    description: 导入前诊断确认工作簿模板
     stages:
       - confirmation_template_diagnosis
     supports_review_replay: false
@@ -18,7 +18,7 @@ profiles:
 
   - name: import_confirmation_with_template
     enabled: true
-    description: Import a confirmation workbook using template-specific column mapping
+    description: 按模板字段映射导入确认工作簿
     stages:
       - confirmation_template_diagnosis
       - workbook_import
@@ -28,7 +28,7 @@ profiles:
 
   - name: import_confirmation_template_and_rerun
     enabled: true
-    description: Import a templated confirmation workbook and prepare changed-object rerun scope
+    description: 导入模板化确认工作簿，并准备变更对象重跑范围
     stages:
       - confirmation_template_diagnosis
       - workbook_import
@@ -39,7 +39,7 @@ profiles:
 
   - name: metadata_diagnosis_only
     enabled: true
-    description: Run metadata diagnosis only
+    description: 仅运行元数据诊断
     stages:
       - diagnosis
     supports_review_replay: false
@@ -47,7 +47,7 @@ profiles:
 
   - name: diagnosis_plus_mapping
     enabled: true
-    description: Run diagnosis and standard mapping
+    description: 运行元数据诊断和数据标准映射
     stages:
       - diagnosis
       - mapping
@@ -56,7 +56,7 @@ profiles:
 
   - name: diagnosis_mapping_stg
     enabled: true
-    description: Run diagnosis, mapping, and STG suggestion
+    description: 运行诊断、标准映射和 STG 建议
     stages:
       - diagnosis
       - mapping
@@ -66,7 +66,7 @@ profiles:
 
   - name: diagnosis_mapping_stg_with_review
     enabled: true
-    description: Run diagnosis, mapping, STG suggestion, and apply review overrides
+    description: 运行诊断、映射、STG 建议，并应用评审覆盖
     stages:
       - diagnosis
       - mapping
@@ -77,7 +77,7 @@ profiles:
 
   - name: diagnosis_mapping_stg_quality
     enabled: true
-    description: Run diagnosis, mapping, STG suggestion, and quality rule recommendation
+    description: 运行诊断、映射、STG 建议和质量规则推荐
     stages:
       - diagnosis
       - mapping
@@ -88,7 +88,7 @@ profiles:
 
   - name: diagnosis_mapping_stg_quality_with_review
     enabled: true
-    description: Run diagnosis, mapping, STG suggestion, quality rule recommendation, and apply review overrides
+    description: 运行诊断、映射、STG 建议、质量规则推荐，并应用评审覆盖
     stages:
       - diagnosis
       - mapping
@@ -101,7 +101,7 @@ profiles:
 
   - name: diagnosis_mapping_stg_quality_package
     enabled: true
-    description: Run diagnosis, mapping, STG suggestion, quality rule recommendation, and build the execution-ready package layer
+    description: 运行诊断、映射、STG 建议、质量规则推荐，并构建执行准备包
     stages:
       - diagnosis
       - mapping
@@ -113,7 +113,7 @@ profiles:
 
   - name: diagnosis_mapping_stg_quality_package_with_review
     enabled: true
-    description: Run diagnosis, mapping, STG, quality review replay, and build the execution-ready package layer
+    description: 运行诊断、映射、STG、质量评审回放，并构建执行准备包
     stages:
       - diagnosis
       - mapping
@@ -127,7 +127,7 @@ profiles:
 
   - name: governance_readiness_assessment
     enabled: true
-    description: Run quality intelligence, package build, readiness assessment, and gap classification
+    description: 运行质量智能推荐、执行包构建、就绪度评估和缺口分类
     stages:
       - diagnosis
       - mapping
@@ -142,7 +142,7 @@ profiles:
 
   - name: governance_readiness_assessment_with_review
     enabled: true
-    description: Run quality review replay, package build, readiness assessment, and remediation planning
+    description: 运行质量评审回放、执行包构建、就绪度评估和整改规划
     stages:
       - diagnosis
       - mapping
@@ -159,7 +159,7 @@ profiles:
 
   - name: full_governance_work_package
     enabled: true
-    description: Build the full governance readiness and remediation work package
+    description: 构建完整治理就绪度与整改工作包
     stages:
       - diagnosis
       - mapping
@@ -176,7 +176,7 @@ profiles:
 
   - name: governance_backlog_build
     enabled: true
-    description: Run readiness, remediation planning, and build governance backlog items
+    description: 运行就绪度评估、整改规划，并构建治理待办
     stages:
       - diagnosis
       - mapping
@@ -192,7 +192,7 @@ profiles:
 
   - name: governance_backlog_build_with_review
     enabled: true
-    description: Run review replay, readiness, remediation planning, and backlog build
+    description: 运行评审回放、就绪度评估、整改规划和待办构建
     stages:
       - diagnosis
       - mapping
@@ -210,7 +210,7 @@ profiles:
 
   - name: full_governance_backlog_package
     enabled: true
-    description: Build the full governance work package and local tracking backlog
+    description: 构建完整治理工作包和本地跟踪待办
     stages:
       - diagnosis
       - mapping
@@ -228,7 +228,7 @@ profiles:
 
   - name: governance_portfolio_assessment
     enabled: true
-    description: Run backlog build, SLA analysis, portfolio aggregation, and progress snapshot
+    description: 运行待办构建、SLA 分析、组合汇总和进度快照
     stages:
       - diagnosis
       - mapping
@@ -247,7 +247,7 @@ profiles:
 
   - name: full_governance_portfolio_package
     enabled: true
-    description: Build the full governance backlog package with SLA, portfolio summary, and progress snapshot
+    description: 构建包含 SLA、组合汇总和进度快照的完整治理待办包
     stages:
       - diagnosis
       - mapping
@@ -268,7 +268,7 @@ profiles:
 
   - name: governance_delivery_package
     enabled: true
-    description: Build confirmation workbooks and a local governance delivery package
+    description: 构建确认工作簿和本地治理交付包
     stages:
       - diagnosis
       - mapping
@@ -286,7 +286,7 @@ profiles:
 
   - name: governance_delivery_package_with_review
     enabled: true
-    description: Build reviewed confirmation workbooks and a local governance delivery package
+    description: 构建带评审回放的确认工作簿和本地治理交付包
     stages:
       - diagnosis
       - mapping
@@ -306,7 +306,7 @@ profiles:
 
   - name: confirmation_workbook_only
     enabled: true
-    description: Export confirmation workbooks for mapping, STG, quality rules, and backlog
+    description: 导出映射、STG、质量规则和待办确认工作簿
     stages:
       - diagnosis
       - mapping
@@ -325,7 +325,7 @@ profiles:
 
   - name: batch_governance_run
     enabled: true
-    description: Run multi-file batch governance grouped by configured metadata fields
+    description: 按配置字段分组运行多文件批处理治理
     stages:
       - batch_load
       - grouping
@@ -338,7 +338,7 @@ profiles:
 
   - name: batch_incremental_rerun
     enabled: true
-    description: Run changed-only batch governance using local fingerprint snapshots
+    description: 基于本地指纹快照仅重跑变更对象
     stages:
       - batch_load
       - grouping
@@ -351,7 +351,7 @@ profiles:
 
   - name: batch_delivery_package
     enabled: true
-    description: Run multi-file batch governance and build a delivery package
+    description: 运行多文件批处理治理并构建交付包
     stages:
       - batch_load
       - grouping
@@ -365,7 +365,7 @@ profiles:
 
   - name: import_confirmation_workbook
     enabled: true
-    description: Import a filled confirmation workbook and merge local updates
+    description: 导入已填写确认工作簿并合并本地更新
     stages:
       - workbook_validate
       - workbook_import
@@ -375,7 +375,7 @@ profiles:
 
   - name: import_and_rerun_changed_objects
     enabled: true
-    description: Import a confirmation workbook and prepare changed-object rerun scope
+    description: 导入确认工作簿并准备变更对象重跑范围
     stages:
       - workbook_validate
       - workbook_import
@@ -386,7 +386,7 @@ profiles:
 
   - name: mapping_only
     enabled: true
-    description: Run standard mapping only
+    description: 仅运行数据标准映射
     stages:
       - mapping
     supports_review_replay: false
@@ -394,7 +394,7 @@ profiles:
 
   - name: stg_only_from_mapping
     enabled: true
-    description: Run mapping and STG suggestion without full diagnosis packaging
+    description: 运行映射和 STG 建议，不执行完整诊断打包
     stages:
       - mapping
       - stg
@@ -403,7 +403,7 @@ profiles:
 
   - name: quality_only_from_stg
     enabled: true
-    description: Run mapping, STG suggestion, and quality rule recommendation without full diagnosis packaging
+    description: 运行映射、STG 建议和质量规则推荐，不执行完整诊断打包
     stages:
       - mapping
       - stg
@@ -413,7 +413,7 @@ profiles:
 
   - name: quality_only_from_stg_with_review
     enabled: true
-    description: Run mapping, STG suggestion, quality rule recommendation, and quality review replay without full diagnosis packaging
+    description: 运行映射、STG 建议、质量规则推荐和质量评审回放，不执行完整诊断打包
     stages:
       - mapping
       - stg
@@ -424,7 +424,7 @@ profiles:
 
   - name: quality_package_only_from_confirmed
     enabled: true
-    description: Run the lightweight quality review chain and build the execution-ready package layer
+    description: 运行轻量质量评审链路并构建执行准备包
     stages:
       - mapping
       - stg

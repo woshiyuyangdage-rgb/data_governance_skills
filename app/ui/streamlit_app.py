@@ -26,6 +26,8 @@ from app.ui.workbench_cache import (
     read_csv_dataframe_cached,
     read_file_bytes_cached,
 )
+from app.ui.column_labels import localize_dataframe_columns
+from app.ui.navigation import build_navigation_sections, build_page_registry
 from app.ui.status_blocks import render_key_value_block, render_page_header
 
 ensure_project_root_on_path()
@@ -81,7 +83,10 @@ def render_home_page() -> None:
         sample_cache_token = file_cache_key(str(SAMPLE_METADATA_PATH))
         sample_bytes = read_file_bytes_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
         sample_df = read_csv_dataframe_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
-        st.dataframe(sample_df.head(8), use_container_width=True)
+        st.dataframe(
+            localize_dataframe_columns(sample_df.head(8)),
+            use_container_width=True,
+        )
         if st.button("载入示例数据", use_container_width=True):
             set_uploaded_file_state(
                 file_path=SAMPLE_METADATA_PATH,
@@ -126,62 +131,10 @@ def render_home_page() -> None:
     st.caption("左侧功能树已按治理流程分组，适合继续处理、回放或维护。")
 
 
-PAGE_BY_KEY = {
-    "home": st.Page(render_home_page, title="治理启动台", icon="🏠", default=True),
-    "upload": st.Page("pages/01_upload.py", title="01 上传元数据", icon="📤"),
-    "diagnosis": st.Page("pages/02_diagnosis.py", title="02 诊断工作台", icon="🔎"),
-    "review": st.Page("pages/04_review.py", title="03 人工评审", icon="🗂"),
-    "reports": st.Page("pages/03_reports.py", title="04 导出报告", icon="📦"),
-    "intent_runner": st.Page("pages/05_intent_runner.py", title="意图运行器", icon="🧭"),
-    "agent_shell": st.Page("pages/06_agent_shell.py", title="Agent 控制台", icon="⌨️"),
-    "tool_console": st.Page("pages/07_tool_console.py", title="工具控制台", icon="🧰"),
-    "adapter_console": st.Page("pages/09_adapter_console.py", title="适配器控制台", icon="🔌"),
-    "control_plane": st.Page("pages/08_control_plane.py", title="配置控制面", icon="⚙️"),
-    "quality_rules": st.Page("pages/10_quality_rules.py", title="质量规则评审", icon="✅"),
-    "execution_package": st.Page("pages/11_execution_package.py", title="执行准备包", icon="🧾"),
-    "readiness": st.Page("pages/12_governance_readiness.py", title="治理就绪度", icon="📊"),
-    "backlog": st.Page("pages/13_governance_backlog.py", title="治理待办", icon="📌"),
-    "portfolio": st.Page("pages/14_governance_portfolio.py", title="治理组合视图", icon="📈"),
-    "delivery": st.Page("pages/15_governance_delivery.py", title="治理交付包", icon="🚚"),
-    "batch": st.Page("pages/16_batch_incremental.py", title="批处理与增量重跑", icon="🔁"),
-    "confirmation_import": st.Page("pages/17_confirmation_import.py", title="确认结果导入", icon="📥"),
-    "domain_templates": st.Page("pages/18_domain_and_templates.py", title="领域治理包与项目模板", icon="🧩"),
-    "metadata_intake": st.Page("pages/19_metadata_intake.py", title="企业元数据接入", icon="🗃"),
-}
+PAGE_BY_KEY = build_page_registry(render_home_page)
 
 navigation = st.navigation(
-    {
-        "开始": [PAGE_BY_KEY["home"]],
-        "核心流程": [
-            PAGE_BY_KEY["upload"],
-            PAGE_BY_KEY["diagnosis"],
-            PAGE_BY_KEY["review"],
-            PAGE_BY_KEY["reports"],
-        ],
-        "智能入口": [
-            PAGE_BY_KEY["intent_runner"],
-            PAGE_BY_KEY["agent_shell"],
-            PAGE_BY_KEY["tool_console"],
-            PAGE_BY_KEY["adapter_console"],
-        ],
-        "治理管理": [
-            PAGE_BY_KEY["control_plane"],
-            PAGE_BY_KEY["quality_rules"],
-            PAGE_BY_KEY["execution_package"],
-            PAGE_BY_KEY["readiness"],
-            PAGE_BY_KEY["backlog"],
-            PAGE_BY_KEY["portfolio"],
-        ],
-        "交付与批处理": [
-            PAGE_BY_KEY["delivery"],
-            PAGE_BY_KEY["batch"],
-            PAGE_BY_KEY["confirmation_import"],
-        ],
-        "模板与接入": [
-            PAGE_BY_KEY["domain_templates"],
-            PAGE_BY_KEY["metadata_intake"],
-        ],
-    },
+    build_navigation_sections(PAGE_BY_KEY),
     expanded=True,
 )
 navigation.run()
