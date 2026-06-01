@@ -117,13 +117,15 @@ def resolve_readiness_result_from_arguments(
         workflow_result.ai_ready_summary = ai_ready_assessor.summarize(
             workflow_result.ai_ready_scores
         )
-    if not workflow_result.governance_gaps:
-        workflow_result.governance_gaps = classifier.classify(workflow_result)
     if full_work_package or not workflow_result.remediation_actions:
+        if not workflow_result.governance_gaps:
+            workflow_result.governance_gaps = classifier.classify(workflow_result)
         workflow_result.remediation_actions = planner.build_actions(
             workflow_result.readiness_scores,
             workflow_result.governance_gaps,
         )
+    elif not workflow_result.governance_gaps:
+        workflow_result.governance_gaps = classifier.classify(workflow_result)
     if full_work_package and workflow_result.governance_work_package is None:
         package_name = (
             context._optional_string(arguments, "package_name")

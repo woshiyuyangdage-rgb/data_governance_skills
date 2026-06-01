@@ -225,6 +225,61 @@ def test_status_code_name_fields_recommend_paired_presence() -> None:
     )
 
 
+def test_value_set_rule_uses_compact_sample_values() -> None:
+    skill = QualityRuleRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="sales_order",
+            fields=[
+                FieldMeta(
+                    field_name="order_status",
+                    data_type="varchar",
+                    sample_values="OPEN;CLOSED;CANCELLED;OPEN",
+                )
+            ],
+        )
+    ]
+
+    result = skill.run(QualityRuleRecommendationInput(tables=tables))
+
+    value_set_rule = next(
+        rule
+        for rule in result.quality_rule_suggestions
+        if rule.rule_type == "value_set"
+    )
+    assert value_set_rule.rule_expression == "value in ('OPEN', 'CLOSED', 'CANCELLED')"
+    assert "Derived accepted values from source sample_values count=3" in (
+        value_set_rule.reason or ""
+    )
+    assert "value_set_size:3" in value_set_rule.learning_context
+
+
+def test_value_set_rule_ignores_oversized_sample_values() -> None:
+    skill = QualityRuleRecommendationSkill()
+    sample_values = ";".join(f"S{index}" for index in range(20))
+    tables = [
+        TableMeta(
+            table_name="sales_order",
+            fields=[
+                FieldMeta(
+                    field_name="order_status",
+                    data_type="varchar",
+                    sample_values=sample_values,
+                )
+            ],
+        )
+    ]
+
+    result = skill.run(QualityRuleRecommendationInput(tables=tables))
+
+    value_set_rule = next(
+        rule
+        for rule in result.quality_rule_suggestions
+        if rule.rule_type == "value_set"
+    )
+    assert value_set_rule.rule_expression == "value in predefined set"
+
+
 def test_field_level_rules_include_confidence_and_review_priority() -> None:
     skill = QualityRuleRecommendationSkill()
     tables = [

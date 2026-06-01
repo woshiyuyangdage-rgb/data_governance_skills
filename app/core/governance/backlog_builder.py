@@ -132,6 +132,21 @@ class GovernanceBacklogBuilder:
             expected_output=action.expected_output,
             reason=reason,
             source_signals=list(gap.source_signals) if gap is not None else [],
+            affected_objects=(
+                list(gap.affected_objects)
+                if gap is not None
+                else list(action.affected_objects)
+            ),
+            signal_count=(
+                gap.signal_count
+                if gap is not None
+                else action.signal_count
+            ),
+            evidence_details=(
+                dict(gap.evidence_details)
+                if gap is not None
+                else dict(action.evidence_details)
+            ),
             created_at=created_at,
             updated_at=created_at,
         )

@@ -187,8 +187,6 @@ def _localize_dataframe_values(dataframe: pd.DataFrame) -> pd.DataFrame:
 
 def localize_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     """Return a copy of a dataframe with Chinese display labels and values."""
-    if dataframe.empty:
-        return dataframe
     display_dataframe = _localize_dataframe_values(dataframe)
     renamed_columns = {
         column: COLUMN_LABELS.get(str(column), str(column))
@@ -198,5 +196,5 @@ def localize_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
 
 
 def localize_dataframe_columns(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """Return a copy of a dataframe with Chinese display column labels."""
+    """Compatibility wrapper for dataframe display localization."""
     return localize_dataframe(dataframe)

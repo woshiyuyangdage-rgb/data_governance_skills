@@ -143,6 +143,9 @@ def governance_gaps_to_dataframe(
                 "category": gap.category,
                 "severity": gap.severity,
                 "source_signals": gap.source_signals,
+                "source_signals_joined": " | ".join(gap.source_signals),
+                "affected_objects_joined": " | ".join(gap.affected_objects),
+                "signal_count": gap.signal_count,
                 "reason": gap.reason,
                 "suggested_owner_role": gap.suggested_owner_role,
             }
@@ -176,6 +179,8 @@ def remediation_actions_to_dataframe(
                 "expected_output": action.expected_output,
                 "dependency_notes": action.dependency_notes,
                 "reason": action.reason,
+                "affected_objects_joined": " | ".join(action.affected_objects),
+                "signal_count": action.signal_count,
             }
         )
     return pd.DataFrame(records)
@@ -236,6 +241,8 @@ def governance_backlog_items_to_dataframe(
                 "expected_output": item.expected_output,
                 "reason": item.reason,
                 "source_signals": item.source_signals,
+                "affected_objects_joined": " | ".join(item.affected_objects),
+                "signal_count": item.signal_count,
                 "created_at": item.created_at,
                 "updated_at": item.updated_at,
                 "notes": item.notes,

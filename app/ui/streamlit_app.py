@@ -27,7 +27,12 @@ from app.ui.workbench_cache import (
     read_file_bytes_cached,
 )
 from app.ui.column_labels import localize_dataframe_columns
-from app.ui.navigation import build_navigation_sections, build_page_registry
+from app.ui.navigation import (
+    build_maintainer_links,
+    build_navigation_sections,
+    build_page_registry,
+    build_quick_start_links,
+)
 from app.ui.status_blocks import render_key_value_block, render_page_header
 
 ensure_project_root_on_path()
@@ -104,19 +109,12 @@ def render_home_page() -> None:
 
     with demo_right:
         st.subheader("一键入口")
-        st.page_link(PAGE_BY_KEY["upload"], label="1. 上传文件", icon="📤", use_container_width=True)
-        st.page_link(PAGE_BY_KEY["diagnosis"], label="2. 开始诊断", icon="🔎", use_container_width=True)
-        st.page_link(PAGE_BY_KEY["review"], label="3. 进入评审", icon="🗂", use_container_width=True)
-        st.page_link(PAGE_BY_KEY["reports"], label="4. 导出报告", icon="📦", use_container_width=True)
+        for page, label, icon in build_quick_start_links(PAGE_BY_KEY):
+            st.page_link(page, label=label, icon=icon, use_container_width=True)
 
     st.subheader("维护者入口")
-    maintainer_cols = st.columns(4)
-    maintainer_links = [
-        (PAGE_BY_KEY["intent_runner"], "意图运行器", "🧭"),
-        (PAGE_BY_KEY["agent_shell"], "Agent 控制台", "⌨️"),
-        (PAGE_BY_KEY["quality_rules"], "质量规则", "✅"),
-        (PAGE_BY_KEY["control_plane"], "配置控制面", "⚙️"),
-    ]
+    maintainer_links = build_maintainer_links(PAGE_BY_KEY)
+    maintainer_cols = st.columns(len(maintainer_links))
     for column, (page, label, icon) in zip(maintainer_cols, maintainer_links, strict=True):
         with column:
             st.page_link(page, label=label, icon=icon, use_container_width=True)

@@ -14,5 +14,11 @@ class GovernancePortfolioSummary(BaseModel):
     readiness_distribution: dict[str, int] = Field(default_factory=dict)
     overdue_count: int = 0
     blocked_count: int = 0
+    high_risk_item_count: int = 0
+    critical_risk_item_count: int = 0
+    avg_priority_score: float | None = None
+    avg_ai_consumption_risk_score: float | None = None
+    risk_tier_distribution: dict[str, int] = Field(default_factory=dict)
+    top_risk_items: list[dict[str, object]] = Field(default_factory=list)
     owner_workload: dict[str, dict[str, int]] = Field(default_factory=dict)
     summary: str | None = None

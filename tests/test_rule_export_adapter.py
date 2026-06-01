@@ -120,6 +120,15 @@ def test_export_dbt_tests_yaml_succeeds() -> None:
         column for column in payload["models"][0]["columns"] if column["name"] == "order_id"
     )
     assert "not_null" in order_id_column["tests"]
+    status_column = next(
+        column for column in payload["models"][0]["columns"] if column["name"] == "status"
+    )
+    accepted_values = next(
+        test["accepted_values"]
+        for test in status_column["tests"]
+        if isinstance(test, dict) and "accepted_values" in test
+    )
+    assert accepted_values["values"] == ["OPEN", "CLOSED"]
 
 
 def test_export_execution_package_json_and_manifest_succeed() -> None:

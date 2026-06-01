@@ -53,6 +53,12 @@ def test_remediation_actions_can_build_backlog_items_and_summary() -> None:
         category="mapping",
         severity="medium",
         source_signals=["standard_mapping_low_confidence"],
+        affected_objects=["sales_order.order_channel", "sales_order.order_status"],
+        signal_count=2,
+        evidence_details={
+            "signal_counts": {"standard_mapping_low_confidence": 2},
+            "affected_object_count": 2,
+        },
     )
     readiness = ReadinessScore(
         object_type="table",
@@ -88,6 +94,12 @@ def test_remediation_actions_can_build_backlog_items_and_summary() -> None:
     assert item.dependency_notes == "Requires steward review."
     assert item.completion_criteria is not None
     assert item.source_signals == ["standard_mapping_low_confidence"]
+    assert item.affected_objects == ["sales_order.order_channel", "sales_order.order_status"]
+    assert item.signal_count == 2
+    assert item.evidence_details == {
+        "signal_counts": {"standard_mapping_low_confidence": 2},
+        "affected_object_count": 2,
+    }
     assert summary.total_items == 1
     assert summary.by_status == {"proposed": 1}
     assert summary.by_priority == {"key_tracking": 1}
@@ -109,3 +121,25 @@ def test_build_backlog_id_is_stable() -> None:
 
     assert first_id == second_id
     assert first_id.startswith("backlog_")
+
+
+def test_backlog_item_uses_action_evidence_without_gap_payload() -> None:
+    action = RemediationAction(
+        object_type="table",
+        object_name="sales_order",
+        gap_type="metadata_completion_gap",
+        action="Complete field metadata",
+        owner_role="data_steward",
+        priority="key_tracking",
+        affected_objects=["sales_order.buyer_name"],
+        signal_count=3,
+        evidence_details={"signal_counts": {"missing_field_description": 3}},
+    )
+
+    items, _ = GovernanceBacklogBuilder(_policies()).build_backlog([action])
+
+    assert items[0].affected_objects == ["sales_order.buyer_name"]
+    assert items[0].signal_count == 3
+    assert items[0].evidence_details == {
+        "signal_counts": {"missing_field_description": 3}
+    }

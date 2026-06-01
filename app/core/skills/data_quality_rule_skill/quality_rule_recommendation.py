@@ -235,6 +235,7 @@ class QualityRuleRecommendationSkill(BaseSkill):
                                 rule_template=rule_template,
                                 match_basis=match_basis,
                                 reason=reason,
+                                source_sample_values=field.sample_values,
                             )
                         )
 

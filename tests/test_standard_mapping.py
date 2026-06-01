@@ -189,3 +189,64 @@ def test_standard_mapping_detects_suspected_wrong_existing_binding() -> None:
         issue.issue_type == "standard_mapping_suspected_wrong"
         for issue in result.issues
     )
+
+
+def test_standard_mapping_promotes_contextual_alias_match() -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="sales_order_header",
+            table_description="Sales order header from ERP.",
+            business_domain="transaction",
+            fields=[
+                FieldMeta(
+                    field_name="order_status",
+                    field_name_cn="订单状态",
+                    field_description="Current order status.",
+                    data_type="varchar",
+                )
+            ],
+        )
+    ]
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    mapping = result.mapping_results[0]
+    assert mapping.recommended_standard_code == "status_code"
+    assert mapping.match_score >= 0.9
+    assert mapping.mapping_status == "auto_recommended"
+    assert mapping.requires_manual_review is False
+    assert all(
+        unmapped.field_name != "order_status" for unmapped in result.unmapped_fields
+    )
+    assert "standard alias tokens matched within field name" in mapping.match_reason
+    assert "field qualifier tokens are supported by table context" in mapping.match_reason
+
+
+def test_standard_mapping_keeps_unsupported_alias_qualifier_in_review() -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="generic_feed",
+            table_description="Generic source feed.",
+            fields=[
+                FieldMeta(
+                    field_name="order_status",
+                    field_name_cn="订单状态",
+                    field_description="Current status.",
+                    data_type="varchar",
+                )
+            ],
+        )
+    ]
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    mapping = result.mapping_results[0]
+    assert mapping.recommended_standard_code == "status_code"
+    assert mapping.match_score < 0.9
+    assert mapping.mapping_status == "manual_review"
+    assert mapping.requires_manual_review is True
+    assert any(
+        unmapped.field_name == "order_status" for unmapped in result.unmapped_fields
+    )

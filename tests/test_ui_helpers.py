@@ -13,6 +13,12 @@ from app.ui.control_plane_helpers import (
 from app.ui import page_utils
 from app.ui import performance_helpers
 from app.ui.column_labels import localize_dataframe
+from app.ui.navigation import (
+    build_maintainer_links,
+    build_navigation_sections,
+    build_page_registry,
+    build_quick_start_links,
+)
 from app.ui.page_overview import build_workflow_overview
 from app.ui.review_form_helpers import (
     candidate_evidence,
@@ -386,8 +392,9 @@ def test_value_formatter_handles_common_values() -> None:
     assert format_value(3.0) == "3"
     assert format_value(3.14159) == "3.14"
     assert format_value(["a", "", None, "b"]) == "a, b"
-    assert format_value({"enabled": True, "empty": None}) == "enabled=是"
+    assert format_value({"status": "HIGH", "enabled": True, "empty": None}) == "状态=高; enabled=是"
     assert format_value("success") == "成功"
+    assert format_value("True") == "是"
 
 
 def test_column_labels_localize_dataframe_columns_and_values() -> None:
@@ -412,6 +419,59 @@ def test_column_labels_localize_dataframe_columns_and_values() -> None:
             "置信度": 0.91,
         }
     ]
+
+
+def test_column_labels_localize_empty_dataframe_columns() -> None:
+    dataframe = performance_helpers.pd.DataFrame(columns=["table_name", "status"])
+
+    localized = localize_dataframe(dataframe)
+
+    assert list(localized.columns) == ["表英文名", "状态"]
+    assert localized.empty is True
+
+
+def test_navigation_registry_builds_chinese_sections_and_home_links(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_page(target, **kwargs):  # noqa: ANN001
+        page = {"target": target, **kwargs}
+        calls.append(page)
+        return page
+
+    monkeypatch.setattr("app.ui.navigation.st.Page", fake_page)
+
+    def home_page() -> None:
+        return None
+
+    page_by_key = build_page_registry(home_page)
+    sections = build_navigation_sections(page_by_key)
+    quick_start_links = build_quick_start_links(page_by_key)
+    maintainer_links = build_maintainer_links(page_by_key)
+
+    assert page_by_key["home"]["target"] is home_page
+    assert page_by_key["home"]["default"] is True
+    assert page_by_key["upload"]["title"] == "01 上传元数据"
+    assert list(sections) == [
+        "开始",
+        "核心流程",
+        "智能入口",
+        "治理管理",
+        "交付与批处理",
+        "模板与接入",
+    ]
+    assert [label for _, label, _ in quick_start_links] == [
+        "1. 上传文件",
+        "2. 开始诊断",
+        "3. 进入评审",
+        "4. 导出报告",
+    ]
+    assert [label for _, label, _ in maintainer_links] == [
+        "意图运行器",
+        "Agent 控制台",
+        "配置控制面",
+        "质量规则",
+    ]
+    assert len(calls) == len(page_by_key)
 
 
 def test_status_block_renders_key_values(monkeypatch) -> None:

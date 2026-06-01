@@ -31,10 +31,12 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
     lines.extend(["", "# Governance Gaps", ""])
     if result.governance_gaps:
         for gap in result.governance_gaps:
+            affected_text = ", ".join(gap.affected_objects[:3]) or "N/A"
             lines.append(
                 f"- `{gap.object_name}` | {gap.gap_type} | category={gap.category} | "
                 f"severity={gap.severity} | owner={gap.suggested_owner_role or 'N/A'} | "
-                f"signals={', '.join(gap.source_signals) or 'N/A'}"
+                f"signals={', '.join(gap.source_signals) or 'N/A'} | "
+                f"signal_count={gap.signal_count} | affected={affected_text}"
             )
     else:
         lines.append("- No governance gaps available.")
@@ -42,11 +44,13 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
     lines.extend(["", "# Remediation Plan", ""])
     if result.remediation_actions:
         for action in result.remediation_actions:
+            affected_text = ", ".join(action.affected_objects[:3]) or "N/A"
             lines.append(
                 f"- `{action.object_name}` | priority={action.priority} | "
                 f"score={action.priority_score if action.priority_score is not None else 'N/A'} | "
                 f"owner={action.owner_role} | gap={action.gap_type} | "
                 f"cycle={action.suggested_cycle or 'N/A'} | "
+                f"signal_count={action.signal_count} | affected={affected_text} | "
                 f"action={action.action} | "
                 f"benefit={action.expected_benefit or 'N/A'} | "
                 f"reason={action.priority_reason or action.reason or 'N/A'}"
@@ -69,12 +73,14 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
     lines.extend(["", "# Governance Backlog", ""])
     if result.governance_backlog_items:
         for item in result.governance_backlog_items:
+            affected_text = ", ".join(item.affected_objects[:3]) or "N/A"
             lines.append(
                 f"- `{item.backlog_id}` | `{item.object_name}` | "
                 f"gap={item.gap_type} | status={item.status} | "
                 f"priority={item.priority} | "
                 f"score={item.priority_score if item.priority_score is not None else 'N/A'} | "
                 f"cycle={item.suggested_cycle or 'N/A'} | owner={item.owner_role} | "
+                f"signal_count={item.signal_count} | affected={affected_text} | "
                 f"action={item.action}"
             )
     else:
@@ -117,6 +123,14 @@ def build_governance_sections(result: WorkflowResult) -> list[str]:
         lines.append(f"- Readiness distribution: {portfolio.readiness_distribution}")
         lines.append(f"- Overdue count: {portfolio.overdue_count}")
         lines.append(f"- Blocked count: {portfolio.blocked_count}")
+        lines.append(f"- High risk item count: {portfolio.high_risk_item_count}")
+        lines.append(f"- Critical risk item count: {portfolio.critical_risk_item_count}")
+        lines.append(f"- Average priority score: {portfolio.avg_priority_score}")
+        lines.append(
+            f"- Average AI consumption risk score: {portfolio.avg_ai_consumption_risk_score}"
+        )
+        lines.append(f"- Risk tier distribution: {portfolio.risk_tier_distribution}")
+        lines.append(f"- Top risk items: {portfolio.top_risk_items}")
         lines.append(f"- Owner workload: {portfolio.owner_workload}")
         lines.append(f"- Summary: {portfolio.summary or 'N/A'}")
     else:

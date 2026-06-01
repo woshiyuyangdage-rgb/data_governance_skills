@@ -31,6 +31,9 @@ class GovernanceBacklogItem(BaseModel):
     expected_output: str | None = None
     reason: str | None = None
     source_signals: list[str] = Field(default_factory=list)
+    affected_objects: list[str] = Field(default_factory=list)
+    signal_count: int = 0
+    evidence_details: dict[str, object] = Field(default_factory=dict)
     created_at: str | None = None
     updated_at: str | None = None
     notes: str | None = None

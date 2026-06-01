@@ -100,6 +100,7 @@ class RemediationPlanner:
     @staticmethod
     def severity_score(severity: str) -> float:
         return {
+            "critical": 1.0,
             "high": 0.95,
             "medium": 0.65,
             "low": 0.35,
@@ -116,6 +117,23 @@ class RemediationPlanner:
         signal_text = " ".join(signals).lower()
         return 0.12 if any(keyword in signal_text for keyword in keywords) else 0.0
 
+    @staticmethod
+    def _count_boost(count: int, unit: float = 0.03, cap: float = 0.12) -> float:
+        if count <= 1:
+            return 0.0
+        return min((count - 1) * unit, cap)
+
+    @staticmethod
+    def _effective_signal_count(gap: GovernanceGap) -> int:
+        return max(int(gap.signal_count or 0), len(gap.source_signals))
+
+    @staticmethod
+    def _affected_object_count(gap: GovernanceGap) -> int:
+        detail_count = (gap.evidence_details or {}).get("affected_object_count", 0)
+        if isinstance(detail_count, (int, float)):
+            return max(len(gap.affected_objects), int(detail_count))
+        return len(gap.affected_objects)
+
     @classmethod
     def priority_dimensions(
         cls,
@@ -124,12 +142,15 @@ class RemediationPlanner:
     ) -> dict[str, float]:
         """Compute the five governance-priority dimensions."""
         readiness_risk = cls.readiness_risk(score)
+        signal_count = cls._effective_signal_count(gap)
+        affected_object_count = cls._affected_object_count(gap)
         business_impact = BUSINESS_IMPACT_BY_GAP.get(gap.gap_type, 0.50)
         business_impact += readiness_risk * 0.20
         business_impact += cls._signal_boost(
             gap.source_signals,
             {"customer", "contract", "amount", "transaction", "sensitive"},
         )
+        business_impact += cls._count_boost(affected_object_count, unit=0.03, cap=0.15)
 
         ai_risk = AI_RISK_BY_GAP.get(gap.gap_type, 0.50)
         ai_risk += readiness_risk * 0.18
@@ -137,15 +158,23 @@ class RemediationPlanner:
             gap.source_signals,
             {"ai", "rag", "text_to_sql", "semantic", "description", "mapping"},
         )
+        ai_risk += cls._count_boost(signal_count, unit=0.025, cap=0.10)
 
         governance_risk = GOVERNANCE_RISK_BY_GAP.get(gap.gap_type, 0.50)
         governance_risk += cls._signal_boost(
             gap.source_signals,
             {"sensitive", "privacy", "amount", "quality", "manual_review"},
         )
+        governance_risk += cls._count_boost(
+            int((gap.evidence_details or {}).get("reason_count", 0) or 0),
+            unit=0.025,
+            cap=0.08,
+        )
 
         severity = cls.severity_score(gap.severity)
+        severity += cls._count_boost(signal_count, unit=0.02, cap=0.08)
         complexity = COMPLEXITY_BY_GAP.get(gap.gap_type, 0.50)
+        complexity += cls._count_boost(len(gap.source_signals), unit=0.015, cap=0.06)
         return {
             "business_impact_score": cls._clamp(business_impact),
             "ai_consumption_risk_score": cls._clamp(ai_risk),
@@ -231,6 +260,8 @@ class RemediationPlanner:
             f"ai_risk={dimensions['ai_consumption_risk_score']:.2f}; "
             f"governance_risk={dimensions['governance_risk_score']:.2f}; "
             f"complexity={dimensions['remediation_complexity_score']:.2f}; "
+            f"signals={RemediationPlanner._effective_signal_count(gap)}; "
+            f"affected_objects={RemediationPlanner._affected_object_count(gap)}; "
             f"priority_score={priority_score:.2f}."
         )
 
@@ -306,6 +337,9 @@ class RemediationPlanner:
                     expected_output=template.get("expected_output"),
                     dependency_notes=self.dependency_notes_for_gap(gap.gap_type),
                     reason=gap.reason,
+                    affected_objects=list(gap.affected_objects),
+                    signal_count=self._effective_signal_count(gap),
+                    evidence_details=dict(gap.evidence_details),
                 )
             )
         return sorted(

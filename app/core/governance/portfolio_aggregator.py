@@ -58,6 +58,73 @@ class GovernancePortfolioAggregator:
                 owner_payload["overdue"] += 1
         return workload
 
+    @staticmethod
+    def _average(values: list[float]) -> float | None:
+        if not values:
+            return None
+        return round(sum(values) / len(values), 4)
+
+    @staticmethod
+    def _risk_score(item: GovernanceBacklogItem) -> float:
+        score_parts = [
+            item.priority_score,
+            item.ai_consumption_risk_score,
+            item.governance_risk_score,
+            item.severity_score,
+        ]
+        scores = [
+            float(score)
+            for score in score_parts
+            if isinstance(score, (int, float))
+        ]
+        if scores:
+            return round(max(scores), 4)
+        if item.priority == "priority_governance":
+            return 0.75
+        if item.priority == "key_tracking":
+            return 0.55
+        return 0.35
+
+    @classmethod
+    def _risk_tier(cls, item: GovernanceBacklogItem) -> str:
+        risk_score = cls._risk_score(item)
+        if risk_score >= 0.85:
+            return "critical"
+        if risk_score >= 0.70:
+            return "high"
+        if risk_score >= 0.50:
+            return "medium"
+        return "low"
+
+    @classmethod
+    def _top_risk_items(
+        cls,
+        items: list[GovernanceBacklogItem],
+        *,
+        limit: int = 5,
+    ) -> list[dict[str, object]]:
+        ranked = sorted(
+            items,
+            key=lambda item: (
+                -cls._risk_score(item),
+                item.status == "completed",
+                item.object_name,
+                item.gap_type,
+            ),
+        )
+        return [
+            {
+                "backlog_id": item.backlog_id,
+                "object_name": item.object_name,
+                "gap_type": item.gap_type,
+                "priority": item.priority,
+                "status": item.status,
+                "owner_role": item.owner_role,
+                "risk_score": cls._risk_score(item),
+            }
+            for item in ranked[:limit]
+        ]
+
     def summarize(
         self,
         governance_backlog_items: list[GovernanceBacklogItem],
@@ -74,6 +141,22 @@ class GovernancePortfolioAggregator:
         blocked_count = int(by_status.get("blocked", 0))
         readiness_distribution = self._readiness_distribution(readiness_scores)
         owner_workload = self._owner_workload(governance_backlog_items, sla_lookup)
+        priority_scores = [
+            float(item.priority_score)
+            for item in governance_backlog_items
+            if isinstance(item.priority_score, (int, float))
+        ]
+        ai_risk_scores = [
+            float(item.ai_consumption_risk_score)
+            for item in governance_backlog_items
+            if isinstance(item.ai_consumption_risk_score, (int, float))
+        ]
+        risk_tiers = Counter(
+            self._risk_tier(item) for item in governance_backlog_items
+        )
+        high_risk_item_count = int(risk_tiers.get("high", 0))
+        critical_risk_item_count = int(risk_tiers.get("critical", 0))
+        top_risk_items = self._top_risk_items(governance_backlog_items)
 
         return GovernancePortfolioSummary(
             total_items=len(governance_backlog_items),
@@ -84,10 +167,18 @@ class GovernancePortfolioAggregator:
             readiness_distribution=readiness_distribution,
             overdue_count=overdue_count,
             blocked_count=blocked_count,
+            high_risk_item_count=high_risk_item_count,
+            critical_risk_item_count=critical_risk_item_count,
+            avg_priority_score=self._average(priority_scores),
+            avg_ai_consumption_risk_score=self._average(ai_risk_scores),
+            risk_tier_distribution=dict(risk_tiers),
+            top_risk_items=top_risk_items,
             owner_workload=owner_workload,
             summary=(
                 f"Portfolio contains {len(governance_backlog_items)} backlog items, "
-                f"{blocked_count} blocked and {overdue_count} overdue."
+                f"{blocked_count} blocked, {overdue_count} overdue, "
+                f"{critical_risk_item_count} critical risk and "
+                f"{high_risk_item_count} high risk."
             ),
         )
 

@@ -3,6 +3,7 @@
 from collections import defaultdict
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 import yaml
@@ -43,6 +44,48 @@ def _coerce_package(
     if isinstance(package, ExecutionReadyPackage):
         return package
     return ExecutionReadyPackage.model_validate(package)
+
+
+VALUE_SET_EXPRESSION_PATTERN = re.compile(r"value\s+in\s*\((?P<values>.*)\)", re.IGNORECASE)
+
+
+def _parse_value_set_expression(expression: str | None) -> list[str]:
+    """Parse simple value in ('A','B') expressions into accepted values."""
+    if not expression:
+        return []
+    match = VALUE_SET_EXPRESSION_PATTERN.search(str(expression).strip())
+    if not match:
+        return []
+
+    values_text = match.group("values").strip()
+    if not values_text:
+        return []
+
+    values: list[str] = []
+    current: list[str] = []
+    in_quote = False
+    index = 0
+    while index < len(values_text):
+        char = values_text[index]
+        if char == "'":
+            if in_quote and index + 1 < len(values_text) and values_text[index + 1] == "'":
+                current.append("'")
+                index += 2
+                continue
+            in_quote = not in_quote
+        elif char == "," and not in_quote:
+            value = "".join(current).strip().strip("'\"")
+            if value:
+                values.append(value)
+            current = []
+        else:
+            current.append(char)
+        index += 1
+
+    value = "".join(current).strip().strip("'\"")
+    if value:
+        values.append(value)
+    return list(dict.fromkeys(values))
 
 
 class RuleExportAdapter:
@@ -149,7 +192,7 @@ class RuleExportAdapter:
         if rule_type == "value_set":
             return {
                 "accepted_values": {
-                    "values": [],
+                    "values": _parse_value_set_expression(rule.rule_expression),
                     "meta": {
                         "rule_expression": rule.rule_expression,
                         "severity": rule.severity,
@@ -210,7 +253,7 @@ class RuleExportAdapter:
         if mapped == "accepted_values":
             return {
                 "accepted_values": {
-                    "values": [],
+                    "values": _parse_value_set_expression(rule.rule_expression),
                     "meta": {
                         "rule_id": rule.rule_id,
                         "rule_expression": rule.rule_expression,

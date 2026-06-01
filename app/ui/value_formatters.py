@@ -77,13 +77,21 @@ def format_value(value: object | None) -> str:
         return f"{numeric_value:.2f}"
     if isinstance(value, str):
         text = value.strip()
-        return DISPLAY_VALUE_LABELS.get(text, text)
+        normalized_text = text.casefold()
+        if normalized_text in {"true", "yes"}:
+            return "是"
+        if normalized_text in {"false", "no"}:
+            return "否"
+        return DISPLAY_VALUE_LABELS.get(normalized_text, DISPLAY_VALUE_LABELS.get(text, text))
     if isinstance(value, dict):
+        from app.ui.column_labels import COLUMN_LABELS
+
         parts: list[str] = []
         for key, item in value.items():
             formatted_item = format_value(item)
             if formatted_item:
-                parts.append(f"{key}={formatted_item}")
+                formatted_key = COLUMN_LABELS.get(str(key), str(key))
+                parts.append(f"{formatted_key}={formatted_item}")
         return "; ".join(parts)
     if isinstance(value, (list, tuple, set)):
         items = [format_value(item) for item in value]

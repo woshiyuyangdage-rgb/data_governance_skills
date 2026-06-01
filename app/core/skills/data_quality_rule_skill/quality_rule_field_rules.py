@@ -1,5 +1,7 @@
 """Field-level quality rule recommendation helpers."""
 
+import re
+
 from app.core.models.issue import Issue
 from app.core.models.mapping_result import MappingResult
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
@@ -18,6 +20,11 @@ from app.core.rules.config_loader import (
     get_quality_rule_policies_config,
     get_quality_rule_templates_config,
 )
+
+SAMPLE_VALUE_SPLIT_PATTERN = re.compile(r"[;|,\r\n]+")
+EMPTY_SAMPLE_VALUES = {"", "nan", "none", "null"}
+MAX_VALUE_SET_SAMPLE_VALUES = 12
+MAX_SAMPLE_VALUE_LENGTH = 64
 
 
 def build_template_lookup() -> dict[str, list[dict[str, object]]]:
@@ -242,6 +249,41 @@ def learning_context_for_field(
     return list(dict.fromkeys(context))
 
 
+def candidate_value_set_from_sample_values(sample_values: str | None) -> list[str]:
+    """Infer a compact accepted-value set from source sample values."""
+    if sample_values is None:
+        return []
+
+    text = str(sample_values).strip()
+    if not text or text.lower() in EMPTY_SAMPLE_VALUES:
+        return []
+
+    values: list[str] = []
+    seen: set[str] = set()
+    for raw_value in SAMPLE_VALUE_SPLIT_PATTERN.split(text):
+        value = raw_value.strip().strip("'\"")
+        if not value or value.lower() in EMPTY_SAMPLE_VALUES:
+            continue
+        if len(value) > MAX_SAMPLE_VALUE_LENGTH:
+            return []
+        key = value.casefold()
+        if key in seen:
+            continue
+        values.append(value)
+        seen.add(key)
+
+    if len(values) < 2 or len(values) > MAX_VALUE_SET_SAMPLE_VALUES:
+        return []
+    return values
+
+
+def value_set_expression(values: list[str]) -> str:
+    """Build a deterministic value-set expression for generated rules."""
+    escaped_values = [value.replace("'", "''") for value in values]
+    quoted_values = ", ".join(f"'{value}'" for value in escaped_values)
+    return f"value in ({quoted_values})"
+
+
 def table_tokens(table: TableMeta) -> set[str]:
     """Return normalized tokens collected from table and field metadata."""
     tokens: set[str] = set()
@@ -389,6 +431,7 @@ def build_quality_rule_suggestion(
     rule_template: dict[str, object],
     match_basis: str | None,
     reason: str | None,
+    source_sample_values: str | None = None,
 ) -> QualityRuleSuggestion:
     """Create one normalized quality-rule suggestion."""
     severity = str(rule_template.get("severity", "low")).lower()
@@ -396,11 +439,33 @@ def build_quality_rule_suggestion(
     confidence = compute_quality_rule_confidence(recommendation_source)
     rule_expression = rule_template.get("rule_expression")
     expression_text = str(rule_expression) if rule_expression is not None else None
+    value_set_values = (
+        candidate_value_set_from_sample_values(source_sample_values)
+        if rule_type == "value_set"
+        else []
+    )
+    if value_set_values:
+        expression_text = value_set_expression(value_set_values)
+        sample_reason = (
+            "Derived accepted values from source sample_values "
+            f"count={len(value_set_values)}"
+        )
+        reason = f"{reason}; {sample_reason}" if reason else sample_reason
     review_priority = infer_review_priority(
         rule_scope="field",
         rule_type=rule_type,
         confidence=confidence,
     )
+    learning_context = learning_context_for_field(
+        field_name=source_field_name,
+        data_type=source_data_type,
+        recommended_field_name=recommended_field_name,
+        recommendation_source=recommendation_source,
+        match_basis=match_basis,
+    )
+    if value_set_values:
+        learning_context.append(f"value_set_size:{len(value_set_values)}")
+
     return QualityRuleSuggestion(
         source_table_name=source_table_name,
         source_field_name=source_field_name,
@@ -430,14 +495,13 @@ def build_quality_rule_suggestion(
         match_basis=match_basis,
         reason=reason,
         export_formats=export_formats_for_rule("field", rule_type),
-        learning_context=learning_context_for_field(
-            field_name=source_field_name,
-            data_type=source_data_type,
-            recommended_field_name=recommended_field_name,
-            recommendation_source=recommendation_source,
-            match_basis=match_basis,
+        learning_context=learning_context,
+        notes=(
+            f"Recommended from template={template_name}. "
+            f"sample_value_set={value_set_values}."
+            if value_set_values
+            else f"Recommended from template={template_name}."
         ),
-        notes=f"Recommended from template={template_name}.",
     )
 
 

@@ -90,6 +90,7 @@ class StandardCandidate:
     normalized_tokens: list[str]
     expanded_tokens: list[str]
     alias_lookup: list[str]
+    alias_token_groups: list[list[str]]
     context_tokens: list[str]
 
 
@@ -252,9 +253,15 @@ class StandardMappingRecommendationSkill(BaseSkill):
                 if alias and alias.strip() and str(alias).strip().lower() != "nan"
             ]
             alias_lookup = []
+            alias_token_groups = []
             for alias in aliases:
+                normalized_alias = cls.normalize_field_for_matching(alias)
+                normalized_alias_name = str(normalized_alias["normalized_name"])
+                normalized_alias_tokens = list(normalized_alias["normalized_tokens"])
                 alias_lookup.append(alias.lower())
-                alias_lookup.append(cls.normalize_field_for_matching(alias)["normalized_name"])
+                alias_lookup.append(normalized_alias_name)
+                if normalized_alias_tokens:
+                    alias_token_groups.append(normalized_alias_tokens)
 
             candidates.append(
                 StandardCandidate(
@@ -279,6 +286,12 @@ class StandardMappingRecommendationSkill(BaseSkill):
                     normalized_tokens=list(normalized["normalized_tokens"]),
                     expanded_tokens=list(normalized["expanded_tokens"]),
                     alias_lookup=list(dict.fromkeys(alias_lookup)),
+                    alias_token_groups=[
+                        list(tokens)
+                        for tokens in dict.fromkeys(
+                            tuple(tokens) for tokens in alias_token_groups
+                        )
+                    ],
                     context_tokens=cls._text_tokens(
                         standard_name,
                         row.get("standard_name_cn"),
@@ -312,6 +325,8 @@ class StandardMappingRecommendationSkill(BaseSkill):
             candidate.business_domain
         )
         context_tokens = list(field_info.get("context_tokens", []))
+        normalized_token_set = set(normalized_tokens)
+        context_token_set = set(context_tokens)
 
         if normalized_name and normalized_name == candidate.standard_name.lower():
             score += 1.0
@@ -332,6 +347,31 @@ class StandardMappingRecommendationSkill(BaseSkill):
         if normalized_name and normalized_name in candidate.alias_lookup:
             score += 0.7
             reasons.append("matched standard alias after normalization")
+
+        for alias_tokens in candidate.alias_token_groups:
+            alias_token_set = set(alias_tokens)
+            if (
+                not alias_token_set
+                or not alias_token_set.issubset(normalized_token_set)
+            ):
+                continue
+            field_qualifiers = normalized_token_set.difference(alias_token_set)
+            if not field_qualifiers:
+                continue
+            score += 0.35
+            reasons.append(
+                "standard alias tokens matched within field name "
+                f"alias_tokens={sorted(alias_token_set)} "
+                f"field_qualifiers={sorted(field_qualifiers)}"
+            )
+            context_qualifiers = field_qualifiers.intersection(context_token_set)
+            if context_qualifiers:
+                score += 0.15
+                reasons.append(
+                    "field qualifier tokens are supported by table context "
+                    f"context_tokens={sorted(context_qualifiers)}"
+                )
+            break
 
         if cleaned_cn_name and candidate.standard_name_cn:
             standard_cn = clean_text(candidate.standard_name_cn)

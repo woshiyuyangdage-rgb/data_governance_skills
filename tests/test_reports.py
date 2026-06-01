@@ -608,6 +608,12 @@ def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> No
             source_signals=["standard_mapping_low_confidence"],
             reason="Mapping requires review.",
             suggested_owner_role="business_data_steward",
+            affected_objects=["sales_order.order_channel"],
+            signal_count=1,
+            evidence_details={
+                "signal_counts": {"standard_mapping_low_confidence": 1},
+                "affected_object_count": 1,
+            },
         )
     ]
     remediation_actions = [
@@ -668,6 +674,8 @@ def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> No
     assert "# Governance Readiness Assessment" in markdown_content
     assert "# AI-Ready Assessment" in markdown_content
     assert "# Governance Gaps" in markdown_content
+    assert "signal_count=1" in markdown_content
+    assert "affected=sales_order.order_channel" in markdown_content
     assert "# Remediation Plan" in markdown_content
     assert "score=0.68" in markdown_content
     assert "cycle=next_1_to_2_cycles" in markdown_content
@@ -679,6 +687,11 @@ def test_reports_include_readiness_and_remediation_outputs(tmp_path: Path) -> No
     assert "governance_gaps" in workbook.sheetnames
     assert "remediation_actions" in workbook.sheetnames
     assert "governance_work_package_summary" in workbook.sheetnames
+    governance_gap_headers = [
+        cell.value for cell in next(workbook["governance_gaps"].iter_rows(max_row=1))
+    ]
+    assert "affected_objects_joined" in governance_gap_headers
+    assert "signal_count" in governance_gap_headers
     remediation_headers = [
         cell.value for cell in next(workbook["remediation_actions"].iter_rows(max_row=1))
     ]

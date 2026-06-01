@@ -1,6 +1,6 @@
 """Remediation action model."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RemediationAction(BaseModel):
@@ -24,3 +24,6 @@ class RemediationAction(BaseModel):
     expected_output: str | None = None
     dependency_notes: str | None = None
     reason: str | None = None
+    affected_objects: list[str] = Field(default_factory=list)
+    signal_count: int = 0
+    evidence_details: dict[str, object] = Field(default_factory=dict)
