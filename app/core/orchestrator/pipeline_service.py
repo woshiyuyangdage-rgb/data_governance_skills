@@ -8,6 +8,7 @@ from app.core.models.table_meta import TableMeta
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.workflow_engine import WorkflowEngine
 from app.core.parser.loader import load_metadata_file
+from app.core.parser.manual_metadata_input import save_manual_metadata_records
 from app.core.parser.parser_exceptions import ParserError
 
 WorkflowRunner = Callable[[WorkflowEngine, list[TableMeta]], WorkflowResult]
@@ -39,6 +40,20 @@ def run_p0_pipeline_from_file(file_path: str) -> WorkflowResult:
     return _run_loaded_workflow(
         file_path,
         lambda engine, tables: engine.run_p0_pipeline(tables),
+    )
+
+
+def save_manual_metadata_to_file(
+    records: list[dict[str, object]],
+    output_dir: str | None = None,
+    *,
+    base_filename: str | None = None,
+) -> str:
+    """Persist small hand-entered metadata records as a reusable CSV file."""
+    return save_manual_metadata_records(
+        records,
+        output_dir=output_dir,
+        base_filename=base_filename,
     )
 
 

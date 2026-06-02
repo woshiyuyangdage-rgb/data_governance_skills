@@ -18,6 +18,8 @@ from app.api.job_requests import (
     GovernanceReadinessAssessmentRequest,
     GovernanceWorkPackageBuildRequest,
     IntentTextRequest,
+    ManualMetadataRequest,
+    ManualMetadataRunRequest,
     NativeToolInvokeRequest,
     OpenAIToolInvokeRequest,
     ProgressSnapshotRequest,
@@ -43,6 +45,8 @@ from app.api.routes_jobs_core import (
     router as core_router,
     run_governance_task_route,
     run_interpreted_governance_task,
+    run_manual_metadata_route,
+    save_manual_metadata_route,
 )
 from app.api.routes_jobs_control_plane import (
     get_config_asset_route,
@@ -118,6 +122,8 @@ __all__ = [
     "GovernanceReadinessAssessmentRequest",
     "GovernanceWorkPackageBuildRequest",
     "IntentTextRequest",
+    "ManualMetadataRequest",
+    "ManualMetadataRunRequest",
     "NativeToolInvokeRequest",
     "OpenAIToolInvokeRequest",
     "ProgressSnapshotRequest",
@@ -165,7 +171,9 @@ __all__ = [
     "router",
     "run_governance_task_route",
     "run_interpreted_governance_task",
+    "run_manual_metadata_route",
     "save_config_asset_route",
+    "save_manual_metadata_route",
     "update_governance_backlog_status_route",
     "validate_config_asset_route",
 ]

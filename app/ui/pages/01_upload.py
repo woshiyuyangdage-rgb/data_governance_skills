@@ -3,6 +3,7 @@
 from pathlib import Path
 import sys
 
+import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -42,6 +43,10 @@ from app.core.agent.session_store import (
     set_last_uploaded_file,
 )
 from app.core.orchestrator.profile_loader import list_enabled_profiles
+from app.core.parser.manual_metadata_input import (
+    MANUAL_METADATA_COLUMNS,
+    save_manual_metadata_records,
+)
 from app.core.utils.file_utils import get_file_extension, save_uploaded_file
 
 initialize_session_state()
@@ -142,6 +147,64 @@ if uploaded_file is not None:
             ensure_large_file_runtime_ready(saved_path, current_signature)
     else:
         ensure_large_file_runtime_ready(saved_path, current_signature)
+
+st.subheader("手工录入元数据")
+st.caption("适合少量表字段。保存后会生成本地 CSV，并作为当前输入文件使用。")
+default_manual_rows = [
+    {
+        "table_name": "contract_info",
+        "table_name_cn": "合同信息",
+        "table_description": "融资合同基础信息",
+        "business_domain": "finance",
+        "field_name": "contract_no",
+        "field_name_cn": "合同编号",
+        "field_description": "合同唯一编号",
+        "data_type": "varchar",
+        "nullable": "false",
+        "is_primary_key": "true",
+    },
+    {
+        "table_name": "contract_info",
+        "field_name": "contract_amt",
+        "field_name_cn": "合同金额",
+        "field_description": "合同约定金额",
+        "data_type": "decimal",
+        "nullable": "false",
+    },
+]
+manual_df = st.data_editor(
+    pd.DataFrame(default_manual_rows, columns=MANUAL_METADATA_COLUMNS),
+    num_rows="dynamic",
+    use_container_width=True,
+    key="manual_metadata_editor",
+)
+manual_base_filename = st.text_input(
+    "保存文件名",
+    value="manual_metadata",
+    help="系统会自动添加随机后缀，避免覆盖已有文件。",
+)
+if st.button("保存手工录入为当前输入", use_container_width=True):
+    try:
+        manual_path = save_manual_metadata_records(
+            manual_df.to_dict("records"),
+            output_dir=UPLOAD_OUTPUT_DIR,
+            base_filename=manual_base_filename,
+        )
+    except Exception as exc:
+        st.error(f"保存手工录入元数据失败: {exc}")
+    else:
+        manual_bytes = Path(manual_path).read_bytes()
+        manual_signature = content_signature(manual_bytes)
+        set_uploaded_file_state(
+            file_path=manual_path,
+            file_name=Path(manual_path).name,
+            file_size=len(manual_bytes),
+            file_extension="csv",
+            file_signature=manual_signature,
+            source_label="manual_metadata",
+        )
+        st.success("手工录入元数据已保存，并设为当前输入。")
+        ensure_large_file_runtime_ready(manual_path, manual_signature)
 
 file_path = get_uploaded_file_path()
 if file_path:

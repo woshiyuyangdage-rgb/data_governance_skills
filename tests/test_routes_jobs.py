@@ -4,11 +4,15 @@ from pathlib import Path
 
 from app.api.routes_jobs import (
     IntentTextRequest,
+    ManualMetadataRequest,
+    ManualMetadataRunRequest,
     interpret_governance_task,
     list_jobs,
     list_workflow_profiles,
+    run_manual_metadata_route,
     run_governance_task_route,
     run_interpreted_governance_task,
+    save_manual_metadata_route,
 )
 from app.core.models.governance_task_request import GovernanceTaskRequest
 
@@ -21,6 +25,8 @@ def test_jobs_catalog_lists_unified_task_routes() -> None:
     paths = {item["path"] for item in payload["items"]}
 
     assert "/jobs/run-governance-task" in paths
+    assert "/jobs/save-manual-metadata" in paths
+    assert "/jobs/run-manual-metadata" in paths
     assert "/jobs/list-workflow-profiles" in paths
     assert "/jobs/interpret-governance-task" in paths
     assert "/jobs/run-interpreted-governance-task" in paths
@@ -86,6 +92,59 @@ def test_run_governance_task_route_returns_structured_response() -> None:
     assert response.status == "success"
     assert response.stages_executed == ["diagnosis"]
     assert response.result.status == "success"
+
+
+def test_manual_metadata_routes_save_and_run_profile(tmp_path: Path) -> None:
+    records = [
+        {
+            "table_name": "contract_info",
+            "table_name_cn": "合同信息",
+            "table_description": "融资合同基础信息",
+            "business_domain": "finance",
+            "field_name": "contract_no",
+            "field_name_cn": "合同编号",
+            "field_description": "合同唯一编号",
+            "data_type": "varchar",
+            "nullable": "false",
+        }
+    ]
+    save_response = save_manual_metadata_route(
+        ManualMetadataRequest(
+            records=records,
+            output_dir=str(tmp_path),
+            base_filename="route_manual_metadata",
+        )
+    )
+    run_response = run_manual_metadata_route(
+        ManualMetadataRunRequest(
+            records=records,
+            output_dir=str(tmp_path),
+            profile_name="metadata_diagnosis_only",
+        )
+    )
+
+    assert save_response["status"] == "success"
+    assert Path(str(save_response["file_path"])).exists()
+    assert run_response.status == "success"
+    assert run_response.profile_name == "metadata_diagnosis_only"
+    assert run_response.result.status == "success"
+    assert run_response.result.input_table_count == 1
+
+
+def test_run_manual_metadata_route_returns_parser_error_for_empty_input(
+    tmp_path: Path,
+) -> None:
+    response = run_manual_metadata_route(
+        ManualMetadataRunRequest(
+            records=[],
+            output_dir=str(tmp_path),
+            profile_name="metadata_diagnosis_only",
+        )
+    )
+
+    assert response.status == "parser_error"
+    assert response.result.status == "parser_error"
+    assert "does not contain any rows" in response.message
 
 
 def test_interpret_governance_task_returns_request_without_execution() -> None:

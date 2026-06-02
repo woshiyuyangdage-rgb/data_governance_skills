@@ -7,7 +7,12 @@ from app.api.job_requests_backlog import (
     ProgressSnapshotRequest,
 )
 from app.api.job_requests_control_plane import ConfigAssetSaveRequest
-from app.api.job_requests_core import FileRunRequest, IntentTextRequest
+from app.api.job_requests_core import (
+    FileRunRequest,
+    IntentTextRequest,
+    ManualMetadataRequest,
+    ManualMetadataRunRequest,
+)
 from app.api.job_requests_delivery import (
     BatchGovernanceRequest,
     BatchSnapshotCompareRequest,

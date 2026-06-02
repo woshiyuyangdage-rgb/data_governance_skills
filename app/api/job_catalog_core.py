@@ -14,6 +14,18 @@ CORE_JOB_ITEMS = [
         "description": "Run the rule-based P0 pipeline on a local CSV or Excel file path.",
     },
     {
+        "name": "save_manual_metadata",
+        "method": "POST",
+        "path": "/jobs/save-manual-metadata",
+        "description": "Save small hand-entered metadata rows as a reusable local CSV file.",
+    },
+    {
+        "name": "run_manual_metadata",
+        "method": "POST",
+        "path": "/jobs/run-manual-metadata",
+        "description": "Save hand-entered metadata rows and run a workflow profile.",
+    },
+    {
         "name": "run_p0_plus_mapping",
         "method": "POST",
         "path": "/jobs/run-p0-plus-mapping",

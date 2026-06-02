@@ -3,7 +3,12 @@
 from fastapi import APIRouter
 
 from app.api.job_catalog import build_job_catalog
-from app.api.job_requests import FileRunRequest, IntentTextRequest
+from app.api.job_requests import (
+    FileRunRequest,
+    IntentTextRequest,
+    ManualMetadataRequest,
+    ManualMetadataRunRequest,
+)
 from app.core.intent.intent_task_service import (
     interpret_and_build_request,
     interpret_and_run_task,
@@ -23,11 +28,13 @@ from app.core.orchestrator.pipeline_service import (
     run_p0_plus_mapping_plus_stg_with_review_from_file,
     run_quality_only_from_stg_from_file,
     run_quality_only_from_stg_with_review_from_file,
+    save_manual_metadata_to_file,
     run_stg_only_from_mapping_from_file,
 )
 from app.core.orchestrator.profile_loader import list_enabled_profiles
 from app.core.orchestrator.task_service import run_governance_task
 from app.core.orchestrator.workflow_engine import WorkflowEngine
+from app.core.parser.parser_exceptions import ParserError
 
 router = APIRouter()
 
@@ -49,6 +56,51 @@ def run_p0_demo() -> WorkflowResult:
 def run_p0_from_file(payload: FileRunRequest) -> WorkflowResult:
     """Run the rule-based P0 pipeline from a local metadata file path."""
     return run_p0_pipeline_from_file(payload.file_path)
+
+
+@router.post("/save-manual-metadata")
+def save_manual_metadata_route(payload: ManualMetadataRequest) -> dict[str, object]:
+    """Save hand-entered metadata rows as a local CSV input file."""
+    file_path = save_manual_metadata_to_file(
+        payload.records,
+        output_dir=payload.output_dir,
+        base_filename=payload.base_filename,
+    )
+    return {
+        "file_path": file_path,
+        "record_count": len(payload.records),
+        "status": "success",
+    }
+
+
+@router.post("/run-manual-metadata", response_model=GovernanceTaskResponse)
+def run_manual_metadata_route(
+    payload: ManualMetadataRunRequest,
+) -> GovernanceTaskResponse:
+    """Save hand-entered metadata rows and run a workflow profile."""
+    try:
+        file_path = save_manual_metadata_to_file(
+            payload.records,
+            output_dir=payload.output_dir,
+            base_filename=payload.base_filename,
+        )
+    except ParserError as exc:
+        return GovernanceTaskResponse(
+            profile_name=payload.profile_name,
+            status="parser_error",
+            message=str(exc),
+            stages_executed=[],
+            result=WorkflowResult(status="parser_error", message=str(exc)),
+        )
+    return run_governance_task(
+        GovernanceTaskRequest(
+            file_path=file_path,
+            profile_name=payload.profile_name,
+            apply_review_replay=payload.apply_review_replay,
+            export_reports=payload.export_reports,
+            preferred_result_mode=payload.preferred_result_mode,
+        )
+    )
 
 
 @router.post("/run-p0-plus-mapping", response_model=WorkflowResult)
