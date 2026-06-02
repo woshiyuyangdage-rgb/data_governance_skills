@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
+import pandas as pd
 import streamlit as st
 
 from app.core.adapters.manifest_service import (
@@ -75,6 +76,7 @@ from app.core.utils.result_utils import (
     execution_package_export_results_to_dataframe as core_execution_package_export_results_to_dataframe,
     execution_package_summary_to_dataframe as core_execution_package_summary_to_dataframe,
     execution_ready_rules_to_dataframe as core_execution_ready_rules_to_dataframe,
+    field_description_suggestions_to_dataframe as core_field_description_suggestions_to_dataframe,
     governance_backlog_items_to_dataframe as core_governance_backlog_items_to_dataframe,
     governance_gaps_to_dataframe as core_governance_gaps_to_dataframe,
     governance_portfolio_summary_to_dataframe as core_governance_portfolio_summary_to_dataframe,
@@ -86,6 +88,7 @@ from app.core.utils.result_utils import (
     quality_rule_review_summary_to_dataframe as core_quality_rule_review_summary_to_dataframe,
     quality_review_queue_summary_to_dataframe as core_quality_review_queue_summary_to_dataframe,
     quality_rules_to_dataframe as core_quality_rules_to_dataframe,
+    rag_quality_issues_to_dataframe as core_rag_quality_issues_to_dataframe,
     readiness_scores_to_dataframe as core_readiness_scores_to_dataframe,
     remediation_actions_to_dataframe as core_remediation_actions_to_dataframe,
     review_summary_to_dataframe as core_review_summary_to_dataframe,
@@ -93,7 +96,10 @@ from app.core.utils.result_utils import (
     skill_outputs_to_dataframe as core_skill_outputs_to_dataframe,
     stg_fields_to_dataframe as core_stg_fields_to_dataframe,
     stg_tables_to_dataframe as core_stg_tables_to_dataframe,
+    table_semantic_summaries_to_dataframe as core_table_semantic_summaries_to_dataframe,
     tasks_to_dataframe as core_tasks_to_dataframe,
+    text_to_sql_readiness_issues_to_dataframe as core_text_to_sql_readiness_issues_to_dataframe,
+    text_to_sql_readiness_scores_to_dataframe as core_text_to_sql_readiness_scores_to_dataframe,
     unmapped_fields_to_dataframe as core_unmapped_fields_to_dataframe,
 )
 
@@ -381,6 +387,12 @@ def _refresh_adapter_schema_cache() -> None:
 issues_to_dataframe = _cache_builder(core_issues_to_dataframe)
 tasks_to_dataframe = _cache_builder(core_tasks_to_dataframe)
 skill_outputs_to_dataframe = _cache_builder(core_skill_outputs_to_dataframe)
+field_description_suggestions_to_dataframe = _cache_builder(
+    core_field_description_suggestions_to_dataframe
+)
+table_semantic_summaries_to_dataframe = _cache_builder(
+    core_table_semantic_summaries_to_dataframe
+)
 mapping_results_to_dataframe = _cache_builder(core_mapping_results_to_dataframe)
 unmapped_fields_to_dataframe = _cache_builder(core_unmapped_fields_to_dataframe)
 stg_tables_to_dataframe = _cache_builder(core_stg_tables_to_dataframe)
@@ -411,6 +423,13 @@ execution_package_export_results_to_dataframe = _cache_builder(
 )
 readiness_scores_to_dataframe = _cache_builder(core_readiness_scores_to_dataframe)
 ai_ready_scores_to_dataframe = _cache_builder(core_ai_ready_scores_to_dataframe)
+rag_quality_issues_to_dataframe = _cache_builder(core_rag_quality_issues_to_dataframe)
+text_to_sql_readiness_scores_to_dataframe = _cache_builder(
+    core_text_to_sql_readiness_scores_to_dataframe
+)
+text_to_sql_readiness_issues_to_dataframe = _cache_builder(
+    core_text_to_sql_readiness_issues_to_dataframe
+)
 governance_gaps_to_dataframe = _cache_builder(core_governance_gaps_to_dataframe)
 remediation_actions_to_dataframe = _cache_builder(core_remediation_actions_to_dataframe)
 governance_work_package_summary_to_dataframe = _cache_builder(

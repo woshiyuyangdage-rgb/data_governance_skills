@@ -13,6 +13,16 @@ from app.ui.control_plane_helpers import (
 from app.ui import page_utils
 from app.ui import performance_helpers
 from app.ui.column_labels import localize_dataframe
+from app.ui.manual_metadata_editor import (
+    MANUAL_METADATA_DELETE_COLUMN,
+    append_manual_metadata_row,
+    apply_manual_metadata_editor_changes,
+    delete_selected_manual_metadata_rows,
+    editor_dataframe_to_manual_records,
+    ensure_manual_metadata_rows,
+    manual_metadata_rows_to_editor_dataframe,
+    reset_manual_metadata_rows,
+)
 from app.ui.navigation import (
     build_maintainer_links,
     build_navigation_sections,
@@ -28,10 +38,15 @@ from app.ui.review_form_helpers import (
 )
 from app.ui import status_blocks
 from app.ui.result_overview import artifact_download_key, build_result_artifacts
+from app.ui.result_detail_viewer import build_result_detail_sections
 from app.ui import session_keys as keys
 from app.ui.session_keys import build_session_defaults
 from app.ui.value_formatters import format_value
 from app.ui.workbench_state import WorkbenchState
+from app.core.models.ai_ready_score import AiReadyScore
+from app.core.models.issue import Issue
+from app.core.models.mapping_result import MappingResult
+from app.core.models.workflow_result import WorkflowResult
 
 
 class _FakeSessionState(dict):
@@ -119,6 +134,78 @@ def test_workbench_state_reads_uploaded_file_metadata() -> None:
     assert state.get_uploaded_file_name() == "sample.csv"
     assert state.get_uploaded_file_size() == 128
     assert state.get_uploaded_file_extension() == "csv"
+
+
+def test_result_detail_sections_include_available_result_groups() -> None:
+    result = WorkflowResult(
+        issues=[
+            Issue(
+                issue_id="issue-1",
+                object_type="field",
+                object_name="cust_no",
+                issue_type="missing_description",
+                severity="medium",
+            )
+        ],
+        mapping_results=[
+            MappingResult(
+                table_name="customer",
+                field_name="cust_no",
+                recommended_standard_code="STD_CUSTOMER_NO",
+            )
+        ],
+        ai_ready_scores=[
+            AiReadyScore(
+                object_name="customer",
+                overall_score=82,
+                ai_ready_level="B_basic_ready",
+            )
+        ],
+    )
+
+    sections = build_result_detail_sections(result)
+    titles = {section.title for section in sections}
+    groups = {section.group for section in sections}
+
+    assert "问题清单" in titles
+    assert "标准映射推荐" in titles
+    assert "AI-ready 评分" in titles
+    assert "诊断与语义" in groups
+    assert "标准映射与 STG" in groups
+    assert "AI 准备度" in groups
+
+
+def test_manual_metadata_editor_state_actions() -> None:
+    state = _FakeSessionState()
+    rows = ensure_manual_metadata_rows(state)
+    original_count = len(rows)
+
+    append_manual_metadata_row(state)
+    assert len(state["manual_metadata_rows"]) == original_count + 1
+
+    dataframe = manual_metadata_rows_to_editor_dataframe(state["manual_metadata_rows"])
+    dataframe.loc[0, "field_name"] = "changed_field"
+    dataframe.loc[1, MANUAL_METADATA_DELETE_COLUMN] = True
+    apply_manual_metadata_editor_changes(state, dataframe)
+
+    assert state["manual_metadata_rows"][0]["field_name"] == "changed_field"
+
+    delete_dataframe = manual_metadata_rows_to_editor_dataframe(
+        state["manual_metadata_rows"]
+    )
+    delete_dataframe.loc[0, MANUAL_METADATA_DELETE_COLUMN] = True
+    deleted_count = delete_selected_manual_metadata_rows(state, delete_dataframe)
+
+    assert deleted_count == 1
+    assert len(state["manual_metadata_rows"]) == original_count
+
+    records = editor_dataframe_to_manual_records(
+        manual_metadata_rows_to_editor_dataframe(state["manual_metadata_rows"])
+    )
+    assert MANUAL_METADATA_DELETE_COLUMN not in records[0]
+
+    reset_manual_metadata_rows(state)
+    assert state["manual_metadata_rows"][0]["field_name"] == "contract_no"
 
 
 def test_page_utils_records_report_history_with_limit(monkeypatch) -> None:

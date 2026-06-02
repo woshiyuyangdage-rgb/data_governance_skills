@@ -3,7 +3,6 @@
 from pathlib import Path
 import sys
 
-import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -14,20 +13,31 @@ from app.ui.page_utils import (
     INPUT_TEMPLATE_DOC_PATH,
     SAMPLE_METADATA_PATH,
     UPLOAD_OUTPUT_DIR,
-    get_uploaded_file_extension,
-    get_uploaded_file_name,
-    get_uploaded_file_size,
     ensure_agent_shell_session_id,
     ensure_project_root_on_path,
+    get_uploaded_file_extension,
+    get_uploaded_file_name,
     get_uploaded_file_path,
     get_uploaded_file_signature,
+    get_uploaded_file_size,
     initialize_session_state,
     restore_agent_session_to_state,
     set_uploaded_file_state,
 )
+from app.ui.column_labels import localize_dataframe_columns
+from app.ui.manual_metadata_editor import (
+    MANUAL_METADATA_DELETE_COLUMN,
+    append_manual_metadata_row,
+    apply_manual_metadata_editor_changes,
+    delete_selected_manual_metadata_rows,
+    editor_dataframe_to_manual_records,
+    ensure_manual_metadata_rows,
+    manual_metadata_editor_version,
+    manual_metadata_rows_to_editor_dataframe,
+    reset_manual_metadata_rows,
+)
 from app.ui.performance_helpers import ensure_large_file_runtime_ready
 from app.ui.status_blocks import render_metric_row, render_page_header
-from app.ui.column_labels import localize_dataframe_columns
 from app.ui.workbench_cache import (
     content_signature,
     file_cache_key,
@@ -43,17 +53,14 @@ from app.core.agent.session_store import (
     set_last_uploaded_file,
 )
 from app.core.orchestrator.profile_loader import list_enabled_profiles
-from app.core.parser.manual_metadata_input import (
-    MANUAL_METADATA_COLUMNS,
-    save_manual_metadata_records,
-)
+from app.core.parser.manual_metadata_input import save_manual_metadata_records
 from app.core.utils.file_utils import get_file_extension, save_uploaded_file
 
 initialize_session_state()
 
 render_page_header(
     "上传元数据",
-    "上传符合模板的本地 CSV 或 Excel 文件，作为后续诊断与评审的入口。",
+    "上传符合模板的本地 CSV 或 Excel 文件，或手工录入少量元数据，作为后续诊断与评审的输入。",
 )
 
 sample_cache_token = file_cache_key(str(SAMPLE_METADATA_PATH))
@@ -149,44 +156,61 @@ if uploaded_file is not None:
         ensure_large_file_runtime_ready(saved_path, current_signature)
 
 st.subheader("手工录入元数据")
-st.caption("适合少量表字段。保存后会生成本地 CSV，并作为当前输入文件使用。")
-default_manual_rows = [
-    {
-        "table_name": "contract_info",
-        "table_name_cn": "合同信息",
-        "table_description": "融资合同基础信息",
-        "business_domain": "finance",
-        "field_name": "contract_no",
-        "field_name_cn": "合同编号",
-        "field_description": "合同唯一编号",
-        "data_type": "varchar",
-        "nullable": "false",
-        "is_primary_key": "true",
-    },
-    {
-        "table_name": "contract_info",
-        "field_name": "contract_amt",
-        "field_name_cn": "合同金额",
-        "field_description": "合同约定金额",
-        "data_type": "decimal",
-        "nullable": "false",
-    },
-]
+st.caption(
+    "适合少量表字段。可以直接修改表格，勾选删除列后点击删除选中行；"
+    "保存后会生成本地 CSV 并作为当前输入文件使用。"
+)
+
+manual_rows = ensure_manual_metadata_rows(st.session_state)
+manual_editor_df = manual_metadata_rows_to_editor_dataframe(manual_rows)
 manual_df = st.data_editor(
-    pd.DataFrame(default_manual_rows, columns=MANUAL_METADATA_COLUMNS),
+    manual_editor_df,
     num_rows="dynamic",
     use_container_width=True,
-    key="manual_metadata_editor",
+    key=f"manual_metadata_editor_{manual_metadata_editor_version(st.session_state)}",
+    column_config={
+        MANUAL_METADATA_DELETE_COLUMN: st.column_config.CheckboxColumn(
+            "删除",
+            help="勾选后点击“删除选中行”。",
+            default=False,
+        )
+    },
 )
+
+action_col1, action_col2, action_col3, action_col4 = st.columns(4)
+with action_col1:
+    if st.button("新增空行", use_container_width=True):
+        apply_manual_metadata_editor_changes(st.session_state, manual_df)
+        append_manual_metadata_row(st.session_state)
+        st.rerun()
+with action_col2:
+    if st.button("应用修改", use_container_width=True):
+        apply_manual_metadata_editor_changes(st.session_state, manual_df)
+        st.success("表格修改已应用。")
+with action_col3:
+    if st.button("删除选中行", use_container_width=True):
+        deleted_count = delete_selected_manual_metadata_rows(st.session_state, manual_df)
+        if deleted_count:
+            st.success(f"已删除 {deleted_count} 行。")
+            st.rerun()
+        else:
+            st.info("请先在表格第一列勾选要删除的行。")
+with action_col4:
+    if st.button("重置示例", use_container_width=True):
+        reset_manual_metadata_rows(st.session_state)
+        st.rerun()
+
 manual_base_filename = st.text_input(
     "保存文件名",
     value="manual_metadata",
     help="系统会自动添加随机后缀，避免覆盖已有文件。",
 )
 if st.button("保存手工录入为当前输入", use_container_width=True):
+    apply_manual_metadata_editor_changes(st.session_state, manual_df)
+    manual_records = editor_dataframe_to_manual_records(manual_df)
     try:
         manual_path = save_manual_metadata_records(
-            manual_df.to_dict("records"),
+            manual_records,
             output_dir=UPLOAD_OUTPUT_DIR,
             base_filename=manual_base_filename,
         )
@@ -211,7 +235,7 @@ if file_path:
     agent_session_id = ensure_agent_shell_session_id()
     set_last_uploaded_file(agent_session_id, file_path)
 
-    st.subheader("当前上传文件")
+    st.subheader("当前输入文件")
     render_metric_row(
         [
             ("文件名", get_uploaded_file_name() or "N/A"),

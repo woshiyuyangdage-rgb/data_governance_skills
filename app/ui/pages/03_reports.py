@@ -1,4 +1,4 @@
-"""Reports page for exporting workflow outputs."""
+"""Reports page for viewing and exporting workflow outputs."""
 
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +23,7 @@ from app.ui.page_utils import (
 )
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_workflow_overview
+from app.ui.result_detail_viewer import render_result_detail_viewer
 from app.ui.result_overview import (
     build_result_artifacts,
     render_result_artifacts,
@@ -45,22 +46,26 @@ REPORT_MIME_TYPES = {
 }
 
 render_page_header(
-    "导出报告",
-    "把当前工作流结果整理成 JSON、Markdown、Excel 三类交付物。",
+    "报告与结果明细",
+    "先在页面查看当前工作流结果明细，再按需导出 JSON、Markdown、Excel 交付文件。",
 )
 
 result = get_workflow_result()
 if result is None:
-    st.warning("当前没有可导出的工作流结果，请先完成诊断。")
+    st.warning("当前没有可查看或导出的工作流结果，请先完成诊断。")
 else:
     current_file = get_current_input_file_path() or "unknown_input"
     render_result_overview(
         build_workflow_overview(
             result,
-            title="导出总览",
-            next_step="导出后可以直接下载，或回到评审页继续固化覆盖。",
+            title="结果总览",
+            next_step="先展开页面明细核对结果，再按需导出交付文件或回到评审页固化覆盖。",
         )
     )
+
+    st.subheader("页面明细")
+    st.caption("明细表默认延迟加载，适合大文件结果核对；展开模块后再点击加载表格。")
+    render_result_detail_viewer(result, key_prefix="reports_result_detail")
 
     export_col1, export_col2 = st.columns([1, 2])
     with export_col1:
@@ -101,5 +106,8 @@ if history:
         with st.expander(f"导出 {export_index}", expanded=export_index == 1):
             render_bullet_list(
                 None,
-                [f"`{report_type}`: {report_path}" for report_type, report_path in export_paths.items()],
+                [
+                    f"`{report_type}`: {report_path}"
+                    for report_type, report_path in export_paths.items()
+                ],
             )
