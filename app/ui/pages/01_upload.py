@@ -44,6 +44,7 @@ from app.ui.workbench_cache import (
     read_csv_dataframe_cached,
     read_file_bytes_cached,
 )
+from app.ui.workflow_run_panel import render_workflow_run_panel
 
 ensure_project_root_on_path()
 
@@ -53,6 +54,16 @@ from app.core.agent.session_store import (
     set_last_uploaded_file,
 )
 from app.core.orchestrator.profile_loader import list_enabled_profiles
+from app.core.parser.metadata_completion import (
+    apply_reviewed_completion_values,
+    complete_metadata_file,
+    metadata_completion_changes_to_dataframe,
+    save_completed_metadata,
+)
+from app.core.parser.metadata_learning import (
+    learn_metadata_memory_from_dataframe,
+    learn_metadata_memory_from_file,
+)
 from app.core.parser.manual_metadata_input import save_manual_metadata_records
 from app.core.utils.file_utils import get_file_extension, save_uploaded_file
 
@@ -245,3 +256,150 @@ if file_path:
     )
     st.caption(f"本地路径: {file_path}")
     st.caption(f"共享会话: {agent_session_id}")
+
+    st.subheader("元数据学习库")
+    st.caption("如果当前文件质量较好，可以将已填写的中文名和描述学习到本地记忆库，供后续新文件自动补全优先参考。")
+    learning_confirmed = st.checkbox(
+        "我确认当前文件可作为高质量学习样本",
+        value=False,
+        key="metadata_learning_confirmed",
+    )
+    if st.button("学习当前元数据", use_container_width=True):
+        if not learning_confirmed:
+            st.warning("请先确认当前文件可作为高质量学习样本。")
+            st.stop()
+        try:
+            learning_summary = learn_metadata_memory_from_file(file_path)
+        except Exception as exc:
+            st.error(f"学习元数据失败: {exc}")
+        else:
+            st.success(
+                "元数据学习完成："
+                f"字段记忆 {learning_summary.field_memory_count} 条，"
+                f"表记忆 {learning_summary.table_memory_count} 条。"
+            )
+
+    st.subheader("元数据自动补全")
+    st.caption("算法每个缺失项给出 3 个候选值；必须人工选择或编辑最终值并确认审核后，才会保存为增强版 CSV。")
+    completion_col1, completion_col2 = st.columns([1, 1])
+    with completion_col1:
+        if st.button("预览自动补全", use_container_width=True):
+            try:
+                completion_result = complete_metadata_file(file_path)
+            except Exception as exc:
+                st.error(f"自动补全失败: {exc}")
+            else:
+                st.session_state["metadata_completion_result"] = completion_result
+                st.success(f"已生成 {completion_result.completed_count} 条补全建议。")
+
+    completion_result = st.session_state.get("metadata_completion_result")
+    if completion_result is not None:
+        changes_df = metadata_completion_changes_to_dataframe(completion_result.changes)
+        if changes_df.empty:
+            st.info("暂无可补全的缺失项。")
+            reviewed_changes_df = changes_df
+        else:
+            review_df = changes_df.copy()
+            review_df.insert(0, "accept", False)
+            review_df.insert(1, "selected_candidate", "候选1")
+            reviewed_changes_df = st.data_editor(
+                review_df,
+                use_container_width=True,
+                hide_index=True,
+                key="metadata_completion_review_editor",
+                column_config={
+                    "accept": st.column_config.CheckboxColumn(
+                        "保存",
+                        help="只有勾选保存的最终采纳值才会写入增强版元数据。",
+                        default=False,
+                    ),
+                    "selected_candidate": st.column_config.SelectboxColumn(
+                        "候选选择",
+                        options=["候选1", "候选2", "候选3", "人工编辑"],
+                        help="选择候选值后，可继续修改最终采纳值。",
+                    ),
+                    "final_value": st.column_config.TextColumn(
+                        "最终采纳值",
+                        help="可直接编辑。保存时以这里的值为准。",
+                    ),
+                },
+            )
+            accepted_count = int(reviewed_changes_df["accept"].fillna(False).sum())
+            st.caption(f"已选择保存 {accepted_count} / {len(reviewed_changes_df)} 条建议。")
+        review_confirmed = st.checkbox(
+            "我已人工审核所选补全建议",
+            value=False,
+            key="metadata_completion_review_confirmed",
+        )
+        with completion_col2:
+            if st.button("保存已审核采纳项为当前输入", use_container_width=True):
+                accepted_values = {}
+                if not reviewed_changes_df.empty:
+                    selected_rows = reviewed_changes_df[
+                        reviewed_changes_df["accept"].fillna(False)
+                    ]
+                    for _, review_row in selected_rows.iterrows():
+                        selected_candidate = str(
+                            review_row.get("selected_candidate") or "人工编辑"
+                        )
+                        final_value = review_row.get("final_value")
+                        if selected_candidate == "候选1":
+                            final_value = review_row.get("candidate_1")
+                        elif selected_candidate == "候选2":
+                            final_value = review_row.get("candidate_2")
+                        elif selected_candidate == "候选3":
+                            final_value = review_row.get("candidate_3")
+                        if str(final_value or "").strip():
+                            accepted_values[str(review_row["change_key"])] = str(
+                                final_value
+                            ).strip()
+                if not review_confirmed:
+                    st.warning("请先确认已经人工审核所选补全建议。")
+                    st.stop()
+                if not accepted_values:
+                    st.warning("请至少勾选一条要保存的补全建议，并填写最终采纳值。")
+                    st.stop()
+                try:
+                    reviewed_completion = apply_reviewed_completion_values(
+                        completion_result.source_dataframe
+                        if completion_result.source_dataframe is not None
+                        else completion_result.dataframe,
+                        completion_result.changes,
+                        accepted_values,
+                    )
+                    saved_completion = save_completed_metadata(
+                        reviewed_completion,
+                        output_dir=UPLOAD_OUTPUT_DIR,
+                        base_filename=Path(file_path).stem + "_completed",
+                    )
+                    learn_metadata_memory_from_dataframe(
+                        reviewed_completion.dataframe,
+                        source="reviewed_metadata_completion",
+                    )
+                except Exception as exc:
+                    st.error(f"保存增强版元数据失败: {exc}")
+                else:
+                    if saved_completion.output_path:
+                        completed_bytes = Path(saved_completion.output_path).read_bytes()
+                        completed_signature = content_signature(completed_bytes)
+                        set_uploaded_file_state(
+                            file_path=saved_completion.output_path,
+                            file_name=Path(saved_completion.output_path).name,
+                            file_size=len(completed_bytes),
+                            file_extension="csv",
+                            file_signature=completed_signature,
+                            source_label="metadata_completion",
+                        )
+                        st.session_state["metadata_completion_result"] = saved_completion
+                        st.success("已保存人工审核采纳后的增强版元数据，并设为当前输入。")
+                        ensure_large_file_runtime_ready(
+                            saved_completion.output_path,
+                            completed_signature,
+                        )
+                        st.rerun()
+
+    render_workflow_run_panel(
+        file_path,
+        key_prefix="upload_quick_run",
+        title="当前输入快捷运行",
+    )

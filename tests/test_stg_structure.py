@@ -8,9 +8,19 @@ from app.core.skills.stg_standardization_skill import (
     StgStructureSuggestionInput,
     StgStructureSuggestionSkill,
 )
+from app.core.skills.stg_standardization_skill import stg_structure_suggestion
 
 
-def test_stg_structure_skill_generates_table_and_field_suggestions() -> None:
+def _disable_stg_learning(monkeypatch) -> None:
+    monkeypatch.setattr(
+        stg_structure_suggestion,
+        "load_stg_field_memory",
+        lambda: None,
+    )
+
+
+def test_stg_structure_skill_generates_table_and_field_suggestions(monkeypatch) -> None:
+    _disable_stg_learning(monkeypatch)
     skill = StgStructureSuggestionSkill()
     tables = [
         TableMeta(
@@ -88,7 +98,8 @@ def test_stg_structure_skill_generates_table_and_field_suggestions() -> None:
     assert "stg_table_requires_manual_review" in issue_types
 
 
-def test_stg_structure_override_edit_replaces_field_name_and_type() -> None:
+def test_stg_structure_override_edit_replaces_field_name_and_type(monkeypatch) -> None:
+    _disable_stg_learning(monkeypatch)
     skill = StgStructureSuggestionSkill()
     tables = [
         TableMeta(
@@ -134,3 +145,56 @@ def test_stg_structure_override_edit_replaces_field_name_and_type() -> None:
     assert result.confirmed_stg_suggestions[0].recommended_stg_field_name == "snapshot_business_date"
     assert result.confirmed_stg_suggestions[0].recommended_data_type == "timestamp"
     assert result.confirmed_stg_suggestions[0].confirmed_source == "override_edit"
+
+
+def test_stg_structure_uses_learned_review_memory(monkeypatch) -> None:
+    import pandas as pd
+
+    monkeypatch.setattr(
+        stg_structure_suggestion,
+        "load_stg_field_memory",
+        lambda: pd.DataFrame(
+            [
+                {
+                    "field_key": "snapshot_dt",
+                    "source_table_name": "ods_customer_snapshot",
+                    "source_field_name": "snapshot_dt",
+                    "final_stg_field_name": "snapshot_business_date",
+                    "final_data_type": "timestamp",
+                    "source": "test_review",
+                    "review_action": "edit",
+                    "reviewed_at": "2026-06-01T10:00:00",
+                }
+            ]
+        ),
+    )
+    skill = StgStructureSuggestionSkill()
+    tables = [
+        TableMeta(
+            table_name="ods_customer_snapshot",
+            fields=[
+                FieldMeta(
+                    field_name="snapshot_dt",
+                    field_name_cn="snapshot date",
+                    data_type="date",
+                )
+            ],
+        )
+    ]
+
+    result = skill.run(
+        StgStructureSuggestionInput(
+            tables=tables,
+            naming_field_suggestions={
+                "ods_customer_snapshot.snapshot_dt": "snapshot_date",
+            },
+            apply_overrides=False,
+        )
+    )
+
+    suggestion = result.field_suggestions_flat[0]
+    assert suggestion.recommended_stg_field_name == "snapshot_business_date"
+    assert suggestion.recommended_data_type == "timestamp"
+    assert suggestion.mapping_source == "learned_stg_memory"
+    assert suggestion.confirmed_source is None
+    assert "learned_from_stg_review_history" in (suggestion.notes or "")

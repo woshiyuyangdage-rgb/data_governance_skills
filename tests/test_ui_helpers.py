@@ -42,10 +42,15 @@ from app.ui.result_detail_viewer import build_result_detail_sections
 from app.ui import session_keys as keys
 from app.ui.session_keys import build_session_defaults
 from app.ui.value_formatters import format_value
+from app.ui.workflow_run_panel import (
+    review_replay_control_defaults,
+    select_profile_name,
+)
 from app.ui.workbench_state import WorkbenchState
 from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.issue import Issue
 from app.core.models.mapping_result import MappingResult
+from app.core.models.workflow_profile import WorkflowProfile
 from app.core.models.workflow_result import WorkflowResult
 
 
@@ -206,6 +211,37 @@ def test_manual_metadata_editor_state_actions() -> None:
 
     reset_manual_metadata_rows(state)
     assert state["manual_metadata_rows"][0]["field_name"] == "contract_no"
+
+
+def test_workflow_run_panel_profile_helpers() -> None:
+    profile_names = ["metadata_diagnosis_only", "diagnosis_mapping_stg_quality"]
+
+    assert (
+        select_profile_name(profile_names, "diagnosis_mapping_stg_quality")
+        == "diagnosis_mapping_stg_quality"
+    )
+    assert select_profile_name(profile_names, "missing") == "metadata_diagnosis_only"
+    assert select_profile_name(["custom"], None) == "custom"
+
+    replay_profile = WorkflowProfile(
+        name="diagnosis_mapping_stg_quality",
+        description="full",
+        supports_review_replay=True,
+    )
+    no_replay_profile = WorkflowProfile(
+        name="metadata_diagnosis_only",
+        description="diagnosis",
+        supports_review_replay=False,
+    )
+    forced_replay_profile = WorkflowProfile(
+        name="diagnosis_mapping_stg_quality_with_review",
+        description="with review",
+        supports_review_replay=True,
+    )
+
+    assert review_replay_control_defaults(replay_profile) == (True, False)
+    assert review_replay_control_defaults(no_replay_profile) == (False, True)
+    assert review_replay_control_defaults(forced_replay_profile) == (True, True)
 
 
 def test_page_utils_records_report_history_with_limit(monkeypatch) -> None:

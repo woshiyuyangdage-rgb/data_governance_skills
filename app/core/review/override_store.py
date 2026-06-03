@@ -83,6 +83,18 @@ def _save_review_session_snapshot(session_type: str, records: list[dict[str, obj
     return str(session_path)
 
 
+def _learned_mapping_output_dir() -> Path:
+    if MAPPING_OVERRIDES_PATH.parent.name == "overrides":
+        return MAPPING_OVERRIDES_PATH.parent.parent / "learned_mapping"
+    return MAPPING_OVERRIDES_PATH.parent / "learned_mapping"
+
+
+def _learned_stg_output_dir() -> Path:
+    if STG_OVERRIDES_PATH.parent.name == "overrides":
+        return STG_OVERRIDES_PATH.parent.parent / "learned_stg"
+    return STG_OVERRIDES_PATH.parent / "learned_stg"
+
+
 def load_mapping_overrides() -> list[MappingReviewRecord]:
     """Load locally persisted mapping overrides."""
     dataframe = _read_csv(MAPPING_OVERRIDES_PATH, MAPPING_OVERRIDE_COLUMNS)
@@ -96,7 +108,25 @@ def save_mapping_review_records(records: list[MappingReviewRecord]) -> dict[str,
     merged = _merge_by_key(existing_records, new_records, ["table_name", "field_name"])
     csv_path = _write_csv(MAPPING_OVERRIDES_PATH, merged, MAPPING_OVERRIDE_COLUMNS)
     history_path = _save_review_session_snapshot("mapping_review", new_records)
-    return {"path": csv_path, "history_path": history_path, "saved_count": len(records)}
+    result: dict[str, str | int] = {
+        "path": csv_path,
+        "history_path": history_path,
+        "saved_count": len(records),
+    }
+    try:
+        from app.core.skills.data_standard_mapping_skill.mapping_learning import (
+            learn_standard_mapping_memory_from_review_records,
+        )
+
+        learning_summary = learn_standard_mapping_memory_from_review_records(
+            records,
+            output_dir=_learned_mapping_output_dir(),
+        )
+        result["learned_count"] = learning_summary.learned_count
+        result["learning_memory_path"] = learning_summary.output_path
+    except Exception as exc:
+        result["learning_warning"] = str(exc)
+    return result
 
 
 def build_mapping_override_lookup(
@@ -124,7 +154,25 @@ def save_stg_review_records(records: list[StgReviewRecord]) -> dict[str, str | i
     )
     csv_path = _write_csv(STG_OVERRIDES_PATH, merged, STG_OVERRIDE_COLUMNS)
     history_path = _save_review_session_snapshot("stg_review", new_records)
-    return {"path": csv_path, "history_path": history_path, "saved_count": len(records)}
+    result: dict[str, str | int] = {
+        "path": csv_path,
+        "history_path": history_path,
+        "saved_count": len(records),
+    }
+    try:
+        from app.core.skills.stg_standardization_skill.stg_learning import (
+            learn_stg_memory_from_review_records,
+        )
+
+        learning_summary = learn_stg_memory_from_review_records(
+            records,
+            output_dir=_learned_stg_output_dir(),
+        )
+        result["learned_count"] = learning_summary.learned_count
+        result["learning_memory_path"] = learning_summary.output_path
+    except Exception as exc:
+        result["learning_warning"] = str(exc)
+    return result
 
 
 def build_stg_override_lookup(

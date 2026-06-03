@@ -23,6 +23,11 @@ from app.core.skills.data_standard_mapping_skill.semantic_index import (
     SemanticFieldMatch,
     semantic_match_source_fields,
 )
+from app.core.skills.data_standard_mapping_skill.mapping_learning import (
+    LearnedStandardMapping,
+    load_standard_mapping_memory,
+    lookup_learned_standard_mapping,
+)
 
 EMPTY_TEXT_VALUES = {"", "nan", "none", "null"}
 SHARED_DOMAIN_VALUES = {"shared", "common", "global", "enterprise"}
@@ -554,6 +559,46 @@ class StandardMappingRecommendationSkill(BaseSkill):
             ]
         return ranked
 
+    @classmethod
+    def promote_learned_standard_candidate(
+        cls,
+        ranked_candidates: list[tuple[StandardCandidate, float, list[str]]],
+        candidates: list[StandardCandidate],
+        learned_mapping: LearnedStandardMapping | None,
+    ) -> list[tuple[StandardCandidate, float, list[str]]]:
+        """Promote a human-reviewed learned standard without auto-confirming it."""
+        if learned_mapping is None:
+            return ranked_candidates
+
+        candidate_lookup = {candidate.standard_code: candidate for candidate in candidates}
+        learned_candidate = candidate_lookup.get(learned_mapping.standard_code)
+        if learned_candidate is None:
+            return ranked_candidates
+
+        reason = (
+            "learned mapping memory matched "
+            f"field_key={learned_mapping.field_key} "
+            f"source={learned_mapping.source or 'review'} "
+            f"action={learned_mapping.review_action or 'unknown'}"
+        )
+        promoted_score = 1.15
+        promoted: tuple[StandardCandidate, float, list[str]] | None = None
+        remaining: list[tuple[StandardCandidate, float, list[str]]] = []
+        for candidate, score, reasons in ranked_candidates:
+            if candidate.standard_code != learned_mapping.standard_code:
+                remaining.append((candidate, score, reasons))
+                continue
+            promoted = (
+                candidate,
+                round(max(score, promoted_score), 2),
+                list(dict.fromkeys([reason, *reasons])),
+            )
+
+        if promoted is None:
+            promoted = (learned_candidate, promoted_score, [reason])
+
+        return [promoted, *remaining]
+
     @staticmethod
     def _has_accepted_semantic_match(
         semantic_match: SemanticFieldMatch | None,
@@ -848,6 +893,7 @@ class StandardMappingRecommendationSkill(BaseSkill):
             )
 
         standard_candidates = self._prepare_standard_candidates()
+        learned_mapping_memory = load_standard_mapping_memory()
         mapping_results: list[MappingResult] = []
         unmapped_fields: list[UnmappedField] = []
         issues: list[Issue] = []
@@ -875,6 +921,15 @@ class StandardMappingRecommendationSkill(BaseSkill):
                     field_info,
                     standard_candidates,
                     semantic_match,
+                )
+                learned_mapping = lookup_learned_standard_mapping(
+                    field.field_name,
+                    learned_mapping_memory,
+                )
+                ranked_candidates = self.promote_learned_standard_candidate(
+                    ranked_candidates,
+                    standard_candidates,
+                    learned_mapping,
                 )
                 top_candidates = ranked_candidates[:3]
 

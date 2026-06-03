@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pandas as pd
+
 from app.core.models.field_meta import FieldMeta
 from app.core.models.table_meta import TableMeta
 from app.core.models.mapping_review_record import MappingReviewRecord
@@ -128,6 +130,48 @@ def test_semantic_match_can_promote_low_rule_score_to_mapping(monkeypatch) -> No
     assert all(
         unmapped.field_name != "buyer_name" for unmapped in result.unmapped_fields
     )
+
+
+def test_learned_mapping_memory_promotes_human_confirmed_standard(monkeypatch) -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="order_header",
+            fields=[FieldMeta(field_name="buyer_name", field_name_cn="buyer name")],
+        )
+    ]
+
+    monkeypatch.setattr(
+        standard_mapping_recommendation,
+        "load_standard_mapping_memory",
+        lambda: pd.DataFrame(
+            [
+                {
+                    "field_key": "buyer_name",
+                    "table_name": "order_header",
+                    "field_name": "buyer_name",
+                    "standard_code": "customer_name",
+                    "source": "test_review",
+                    "review_action": "edit",
+                    "reviewed_at": "2026-06-01T10:00:00",
+                }
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        standard_mapping_recommendation,
+        "semantic_match_source_fields",
+        lambda fields, candidate_limit=None: [None for _ in fields],
+    )
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    assert result.mapping_results
+    mapping = result.mapping_results[0]
+    assert mapping.recommended_standard_code == "customer_name"
+    assert mapping.match_score == 1.15
+    assert "learned mapping memory matched" in mapping.match_reason
+    assert mapping.top_candidates[0]["standard_code"] == "customer_name"
 
 
 def test_standard_mapping_flags_type_conflict_for_manual_review() -> None:

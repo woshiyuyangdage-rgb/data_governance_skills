@@ -18,6 +18,11 @@ from app.core.rules.config_loader import (
     get_stg_rules_config,
 )
 from app.core.skills.base_skill import BaseSkill
+from app.core.skills.stg_standardization_skill.stg_learning import (
+    apply_learned_stg_field,
+    load_stg_field_memory,
+    lookup_learned_stg_field,
+)
 
 
 class StgStructureSuggestionInput(BaseModel):
@@ -314,6 +319,7 @@ class StgStructureSuggestionSkill(BaseSkill):
         }
         mapping_lookup = self.collect_mapping_lookup(payload.mapping_results)
         standard_lookup = self.collect_standard_lookup()
+        learned_stg_memory = load_stg_field_memory()
 
         stg_table_suggestions: list[StgTableSuggestion] = []
         field_suggestions_flat: list[StgFieldSuggestion] = []
@@ -390,6 +396,14 @@ class StgStructureSuggestionSkill(BaseSkill):
                         ),
                     )
 
+                learned_stg_field = lookup_learned_stg_field(
+                    field.field_name,
+                    learned_stg_memory,
+                )
+                field_suggestion = apply_learned_stg_field(
+                    field_suggestion,
+                    learned_stg_field,
+                )
                 table_field_suggestions.append(field_suggestion)
                 field_suggestions_flat.append(field_suggestion)
 
