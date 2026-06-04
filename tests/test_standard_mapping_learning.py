@@ -4,9 +4,11 @@ from pathlib import Path
 
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
+    explain_standard_mapping_memory_lookup,
     learn_standard_mapping_memory_from_review_records,
     load_standard_mapping_memory,
     lookup_learned_standard_mapping,
+    summarize_standard_mapping_memory,
 )
 
 
@@ -43,11 +45,18 @@ def test_learning_memory_saves_only_confirmed_mapping_reviews(tmp_path: Path) ->
     assert summary.learned_count == 1
     assert len(memory) == 1
     assert memory.iloc[0]["field_key"] == "buyer_name"
+    assert memory.iloc[0]["table_key"] == "order_header"
     assert memory.iloc[0]["standard_code"] == "customer_name"
-    assert lookup_learned_standard_mapping("buyer_name", memory).standard_code == (
-        "customer_name"
-    )
-    assert lookup_learned_standard_mapping("buyer_status", memory) is None
+    assert lookup_learned_standard_mapping(
+        "buyer_name",
+        memory,
+        table_name="order_header",
+    ).standard_code == "customer_name"
+    assert lookup_learned_standard_mapping(
+        "buyer_status",
+        memory,
+        table_name="order_header",
+    ) is None
 
 
 def test_learning_memory_keeps_latest_mapping_for_same_field(tmp_path: Path) -> None:
@@ -80,6 +89,196 @@ def test_learning_memory_keeps_latest_mapping_for_same_field(tmp_path: Path) -> 
     memory = load_standard_mapping_memory(tmp_path / "standard_mapping_memory.csv")
 
     assert len(memory) == 1
-    assert lookup_learned_standard_mapping("buyer_name", memory).standard_code == (
-        "customer_name"
+    assert lookup_learned_standard_mapping(
+        "buyer_name",
+        memory,
+        table_name="order_header",
+    ).standard_code == "customer_name"
+
+
+def test_learning_memory_does_not_cross_reuse_generic_field_names(
+    tmp_path: Path,
+) -> None:
+    summary = learn_standard_mapping_memory_from_review_records(
+        [
+            MappingReviewRecord(
+                table_name="contract_info",
+                field_name="status",
+                original_recommended_standard_code="status_code",
+                final_standard_code="contract_status",
+                review_action="edit",
+                reviewer_note=None,
+                reviewed_at="2026-06-01T10:00:00",
+                source="test",
+            )
+        ],
+        output_dir=tmp_path,
     )
+    memory = load_standard_mapping_memory(Path(summary.output_path))
+
+    same_table_match = lookup_learned_standard_mapping(
+        "status",
+        memory,
+        table_name="contract_info",
+    )
+    cross_table_match = lookup_learned_standard_mapping(
+        "status",
+        memory,
+        table_name="customer_profile",
+    )
+
+    assert same_table_match is not None
+    assert same_table_match.match_scope == "table_field"
+    assert cross_table_match is None
+    blocked_lookup = explain_standard_mapping_memory_lookup(
+        "status",
+        memory,
+        table_name="customer_profile",
+    )
+    assert blocked_lookup.status == "generic_cross_table_blocked"
+    assert "blocked_generic_cross_table" in " ".join(blocked_lookup.evidence)
+
+
+def test_learning_memory_can_cross_reuse_specific_field_names(
+    tmp_path: Path,
+) -> None:
+    summary = learn_standard_mapping_memory_from_review_records(
+        [
+            MappingReviewRecord(
+                table_name="order_header",
+                field_name="buyer_name",
+                original_recommended_standard_code="customer_name",
+                final_standard_code="customer_name",
+                review_action="accept",
+                reviewer_note=None,
+                reviewed_at="2026-06-01T10:00:00",
+                source="test",
+            )
+        ],
+        output_dir=tmp_path,
+    )
+    memory = load_standard_mapping_memory(Path(summary.output_path))
+
+    learned = lookup_learned_standard_mapping(
+        "buyer_name",
+        memory,
+        table_name="invoice_header",
+    )
+
+    assert learned is not None
+    assert learned.standard_code == "customer_name"
+    assert learned.match_scope == "field"
+    lookup = explain_standard_mapping_memory_lookup(
+        "buyer_name",
+        memory,
+        table_name="invoice_header",
+    )
+    assert lookup.status == "matched"
+    assert lookup.learned_mapping is not None
+    assert "learned_mapping_memory=matched" in lookup.evidence
+
+
+def test_learning_memory_blocks_cross_reuse_when_field_history_conflicts(
+    tmp_path: Path,
+) -> None:
+    summary = learn_standard_mapping_memory_from_review_records(
+        [
+            MappingReviewRecord(
+                table_name="order_header",
+                field_name="buyer_name",
+                original_recommended_standard_code="customer_name",
+                final_standard_code="customer_name",
+                review_action="accept",
+                reviewer_note=None,
+                reviewed_at="2026-06-01T10:00:00",
+                source="test",
+            ),
+            MappingReviewRecord(
+                table_name="merchant_order",
+                field_name="buyer_name",
+                original_recommended_standard_code="customer_name",
+                final_standard_code="merchant_name",
+                review_action="edit",
+                reviewer_note=None,
+                reviewed_at="2026-06-01T10:01:00",
+                source="test",
+            ),
+        ],
+        output_dir=tmp_path,
+    )
+    memory = load_standard_mapping_memory(Path(summary.output_path))
+
+    same_table = lookup_learned_standard_mapping(
+        "buyer_name",
+        memory,
+        table_name="order_header",
+    )
+    cross_table = lookup_learned_standard_mapping(
+        "buyer_name",
+        memory,
+        table_name="invoice_header",
+    )
+
+    assert same_table is not None
+    assert same_table.standard_code == "customer_name"
+    assert same_table.match_scope == "table_field"
+    assert same_table.conflict_count == 1
+    assert cross_table is None
+    blocked_lookup = explain_standard_mapping_memory_lookup(
+        "buyer_name",
+        memory,
+        table_name="invoice_header",
+    )
+    assert blocked_lookup.status == "conflict_cross_table_blocked"
+    assert blocked_lookup.conflict_count == 1
+    assert "blocked_conflict_cross_table" in " ".join(blocked_lookup.evidence)
+
+
+def test_standard_mapping_memory_health_flags_conflicts_and_invalid_rows() -> None:
+    import pandas as pd
+
+    memory = pd.DataFrame(
+        [
+            {
+                "table_key": "order_header",
+                "field_key": "buyer_name",
+                "table_name": "order_header",
+                "field_name": "buyer_name",
+                "standard_code": "customer_name",
+            },
+            {
+                "table_key": "merchant_order",
+                "field_key": "buyer_name",
+                "table_name": "merchant_order",
+                "field_name": "buyer_name",
+                "standard_code": "merchant_name",
+            },
+            {
+                "table_key": "contract_info",
+                "field_key": "status",
+                "table_name": "contract_info",
+                "field_name": "status",
+                "standard_code": "status_code",
+            },
+            {
+                "table_key": "",
+                "field_key": "broken_field",
+                "table_name": "broken",
+                "field_name": "broken_field",
+                "standard_code": "",
+            },
+        ]
+    )
+
+    health = summarize_standard_mapping_memory(memory)
+
+    assert health.memory_count == 4
+    assert health.field_key_count == 3
+    assert health.table_key_count == 3
+    assert health.reusable_field_count == 1
+    assert health.generic_field_count == 1
+    assert health.conflict_field_count == 1
+    assert health.invalid_record_count == 1
+    assert health.conflict_field_keys == ("buyer_name",)
+    assert "status" in health.generic_field_keys
+    assert "missing_table:broken_field" in health.invalid_record_keys

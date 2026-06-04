@@ -399,6 +399,7 @@ class StgStructureSuggestionSkill(BaseSkill):
                 learned_stg_field = lookup_learned_stg_field(
                     field.field_name,
                     learned_stg_memory,
+                    source_table_name=table.table_name,
                 )
                 field_suggestion = apply_learned_stg_field(
                     field_suggestion,

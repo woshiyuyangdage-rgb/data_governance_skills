@@ -147,6 +147,7 @@ def test_learned_mapping_memory_promotes_human_confirmed_standard(monkeypatch) -
         lambda: pd.DataFrame(
             [
                 {
+                    "table_key": "order_header",
                     "field_key": "buyer_name",
                     "table_name": "order_header",
                     "field_name": "buyer_name",

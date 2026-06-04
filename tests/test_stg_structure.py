@@ -156,6 +156,7 @@ def test_stg_structure_uses_learned_review_memory(monkeypatch) -> None:
         lambda: pd.DataFrame(
             [
                 {
+                    "table_key": "ods_customer_snapshot",
                     "field_key": "snapshot_dt",
                     "source_table_name": "ods_customer_snapshot",
                     "source_field_name": "snapshot_dt",

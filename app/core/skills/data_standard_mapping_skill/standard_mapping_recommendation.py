@@ -25,8 +25,8 @@ from app.core.skills.data_standard_mapping_skill.semantic_index import (
 )
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     LearnedStandardMapping,
+    explain_standard_mapping_memory_lookup,
     load_standard_mapping_memory,
-    lookup_learned_standard_mapping,
 )
 
 EMPTY_TEXT_VALUES = {"", "nan", "none", "null"}
@@ -577,6 +577,7 @@ class StandardMappingRecommendationSkill(BaseSkill):
 
         reason = (
             "learned mapping memory matched "
+            f"scope={learned_mapping.match_scope} "
             f"field_key={learned_mapping.field_key} "
             f"source={learned_mapping.source or 'review'} "
             f"action={learned_mapping.review_action or 'unknown'}"
@@ -922,14 +923,16 @@ class StandardMappingRecommendationSkill(BaseSkill):
                     standard_candidates,
                     semantic_match,
                 )
-                learned_mapping = lookup_learned_standard_mapping(
+                learned_lookup = explain_standard_mapping_memory_lookup(
                     field.field_name,
                     learned_mapping_memory,
+                    table_name=table.table_name,
                 )
+                learning_evidence = list(learned_lookup.evidence)
                 ranked_candidates = self.promote_learned_standard_candidate(
                     ranked_candidates,
                     standard_candidates,
-                    learned_mapping,
+                    learned_lookup.learned_mapping,
                 )
                 top_candidates = ranked_candidates[:3]
 
@@ -961,6 +964,7 @@ class StandardMappingRecommendationSkill(BaseSkill):
                                     else "semantic_retrieval=no candidate above threshold"
                                 ),
                             ]
+                            + learning_evidence
                             + list(field_info["expansion_evidence"]),
                         )
                     )
@@ -978,6 +982,7 @@ class StandardMappingRecommendationSkill(BaseSkill):
                                 f"normalized_tokens={field_info['normalized_tokens']}",
                                 "no standard candidate produced a positive rule-based or semantic score",
                             ]
+                            + learning_evidence
                             + list(field_info["expansion_evidence"]),
                             suggestion=(
                                 "Review whether this field should map to an existing standard "
@@ -1102,7 +1107,9 @@ class StandardMappingRecommendationSkill(BaseSkill):
                             risk_hint=risk_hint,
                             action_suggestion=action_suggestion,
                             requires_manual_review=True,
-                            evidence=top_reasons + list(field_info["expansion_evidence"]),
+                            evidence=top_reasons
+                            + learning_evidence
+                            + list(field_info["expansion_evidence"]),
                         )
                     )
                     issues.append(
@@ -1119,6 +1126,7 @@ class StandardMappingRecommendationSkill(BaseSkill):
                                 f"top_candidate={top_candidate.standard_code}",
                                 f"match_score={top_score}",
                             ]
+                            + learning_evidence
                             + list(field_info["expansion_evidence"]),
                             suggestion=(
                                 "Review the recommended standard candidate and refine either the "
