@@ -31,4 +31,28 @@ CONTROL_PLANE_JOB_ITEMS = [
         "path": "/jobs/config-assets/{asset_name}/publish",
         "description": "Mark one managed governance configuration asset as published.",
     },
+    {
+        "name": "learning_health",
+        "method": "GET",
+        "path": "/jobs/learning-health",
+        "description": "Return local learning-memory health summary for maintenance.",
+    },
+    {
+        "name": "learning_health_details",
+        "method": "GET",
+        "path": "/jobs/learning-health/details",
+        "description": "Return learned-memory conflict, generic, and invalid record details.",
+    },
+    {
+        "name": "prune_invalid_learning_memory",
+        "method": "POST",
+        "path": "/jobs/learning-health/prune-invalid",
+        "description": "Remove clearly invalid learned-memory records from local stores.",
+    },
+    {
+        "name": "clear_learning_memory_field_key",
+        "method": "POST",
+        "path": "/jobs/learning-health/clear-field-key",
+        "description": "Clear learned-memory records for one field key in one memory domain.",
+    },
 ]

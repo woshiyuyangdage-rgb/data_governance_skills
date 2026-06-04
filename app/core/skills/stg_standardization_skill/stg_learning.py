@@ -228,6 +228,135 @@ def summarize_stg_field_memory(
     )
 
 
+def stg_field_memory_details(
+    memory: pd.DataFrame | None = None,
+) -> dict[str, object]:
+    """Return conflict, generic, and invalid learned STG records."""
+    dataframe = memory if memory is not None else load_stg_field_memory()
+    if dataframe is None or dataframe.empty:
+        return {
+            "conflict_records": [],
+            "generic_records": [],
+            "invalid_records": [],
+        }
+
+    prepared = dataframe.copy()
+    for column in STG_FIELD_MEMORY_COLUMNS:
+        if column not in prepared.columns:
+            prepared[column] = None
+    prepared = prepared[STG_FIELD_MEMORY_COLUMNS].astype(object)
+    prepared = prepared.where(pd.notna(prepared), None)
+
+    missing_field = ~prepared["field_key"].map(
+        lambda value: bool(str(value or "").strip())
+    )
+    missing_table = ~prepared["table_key"].map(
+        lambda value: bool(str(value or "").strip())
+    )
+    missing_target = ~prepared["final_stg_field_name"].map(
+        lambda value: bool(str(value or "").strip())
+    )
+    invalid_rows = prepared[missing_field | missing_table | missing_target]
+    valid_rows = prepared[~missing_field & ~missing_target]
+
+    conflict_field_keys = {
+        str(field_key)
+        for field_key, group in valid_rows.groupby("field_key")
+        if len(_distinct_targets(group, "final_stg_field_name")) > 1
+    }
+    generic_field_keys = {
+        str(field_key)
+        for field_key in valid_rows["field_key"].tolist()
+        if str(field_key or "").strip()
+        and not _allows_cross_table_reuse(str(field_key))
+    }
+
+    return {
+        "conflict_records": valid_rows[
+            valid_rows["field_key"].astype(str).isin(conflict_field_keys)
+        ].to_dict("records"),
+        "generic_records": valid_rows[
+            valid_rows["field_key"].astype(str).isin(generic_field_keys)
+        ].to_dict("records"),
+        "invalid_records": invalid_rows.to_dict("records"),
+    }
+
+
+def prune_invalid_stg_field_memory(
+    path: str | Path | None = None,
+) -> dict[str, object]:
+    """Remove invalid learned STG records from local memory."""
+    memory_path = Path(path or STG_FIELD_MEMORY_PATH)
+    if not memory_path.exists():
+        return {
+            "path": str(memory_path),
+            "before_count": 0,
+            "removed_count": 0,
+            "after_count": 0,
+        }
+
+    dataframe = _read_memory(memory_path)
+    missing_field = ~dataframe["field_key"].map(
+        lambda value: bool(str(value or "").strip())
+    )
+    missing_table = ~dataframe["table_key"].map(
+        lambda value: bool(str(value or "").strip())
+    )
+    missing_target = ~dataframe["final_stg_field_name"].map(
+        lambda value: bool(str(value or "").strip())
+    )
+    invalid_mask = missing_field | missing_table | missing_target
+    cleaned = dataframe[~invalid_mask]
+    cleaned.to_csv(memory_path, index=False, encoding="utf-8")
+    return {
+        "path": str(memory_path),
+        "before_count": len(dataframe),
+        "removed_count": int(invalid_mask.sum()),
+        "after_count": len(cleaned),
+    }
+
+
+def clear_stg_field_memory_by_field_key(
+    field_key: str,
+    path: str | Path | None = None,
+) -> dict[str, object]:
+    """Remove learned STG records for one normalized field key."""
+    normalized_key = stg_field_memory_key(field_key) or str(field_key or "").strip()
+    memory_path = Path(path or STG_FIELD_MEMORY_PATH)
+    if not normalized_key:
+        return {
+            "path": str(memory_path),
+            "field_key": normalized_key,
+            "before_count": 0,
+            "removed_count": 0,
+            "after_count": 0,
+            "status": "missing_field_key",
+        }
+    if not memory_path.exists():
+        return {
+            "path": str(memory_path),
+            "field_key": normalized_key,
+            "before_count": 0,
+            "removed_count": 0,
+            "after_count": 0,
+            "status": "not_found",
+        }
+
+    dataframe = _read_memory(memory_path)
+    remove_mask = dataframe["field_key"].astype(str) == normalized_key
+    cleaned = dataframe[~remove_mask]
+    cleaned.to_csv(memory_path, index=False, encoding="utf-8")
+    removed_count = int(remove_mask.sum())
+    return {
+        "path": str(memory_path),
+        "field_key": normalized_key,
+        "before_count": len(dataframe),
+        "removed_count": removed_count,
+        "after_count": len(cleaned),
+        "status": "cleared" if removed_count else "not_found",
+    }
+
+
 def _record_to_memory_row(record: StgReviewRecord) -> dict[str, object] | None:
     if record.review_action not in LEARNABLE_REVIEW_ACTIONS:
         return None

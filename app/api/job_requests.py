@@ -6,7 +6,10 @@ from app.api.job_requests_backlog import (
     GovernancePortfolioAssessmentRequest,
     ProgressSnapshotRequest,
 )
-from app.api.job_requests_control_plane import ConfigAssetSaveRequest
+from app.api.job_requests_control_plane import (
+    ConfigAssetSaveRequest,
+    LearningMemoryClearRequest,
+)
 from app.api.job_requests_core import (
     FileRunRequest,
     IntentTextRequest,

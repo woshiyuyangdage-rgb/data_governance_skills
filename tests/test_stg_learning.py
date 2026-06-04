@@ -6,11 +6,14 @@ from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_review_record import StgReviewRecord
 from app.core.skills.stg_standardization_skill.stg_learning import (
     apply_learned_stg_field,
+    clear_stg_field_memory_by_field_key,
     explain_stg_memory_lookup,
     learn_stg_memory_from_review_records,
     load_stg_field_memory,
     lookup_learned_stg_field,
+    prune_invalid_stg_field_memory,
     summarize_stg_field_memory,
+    stg_field_memory_details,
 )
 
 
@@ -299,3 +302,91 @@ def test_stg_memory_health_flags_conflicts_and_invalid_rows() -> None:
     assert health.conflict_field_keys == ("buyer_name",)
     assert "status" in health.generic_field_keys
     assert "missing_table:broken_field" in health.invalid_record_keys
+
+
+def test_stg_memory_details_and_prune_invalid(tmp_path: Path) -> None:
+    import pandas as pd
+
+    memory = pd.DataFrame(
+        [
+            {
+                "table_key": "ods_order_header",
+                "field_key": "buyer_name",
+                "source_table_name": "ods_order_header",
+                "source_field_name": "buyer_name",
+                "final_stg_field_name": "customer_name",
+            },
+            {
+                "table_key": "ods_merchant_order",
+                "field_key": "buyer_name",
+                "source_table_name": "ods_merchant_order",
+                "source_field_name": "buyer_name",
+                "final_stg_field_name": "merchant_name",
+            },
+            {
+                "table_key": "contract_info",
+                "field_key": "status",
+                "source_table_name": "contract_info",
+                "source_field_name": "status",
+                "final_stg_field_name": "contract_status_code",
+            },
+            {
+                "table_key": "",
+                "field_key": "broken_field",
+                "source_table_name": "broken",
+                "source_field_name": "broken_field",
+                "final_stg_field_name": "",
+            },
+        ]
+    )
+    details = stg_field_memory_details(memory)
+    memory_path = tmp_path / "stg_field_memory.csv"
+    memory.to_csv(memory_path, index=False, encoding="utf-8")
+
+    prune_result = prune_invalid_stg_field_memory(memory_path)
+    cleaned = load_stg_field_memory(memory_path)
+
+    assert len(details["conflict_records"]) == 2
+    assert len(details["generic_records"]) == 1
+    assert len(details["invalid_records"]) == 1
+    assert prune_result["removed_count"] == 1
+    assert len(cleaned) == 3
+
+
+def test_clear_stg_field_memory_by_field_key(tmp_path: Path) -> None:
+    import pandas as pd
+
+    memory_path = tmp_path / "stg_field_memory.csv"
+    pd.DataFrame(
+        [
+            {
+                "table_key": "ods_order_header",
+                "field_key": "buyer_name",
+                "source_table_name": "ods_order_header",
+                "source_field_name": "buyer_name",
+                "final_stg_field_name": "customer_name",
+            },
+            {
+                "table_key": "ods_merchant_order",
+                "field_key": "buyer_name",
+                "source_table_name": "ods_merchant_order",
+                "source_field_name": "buyer_name",
+                "final_stg_field_name": "merchant_name",
+            },
+            {
+                "table_key": "contract_info",
+                "field_key": "status",
+                "source_table_name": "contract_info",
+                "source_field_name": "status",
+                "final_stg_field_name": "contract_status_code",
+            },
+        ]
+    ).to_csv(memory_path, index=False, encoding="utf-8")
+
+    result = clear_stg_field_memory_by_field_key("buyer_name", memory_path)
+    cleaned = load_stg_field_memory(memory_path)
+
+    assert result["status"] == "cleared"
+    assert result["removed_count"] == 2
+    assert len(cleaned) == 1
+    assert cleaned.iloc[0]["field_key"] == "status"

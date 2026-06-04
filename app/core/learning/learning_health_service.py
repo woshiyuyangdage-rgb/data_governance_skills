@@ -6,11 +6,17 @@ from dataclasses import asdict, dataclass
 
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     StandardMappingMemoryHealth,
+    clear_standard_mapping_memory_by_field_key,
+    prune_invalid_standard_mapping_memory,
     summarize_standard_mapping_memory,
+    standard_mapping_memory_details,
 )
 from app.core.skills.stg_standardization_skill.stg_learning import (
     StgMemoryHealth,
+    clear_stg_field_memory_by_field_key,
+    prune_invalid_stg_field_memory,
     summarize_stg_field_memory,
+    stg_field_memory_details,
 )
 
 
@@ -68,4 +74,40 @@ class LearningHealthService:
             total_conflict_field_count=total_conflict_field_count,
             total_invalid_record_count=total_invalid_record_count,
             summary=summary,
+        )
+
+    def details(self) -> dict[str, object]:
+        """Return learned-memory records that need maintenance attention."""
+        return {
+            "standard_mapping": standard_mapping_memory_details(),
+            "stg_standardization": stg_field_memory_details(),
+        }
+
+    def prune_invalid(self) -> dict[str, object]:
+        """Remove clearly invalid learned-memory records from local CSV stores."""
+        standard_mapping = prune_invalid_standard_mapping_memory()
+        stg_standardization = prune_invalid_stg_field_memory()
+        total_removed = int(standard_mapping["removed_count"]) + int(
+            stg_standardization["removed_count"]
+        )
+        return {
+            "standard_mapping": standard_mapping,
+            "stg_standardization": stg_standardization,
+            "total_removed_count": total_removed,
+            "summary": f"Removed {total_removed} invalid learning-memory records.",
+        }
+
+    def clear_field_key(self, memory_type: str, field_key: str) -> dict[str, object]:
+        """Clear learned memory for one field key in one memory domain."""
+        normalized_type = str(memory_type or "").strip().lower()
+        if normalized_type in {"standard_mapping", "mapping"}:
+            result = clear_standard_mapping_memory_by_field_key(field_key)
+            result["memory_type"] = "standard_mapping"
+            return result
+        if normalized_type in {"stg_standardization", "stg"}:
+            result = clear_stg_field_memory_by_field_key(field_key)
+            result["memory_type"] = "stg_standardization"
+            return result
+        raise ValueError(
+            "memory_type must be one of: standard_mapping, stg_standardization"
         )

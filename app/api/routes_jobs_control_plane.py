@@ -2,19 +2,53 @@
 
 from fastapi import APIRouter, HTTPException
 
-from app.api.job_requests import ConfigAssetSaveRequest
+from app.api.job_requests import ConfigAssetSaveRequest, LearningMemoryClearRequest
 from app.core.control_plane.control_plane_service import ControlPlaneService
+from app.core.learning.learning_health_service import LearningHealthService
 from app.core.models.config_edit_result import ConfigEditResult
 from app.core.models.validation_result import ValidationResult
 
 router = APIRouter()
 control_plane_service = ControlPlaneService()
+learning_health_service = LearningHealthService()
 
 
 @router.get("/config-assets", response_model=list[dict[str, object]])
 def list_config_assets_route() -> list[dict[str, object]]:
     """Return managed control-plane assets with their current status."""
     return control_plane_service.list_assets_with_status()
+
+
+@router.get("/learning-health", response_model=dict[str, object])
+def learning_health_route() -> dict[str, object]:
+    """Return local learning-memory health summary."""
+    return learning_health_service.summarize().model_dump()
+
+
+@router.get("/learning-health/details", response_model=dict[str, object])
+def learning_health_details_route() -> dict[str, object]:
+    """Return learned-memory records that need maintenance attention."""
+    return learning_health_service.details()
+
+
+@router.post("/learning-health/prune-invalid", response_model=dict[str, object])
+def prune_invalid_learning_memory_route() -> dict[str, object]:
+    """Remove clearly invalid learned-memory records from local stores."""
+    return learning_health_service.prune_invalid()
+
+
+@router.post("/learning-health/clear-field-key", response_model=dict[str, object])
+def clear_learning_memory_field_key_route(
+    payload: LearningMemoryClearRequest,
+) -> dict[str, object]:
+    """Clear learned-memory records for one field key in one memory domain."""
+    try:
+        return learning_health_service.clear_field_key(
+            payload.memory_type,
+            payload.field_key,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.get("/config-assets/{asset_name}", response_model=dict[str, object])

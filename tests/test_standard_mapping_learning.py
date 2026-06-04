@@ -4,11 +4,14 @@ from pathlib import Path
 
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
+    clear_standard_mapping_memory_by_field_key,
     explain_standard_mapping_memory_lookup,
     learn_standard_mapping_memory_from_review_records,
     load_standard_mapping_memory,
     lookup_learned_standard_mapping,
+    prune_invalid_standard_mapping_memory,
     summarize_standard_mapping_memory,
+    standard_mapping_memory_details,
 )
 
 
@@ -282,3 +285,91 @@ def test_standard_mapping_memory_health_flags_conflicts_and_invalid_rows() -> No
     assert health.conflict_field_keys == ("buyer_name",)
     assert "status" in health.generic_field_keys
     assert "missing_table:broken_field" in health.invalid_record_keys
+
+
+def test_standard_mapping_memory_details_and_prune_invalid(tmp_path: Path) -> None:
+    import pandas as pd
+
+    memory = pd.DataFrame(
+        [
+            {
+                "table_key": "order_header",
+                "field_key": "buyer_name",
+                "table_name": "order_header",
+                "field_name": "buyer_name",
+                "standard_code": "customer_name",
+            },
+            {
+                "table_key": "merchant_order",
+                "field_key": "buyer_name",
+                "table_name": "merchant_order",
+                "field_name": "buyer_name",
+                "standard_code": "merchant_name",
+            },
+            {
+                "table_key": "contract_info",
+                "field_key": "status",
+                "table_name": "contract_info",
+                "field_name": "status",
+                "standard_code": "status_code",
+            },
+            {
+                "table_key": "",
+                "field_key": "broken_field",
+                "table_name": "broken",
+                "field_name": "broken_field",
+                "standard_code": "",
+            },
+        ]
+    )
+    details = standard_mapping_memory_details(memory)
+    memory_path = tmp_path / "standard_mapping_memory.csv"
+    memory.to_csv(memory_path, index=False, encoding="utf-8")
+
+    prune_result = prune_invalid_standard_mapping_memory(memory_path)
+    cleaned = load_standard_mapping_memory(memory_path)
+
+    assert len(details["conflict_records"]) == 2
+    assert len(details["generic_records"]) == 1
+    assert len(details["invalid_records"]) == 1
+    assert prune_result["removed_count"] == 1
+    assert len(cleaned) == 3
+
+
+def test_clear_standard_mapping_memory_by_field_key(tmp_path: Path) -> None:
+    import pandas as pd
+
+    memory_path = tmp_path / "standard_mapping_memory.csv"
+    pd.DataFrame(
+        [
+            {
+                "table_key": "order_header",
+                "field_key": "buyer_name",
+                "table_name": "order_header",
+                "field_name": "buyer_name",
+                "standard_code": "customer_name",
+            },
+            {
+                "table_key": "merchant_order",
+                "field_key": "buyer_name",
+                "table_name": "merchant_order",
+                "field_name": "buyer_name",
+                "standard_code": "merchant_name",
+            },
+            {
+                "table_key": "contract_info",
+                "field_key": "status",
+                "table_name": "contract_info",
+                "field_name": "status",
+                "standard_code": "status_code",
+            },
+        ]
+    ).to_csv(memory_path, index=False, encoding="utf-8")
+
+    result = clear_standard_mapping_memory_by_field_key("buyer_name", memory_path)
+    cleaned = load_standard_mapping_memory(memory_path)
+
+    assert result["status"] == "cleared"
+    assert result["removed_count"] == 2
+    assert len(cleaned) == 1
+    assert cleaned.iloc[0]["field_key"] == "status"
