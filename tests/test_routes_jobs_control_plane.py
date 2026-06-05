@@ -5,6 +5,7 @@ from pathlib import Path
 from app.api.routes_jobs import (
     ConfigAssetSaveRequest,
     LearningMemoryClearRequest,
+    LearningMemoryRestoreRequest,
     clear_learning_memory_field_key_route,
     create_learning_memory_backup_route,
     get_config_asset_route,
@@ -14,8 +15,10 @@ from app.api.routes_jobs import (
     list_config_assets_route,
     prune_invalid_learning_memory_route,
     publish_config_asset_route,
+    restore_learning_memory_backup_route,
     save_config_asset_route,
     validate_config_asset_route,
+    validate_learning_memory_backup_route,
 )
 from app.api import routes_jobs_control_plane
 
@@ -77,6 +80,21 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
                 }
             ]
 
+        def restore_backup(self, backup_id: str):
+            return {
+                "backup_id": backup_id,
+                "restored_file_count": 2,
+                "skipped_file_count": 0,
+            }
+
+        def validate_backup(self, backup_id: str):
+            return {
+                "backup_id": backup_id,
+                "is_valid": True,
+                "restorable_file_count": 2,
+                "issue_count": 0,
+            }
+
         def clear_field_key(self, memory_type: str, field_key: str):
             return {
                 "memory_type": memory_type,
@@ -94,6 +112,16 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     details = learning_health_details_route()
     backup_result = create_learning_memory_backup_route()
     backups = list_learning_memory_backups_route()
+    restore_result = restore_learning_memory_backup_route(
+        LearningMemoryRestoreRequest(
+            backup_id="learning_memory_20260605_010203",
+        )
+    )
+    validation_result = validate_learning_memory_backup_route(
+        LearningMemoryRestoreRequest(
+            backup_id="learning_memory_20260605_010203",
+        )
+    )
     prune_result = prune_invalid_learning_memory_route()
     clear_result = clear_learning_memory_field_key_route(
         LearningMemoryClearRequest(
@@ -105,6 +133,8 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     assert details["standard_mapping"]["invalid_records"][0]["field_key"] == "broken"
     assert backup_result["backed_up_file_count"] == 2
     assert backups[0]["backup_id"] == "learning_memory_20260605_010203"
+    assert restore_result["restored_file_count"] == 2
+    assert validation_result["is_valid"] is True
     assert prune_result["total_removed_count"] == 1
     assert clear_result["status"] == "cleared"
     assert clear_result["field_key"] == "buyer_name"

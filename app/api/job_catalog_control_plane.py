@@ -56,6 +56,18 @@ CONTROL_PLANE_JOB_ITEMS = [
         "description": "Return local learning-memory backup packages, newest first.",
     },
     {
+        "name": "restore_learning_memory_backup",
+        "method": "POST",
+        "path": "/jobs/learning-health/backups/restore",
+        "description": "Restore local learning-memory files from one backup package.",
+    },
+    {
+        "name": "validate_learning_memory_backup",
+        "method": "POST",
+        "path": "/jobs/learning-health/backups/validate",
+        "description": "Validate one local learning-memory backup package before restore.",
+    },
+    {
         "name": "prune_invalid_learning_memory",
         "method": "POST",
         "path": "/jobs/learning-health/prune-invalid",

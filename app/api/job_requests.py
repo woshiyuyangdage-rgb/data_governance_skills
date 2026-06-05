@@ -9,6 +9,7 @@ from app.api.job_requests_backlog import (
 from app.api.job_requests_control_plane import (
     ConfigAssetSaveRequest,
     LearningMemoryClearRequest,
+    LearningMemoryRestoreRequest,
 )
 from app.api.job_requests_core import (
     FileRunRequest,

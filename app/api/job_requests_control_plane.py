@@ -14,3 +14,9 @@ class LearningMemoryClearRequest(BaseModel):
 
     memory_type: str
     field_key: str
+
+
+class LearningMemoryRestoreRequest(BaseModel):
+    """Request body for restoring learned memory from a backup package."""
+
+    backup_id: str

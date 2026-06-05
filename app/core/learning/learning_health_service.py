@@ -7,6 +7,8 @@ from dataclasses import asdict, dataclass
 from app.core.learning.learning_memory_backup import (
     create_learning_memory_backup,
     list_learning_memory_backups,
+    restore_learning_memory_backup,
+    validate_learning_memory_backup,
 )
 from app.core.parser.metadata_learning import (
     MetadataCompletionMemoryHealth,
@@ -125,6 +127,14 @@ class LearningHealthService:
     def list_backups(self) -> list[dict[str, object]]:
         """Return existing learning-memory backups, newest first."""
         return list_learning_memory_backups()
+
+    def restore_backup(self, backup_id: str) -> dict[str, object]:
+        """Restore learning-memory files from one local backup package."""
+        return restore_learning_memory_backup(backup_id)
+
+    def validate_backup(self, backup_id: str) -> dict[str, object]:
+        """Validate one local learning-memory backup package."""
+        return validate_learning_memory_backup(backup_id)
 
     def prune_invalid(self) -> dict[str, object]:
         """Remove clearly invalid learned-memory records from local CSV stores."""

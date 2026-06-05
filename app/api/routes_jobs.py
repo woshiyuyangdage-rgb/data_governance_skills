@@ -19,6 +19,7 @@ from app.api.job_requests import (
     GovernanceWorkPackageBuildRequest,
     IntentTextRequest,
     LearningMemoryClearRequest,
+    LearningMemoryRestoreRequest,
     ManualMetadataRequest,
     ManualMetadataRunRequest,
     NativeToolInvokeRequest,
@@ -59,9 +60,11 @@ from app.api.routes_jobs_control_plane import (
     list_config_assets_route,
     prune_invalid_learning_memory_route,
     publish_config_asset_route,
+    restore_learning_memory_backup_route,
     router as control_plane_router,
     save_config_asset_route,
     validate_config_asset_route,
+    validate_learning_memory_backup_route,
 )
 from app.api.routes_jobs_delivery import (
     assess_governance_readiness_route,
@@ -130,6 +133,7 @@ __all__ = [
     "GovernanceWorkPackageBuildRequest",
     "IntentTextRequest",
     "LearningMemoryClearRequest",
+    "LearningMemoryRestoreRequest",
     "ManualMetadataRequest",
     "ManualMetadataRunRequest",
     "NativeToolInvokeRequest",
@@ -188,6 +192,8 @@ __all__ = [
     "run_manual_metadata_route",
     "save_config_asset_route",
     "save_manual_metadata_route",
+    "restore_learning_memory_backup_route",
     "update_governance_backlog_status_route",
     "validate_config_asset_route",
+    "validate_learning_memory_backup_route",
 ]

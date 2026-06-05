@@ -234,14 +234,37 @@ def test_learning_health_service_creates_and_lists_backups(monkeypatch) -> None:
             }
         ],
     )
+    monkeypatch.setattr(
+        learning_health_service,
+        "restore_learning_memory_backup",
+        lambda backup_id: {
+            "backup_id": backup_id,
+            "restored_file_count": 2,
+            "skipped_file_count": 0,
+        },
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "validate_learning_memory_backup",
+        lambda backup_id: {
+            "backup_id": backup_id,
+            "is_valid": True,
+            "restorable_file_count": 2,
+            "issue_count": 0,
+        },
+    )
 
     service = LearningHealthService()
     backup = service.create_backup()
     backups = service.list_backups()
+    restore_result = service.restore_backup("learning_memory_20260605_010203")
+    validation = service.validate_backup("learning_memory_20260605_010203")
 
     assert backup["backup_id"] == "learning_memory_20260605_010203"
     assert backup["backed_up_file_count"] == 3
     assert backups[0]["missing_file_count"] == 1
+    assert restore_result["restored_file_count"] == 2
+    assert validation["is_valid"] is True
 
 
 def test_learning_health_service_rejects_unknown_memory_type() -> None:

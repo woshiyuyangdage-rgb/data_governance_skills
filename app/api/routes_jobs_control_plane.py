@@ -2,7 +2,11 @@
 
 from fastapi import APIRouter, HTTPException
 
-from app.api.job_requests import ConfigAssetSaveRequest, LearningMemoryClearRequest
+from app.api.job_requests import (
+    ConfigAssetSaveRequest,
+    LearningMemoryClearRequest,
+    LearningMemoryRestoreRequest,
+)
 from app.core.control_plane.control_plane_service import ControlPlaneService
 from app.core.learning.learning_health_service import LearningHealthService
 from app.core.models.config_edit_result import ConfigEditResult
@@ -41,6 +45,28 @@ def create_learning_memory_backup_route() -> dict[str, object]:
 def list_learning_memory_backups_route() -> list[dict[str, object]]:
     """Return local learning-memory backup packages, newest first."""
     return learning_health_service.list_backups()
+
+
+@router.post("/learning-health/backups/restore", response_model=dict[str, object])
+def restore_learning_memory_backup_route(
+    payload: LearningMemoryRestoreRequest,
+) -> dict[str, object]:
+    """Restore local learning-memory files from one backup package."""
+    try:
+        return learning_health_service.restore_backup(payload.backup_id)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/learning-health/backups/validate", response_model=dict[str, object])
+def validate_learning_memory_backup_route(
+    payload: LearningMemoryRestoreRequest,
+) -> dict[str, object]:
+    """Validate one local learning-memory backup package before restore."""
+    try:
+        return learning_health_service.validate_backup(payload.backup_id)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/learning-health/prune-invalid", response_model=dict[str, object])
