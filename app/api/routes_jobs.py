@@ -51,9 +51,11 @@ from app.api.routes_jobs_core import (
 )
 from app.api.routes_jobs_control_plane import (
     clear_learning_memory_field_key_route,
+    create_learning_memory_backup_route,
     get_config_asset_route,
     learning_health_details_route,
     learning_health_route,
+    list_learning_memory_backups_route,
     list_config_assets_route,
     prune_invalid_learning_memory_route,
     publish_config_asset_route,
@@ -150,6 +152,7 @@ __all__ = [
     "call_tool_route",
     "capability_manifest_route",
     "clear_learning_memory_field_key_route",
+    "create_learning_memory_backup_route",
     "execution_package_summary_route",
     "export_confirmed_quality_rules_route",
     "export_execution_ready_package_route",
@@ -167,6 +170,7 @@ __all__ = [
     "learning_health_details_route",
     "learning_health_route",
     "list_config_assets_route",
+    "list_learning_memory_backups_route",
     "list_jobs",
     "list_recent_traces_route",
     "list_tools_route",

@@ -42,6 +42,19 @@ class LearnedQualityRuleMatch:
     evidence_items: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class QualityRuleLearningHealth:
+    """Health summary for quality-rule association learning."""
+
+    enabled: bool = True
+    dependency_available: bool = False
+    accepted_record_count: int = 0
+    min_records: int = 3
+    association_rule_count: int = 0
+    learned_rule_types: tuple[str, ...] = ()
+    status: str = "dependency_unavailable"
+
+
 def quality_rule_learning_policy() -> dict[str, object]:
     """Return association-rule learning configuration."""
     config = get_quality_review_policies_config()
@@ -53,6 +66,10 @@ def association_rule_learning_enabled() -> bool:
     """Return whether historical quality-rule learning is enabled and available."""
     policy = quality_rule_learning_policy()
     return bool(policy.get("enabled", True)) and fpgrowth is not None and association_rules is not None
+
+
+def _dependency_available() -> bool:
+    return fpgrowth is not None and association_rules is not None
 
 
 def _safe_int(value: object, default: int) -> int:
@@ -123,6 +140,71 @@ def _record_items(record: QualityRuleReviewRecord) -> tuple[str, ...]:
     return tuple([*context_items, f"{RULE_ITEM_PREFIX}{record.rule_type.strip().lower()}"])
 
 
+def _accepted_learning_records(
+    records: list[QualityRuleReviewRecord],
+) -> list[QualityRuleReviewRecord]:
+    return [
+        record
+        for record in records
+        if str(record.review_action).strip() in ACCEPTED_REVIEW_ACTIONS
+        and str(record.rule_type).strip()
+    ]
+
+
+def summarize_quality_rule_learning(
+    records: list[QualityRuleReviewRecord] | None = None,
+    associations: Iterable[dict[str, object]] | None = None,
+) -> QualityRuleLearningHealth:
+    """Return a maintenance-friendly summary for quality-rule learning."""
+    policy = quality_rule_learning_policy()
+    enabled = bool(policy.get("enabled", True))
+    dependency_available = _dependency_available()
+    min_records = _safe_int(policy.get("min_records", 3), 3)
+    review_records = records if records is not None else load_quality_rule_overrides()
+    accepted_records = _accepted_learning_records(review_records)
+
+    if associations is not None:
+        association_payload = tuple(associations)
+    elif enabled and dependency_available and len(accepted_records) >= min_records:
+        association_payload = (
+            tuple(mine_quality_rule_associations(review_records))
+            if records is not None
+            else load_quality_rule_associations()
+        )
+    else:
+        association_payload = ()
+
+    learned_rule_types = tuple(
+        sorted(
+            {
+                str(rule.get("rule_type") or "").strip()
+                for rule in association_payload
+                if str(rule.get("rule_type") or "").strip()
+            }
+        )
+    )
+    if not enabled:
+        status = "disabled"
+    elif not dependency_available:
+        status = "dependency_unavailable"
+    elif len(accepted_records) < min_records:
+        status = "insufficient_records"
+    elif not association_payload:
+        status = "no_associations"
+    else:
+        status = "active"
+
+    return QualityRuleLearningHealth(
+        enabled=enabled,
+        dependency_available=dependency_available,
+        accepted_record_count=len(accepted_records),
+        min_records=min_records,
+        association_rule_count=len(association_payload),
+        learned_rule_types=learned_rule_types,
+        status=status,
+    )
+
+
 def _one_hot_transactions(transactions: list[tuple[str, ...]]) -> pd.DataFrame:
     item_universe = sorted({item for transaction in transactions for item in transaction})
     rows = [
@@ -145,12 +227,7 @@ def mine_quality_rule_associations(
     min_confidence = _safe_float(policy.get("min_confidence", 0.8), 0.8)
 
     records = records if records is not None else load_quality_rule_overrides()
-    accepted_records = [
-        record
-        for record in records
-        if str(record.review_action).strip() in ACCEPTED_REVIEW_ACTIONS
-        and str(record.rule_type).strip()
-    ]
+    accepted_records = _accepted_learning_records(records)
     if len(accepted_records) < min_records:
         return []
 

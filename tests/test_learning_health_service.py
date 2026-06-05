@@ -2,6 +2,10 @@
 
 from app.core.learning import learning_health_service
 from app.core.learning.learning_health_service import LearningHealthService
+from app.core.parser.metadata_learning import MetadataCompletionMemoryHealth
+from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
+    QualityRuleLearningHealth,
+)
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     StandardMappingMemoryHealth,
 )
@@ -41,16 +45,50 @@ def test_learning_health_service_summarizes_all_learning_memories(monkeypatch) -
             invalid_record_keys=(),
         ),
     )
+    monkeypatch.setattr(
+        learning_health_service,
+        "summarize_metadata_completion_memory",
+        lambda: MetadataCompletionMemoryHealth(
+            field_memory_count=5,
+            table_memory_count=2,
+            field_key_count=4,
+            table_key_count=2,
+            conflict_field_key_count=1,
+            conflict_table_key_count=1,
+            invalid_field_record_count=2,
+            invalid_table_record_count=1,
+            conflict_field_keys=("buyer_name",),
+            conflict_table_keys=("customer_master",),
+            invalid_field_record_keys=("customer_master:broken_field",),
+            invalid_table_record_keys=("broken_table",),
+        ),
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "summarize_quality_rule_learning",
+        lambda: QualityRuleLearningHealth(
+            enabled=True,
+            dependency_available=True,
+            accepted_record_count=6,
+            min_records=3,
+            association_rule_count=2,
+            learned_rule_types=("not_null", "numeric_range"),
+            status="active",
+        ),
+    )
 
     overview = LearningHealthService().summarize()
     payload = overview.model_dump()
 
-    assert overview.total_memory_count == 7
-    assert overview.total_conflict_field_count == 2
-    assert overview.total_invalid_record_count == 1
-    assert "7 records" in overview.summary
+    assert overview.total_memory_count == 14
+    assert overview.total_conflict_field_count == 3
+    assert overview.total_invalid_record_count == 4
+    assert "14 records" in overview.summary
+    assert "Quality-rule learning is active" in overview.summary
     assert payload["standard_mapping"]["memory_count"] == 3
     assert payload["stg_standardization"]["memory_count"] == 4
+    assert payload["metadata_completion"]["field_memory_count"] == 5
+    assert payload["quality_rules"]["association_rule_count"] == 2
 
 
 def test_learning_health_service_returns_details_and_prunes_invalid(
@@ -76,6 +114,21 @@ def test_learning_health_service_returns_details_and_prunes_invalid(
     )
     monkeypatch.setattr(
         learning_health_service,
+        "metadata_completion_memory_details",
+        lambda: {
+            "field_conflict_records": [{"field_key": "buyer_name"}],
+            "table_conflict_records": [],
+            "invalid_field_records": [{"field_key": "broken_field"}],
+            "invalid_table_records": [{"table_key": "broken_table"}],
+        },
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "load_quality_rule_associations",
+        lambda: ({"rule_type": "not_null"},),
+    )
+    monkeypatch.setattr(
+        learning_health_service,
         "prune_invalid_standard_mapping_memory",
         lambda: {
             "path": "mapping.csv",
@@ -94,6 +147,16 @@ def test_learning_health_service_returns_details_and_prunes_invalid(
             "after_count": 2,
         },
     )
+    monkeypatch.setattr(
+        learning_health_service,
+        "prune_invalid_metadata_completion_memory",
+        lambda: {
+            "field_memory": {"removed_count": 1},
+            "table_memory": {"removed_count": 0},
+            "removed_count": 1,
+            "summary": "Removed 1 invalid metadata completion records.",
+        },
+    )
 
     service = LearningHealthService()
     details = service.details()
@@ -101,8 +164,11 @@ def test_learning_health_service_returns_details_and_prunes_invalid(
 
     assert details["standard_mapping"]["conflict_records"][0]["field_key"] == "buyer_name"
     assert details["stg_standardization"]["generic_records"][0]["field_key"] == "type"
-    assert prune_result["total_removed_count"] == 3
-    assert "Removed 3" in prune_result["summary"]
+    assert details["metadata_completion"]["invalid_table_records"][0]["table_key"] == "broken_table"
+    assert details["quality_rules"]["associations"][0]["rule_type"] == "not_null"
+    assert prune_result["metadata_completion"]["removed_count"] == 1
+    assert prune_result["total_removed_count"] == 4
+    assert "Removed 4" in prune_result["summary"]
 
 
 def test_learning_health_service_clears_field_key_by_memory_type(monkeypatch) -> None:
@@ -124,15 +190,58 @@ def test_learning_health_service_clears_field_key_by_memory_type(monkeypatch) ->
             "status": "cleared",
         },
     )
+    monkeypatch.setattr(
+        learning_health_service,
+        "clear_metadata_completion_memory_by_field_key",
+        lambda field_key: {
+            "field_key": field_key,
+            "removed_count": 3,
+            "status": "cleared",
+        },
+    )
 
     service = LearningHealthService()
     mapping_result = service.clear_field_key("standard_mapping", "buyer_name")
     stg_result = service.clear_field_key("stg_standardization", "buyer_name")
+    metadata_result = service.clear_field_key("metadata_completion", "buyer_name")
 
     assert mapping_result["memory_type"] == "standard_mapping"
     assert mapping_result["removed_count"] == 2
     assert stg_result["memory_type"] == "stg_standardization"
     assert stg_result["removed_count"] == 1
+    assert metadata_result["memory_type"] == "metadata_completion"
+    assert metadata_result["removed_count"] == 3
+
+
+def test_learning_health_service_creates_and_lists_backups(monkeypatch) -> None:
+    monkeypatch.setattr(
+        learning_health_service,
+        "create_learning_memory_backup",
+        lambda: {
+            "backup_id": "learning_memory_20260605_010203",
+            "backed_up_file_count": 3,
+            "missing_file_count": 1,
+        },
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "list_learning_memory_backups",
+        lambda: [
+            {
+                "backup_id": "learning_memory_20260605_010203",
+                "backed_up_file_count": 3,
+                "missing_file_count": 1,
+            }
+        ],
+    )
+
+    service = LearningHealthService()
+    backup = service.create_backup()
+    backups = service.list_backups()
+
+    assert backup["backup_id"] == "learning_memory_20260605_010203"
+    assert backup["backed_up_file_count"] == 3
+    assert backups[0]["missing_file_count"] == 1
 
 
 def test_learning_health_service_rejects_unknown_memory_type() -> None:

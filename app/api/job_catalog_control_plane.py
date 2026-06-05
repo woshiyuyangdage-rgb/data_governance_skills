@@ -44,15 +44,27 @@ CONTROL_PLANE_JOB_ITEMS = [
         "description": "Return learned-memory conflict, generic, and invalid record details.",
     },
     {
+        "name": "create_learning_memory_backup",
+        "method": "POST",
+        "path": "/jobs/learning-health/backups",
+        "description": "Create a timestamped local backup package for learning-memory files.",
+    },
+    {
+        "name": "list_learning_memory_backups",
+        "method": "GET",
+        "path": "/jobs/learning-health/backups",
+        "description": "Return local learning-memory backup packages, newest first.",
+    },
+    {
         "name": "prune_invalid_learning_memory",
         "method": "POST",
         "path": "/jobs/learning-health/prune-invalid",
-        "description": "Remove clearly invalid learned-memory records from local stores.",
+        "description": "Remove clearly invalid mapping, STG, and metadata completion learning records from local stores.",
     },
     {
         "name": "clear_learning_memory_field_key",
         "method": "POST",
         "path": "/jobs/learning-health/clear-field-key",
-        "description": "Clear learned-memory records for one field key in one memory domain.",
+        "description": "Clear learned-memory records for one field key in one memory domain: standard_mapping, stg_standardization, or metadata_completion.",
     },
 ]

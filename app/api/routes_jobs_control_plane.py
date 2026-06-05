@@ -31,6 +31,18 @@ def learning_health_details_route() -> dict[str, object]:
     return learning_health_service.details()
 
 
+@router.post("/learning-health/backups", response_model=dict[str, object])
+def create_learning_memory_backup_route() -> dict[str, object]:
+    """Create a timestamped backup package for local learning-memory files."""
+    return learning_health_service.create_backup()
+
+
+@router.get("/learning-health/backups", response_model=list[dict[str, object]])
+def list_learning_memory_backups_route() -> list[dict[str, object]]:
+    """Return local learning-memory backup packages, newest first."""
+    return learning_health_service.list_backups()
+
+
 @router.post("/learning-health/prune-invalid", response_model=dict[str, object])
 def prune_invalid_learning_memory_route() -> dict[str, object]:
     """Remove clearly invalid learned-memory records from local stores."""

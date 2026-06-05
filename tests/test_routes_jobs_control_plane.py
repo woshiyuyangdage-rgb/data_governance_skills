@@ -6,9 +6,11 @@ from app.api.routes_jobs import (
     ConfigAssetSaveRequest,
     LearningMemoryClearRequest,
     clear_learning_memory_field_key_route,
+    create_learning_memory_backup_route,
     get_config_asset_route,
     learning_health_details_route,
     learning_health_route,
+    list_learning_memory_backups_route,
     list_config_assets_route,
     prune_invalid_learning_memory_route,
     publish_config_asset_route,
@@ -59,6 +61,22 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
                 "summary": "Removed 1 invalid learning-memory records.",
             }
 
+        def create_backup(self):
+            return {
+                "backup_id": "learning_memory_20260605_010203",
+                "backed_up_file_count": 2,
+                "missing_file_count": 0,
+            }
+
+        def list_backups(self):
+            return [
+                {
+                    "backup_id": "learning_memory_20260605_010203",
+                    "backed_up_file_count": 2,
+                    "missing_file_count": 0,
+                }
+            ]
+
         def clear_field_key(self, memory_type: str, field_key: str):
             return {
                 "memory_type": memory_type,
@@ -74,6 +92,8 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     )
 
     details = learning_health_details_route()
+    backup_result = create_learning_memory_backup_route()
+    backups = list_learning_memory_backups_route()
     prune_result = prune_invalid_learning_memory_route()
     clear_result = clear_learning_memory_field_key_route(
         LearningMemoryClearRequest(
@@ -83,6 +103,8 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     )
 
     assert details["standard_mapping"]["invalid_records"][0]["field_key"] == "broken"
+    assert backup_result["backed_up_file_count"] == 2
+    assert backups[0]["backup_id"] == "learning_memory_20260605_010203"
     assert prune_result["total_removed_count"] == 1
     assert clear_result["status"] == "cleared"
     assert clear_result["field_key"] == "buyer_name"
