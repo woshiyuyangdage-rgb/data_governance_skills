@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.job_requests import (
     ConfigAssetSaveRequest,
+    LearningMaintenanceReportExportRequest,
     LearningMemoryClearRequest,
     LearningMemoryRestoreRequest,
 )
@@ -33,6 +34,29 @@ def learning_health_route() -> dict[str, object]:
 def learning_health_details_route() -> dict[str, object]:
     """Return learned-memory records that need maintenance attention."""
     return learning_health_service.details()
+
+
+@router.get("/learning-health/report", response_model=dict[str, object])
+def learning_maintenance_report_route(
+    backup_limit: int = 3,
+) -> dict[str, object]:
+    """Return a consolidated learning-memory maintenance report."""
+    return learning_health_service.maintenance_report(backup_limit=backup_limit)
+
+
+@router.post("/learning-health/report/export", response_model=dict[str, object])
+def export_learning_maintenance_report_route(
+    payload: LearningMaintenanceReportExportRequest,
+) -> dict[str, object]:
+    """Export the learning-memory maintenance report as JSON and Markdown."""
+    try:
+        return learning_health_service.export_maintenance_report(
+            backup_limit=payload.backup_limit,
+            output_dir=payload.output_dir,
+            base_filename=payload.base_filename,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/learning-health/backups", response_model=dict[str, object])
@@ -73,6 +97,15 @@ def validate_learning_memory_backup_route(
 def prune_invalid_learning_memory_route() -> dict[str, object]:
     """Remove clearly invalid learned-memory records from local stores."""
     return learning_health_service.prune_invalid()
+
+
+@router.post(
+    "/learning-health/backup-then-prune-invalid",
+    response_model=dict[str, object],
+)
+def backup_then_prune_invalid_learning_memory_route() -> dict[str, object]:
+    """Create a backup before removing invalid learned-memory records."""
+    return learning_health_service.backup_then_prune_invalid()
 
 
 @router.post("/learning-health/clear-field-key", response_model=dict[str, object])

@@ -6,7 +6,9 @@ from app.api.routes_jobs import (
     IntentTextRequest,
     ManualMetadataRequest,
     ManualMetadataRunRequest,
+    MetadataMemoryLearningRequest,
     interpret_governance_task,
+    learn_metadata_memory_from_file_route,
     list_jobs,
     list_workflow_profiles,
     run_manual_metadata_route,
@@ -25,6 +27,7 @@ def test_jobs_catalog_lists_unified_task_routes() -> None:
     paths = {item["path"] for item in payload["items"]}
 
     assert "/jobs/run-governance-task" in paths
+    assert "/jobs/learn-metadata-memory-from-file" in paths
     assert "/jobs/save-manual-metadata" in paths
     assert "/jobs/run-manual-metadata" in paths
     assert "/jobs/list-workflow-profiles" in paths
@@ -50,10 +53,13 @@ def test_jobs_catalog_lists_unified_task_routes() -> None:
     assert "/jobs/config-assets/{asset_name}/publish" in paths
     assert "/jobs/learning-health" in paths
     assert "/jobs/learning-health/details" in paths
+    assert "/jobs/learning-health/report" in paths
+    assert "/jobs/learning-health/report/export" in paths
     assert "/jobs/learning-health/backups" in paths
     assert "/jobs/learning-health/backups/restore" in paths
     assert "/jobs/learning-health/backups/validate" in paths
     assert "/jobs/learning-health/prune-invalid" in paths
+    assert "/jobs/learning-health/backup-then-prune-invalid" in paths
     assert "/jobs/learning-health/clear-field-key" in paths
     assert "/jobs/run-p0-plus-mapping-plus-stg-plus-quality" in paths
     assert "/jobs/run-p0-plus-mapping-plus-stg-plus-quality-with-review" in paths
@@ -136,6 +142,24 @@ def test_manual_metadata_routes_save_and_run_profile(tmp_path: Path) -> None:
     assert run_response.profile_name == "metadata_diagnosis_only"
     assert run_response.result.status == "success"
     assert run_response.result.input_table_count == 1
+
+
+def test_learn_metadata_memory_from_file_route_writes_local_memory(
+    tmp_path: Path,
+) -> None:
+    response = learn_metadata_memory_from_file_route(
+        MetadataMemoryLearningRequest(
+            file_path=str(SAMPLE_METADATA_PATH),
+            output_dir=str(tmp_path),
+        )
+    )
+
+    assert response["status"] == "success"
+    assert response["field_memory_count"] > 0
+    assert response["table_memory_count"] > 0
+    assert response["output_dir"] == str(tmp_path)
+    assert (tmp_path / "field_completion_memory.csv").exists()
+    assert (tmp_path / "table_completion_memory.csv").exists()
 
 
 def test_run_manual_metadata_route_returns_parser_error_for_empty_input(

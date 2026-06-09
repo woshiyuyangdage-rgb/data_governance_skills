@@ -20,3 +20,11 @@ class LearningMemoryRestoreRequest(BaseModel):
     """Request body for restoring learned memory from a backup package."""
 
     backup_id: str
+
+
+class LearningMaintenanceReportExportRequest(BaseModel):
+    """Request body for exporting learning-memory maintenance reports."""
+
+    backup_limit: int = 3
+    output_dir: str | None = None
+    base_filename: str | None = None

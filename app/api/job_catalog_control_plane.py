@@ -44,6 +44,18 @@ CONTROL_PLANE_JOB_ITEMS = [
         "description": "Return learned-memory conflict, generic, and invalid record details.",
     },
     {
+        "name": "learning_maintenance_report",
+        "method": "GET",
+        "path": "/jobs/learning-health/report",
+        "description": "Return a consolidated learning-memory maintenance report with health, backup validation, and recommended actions.",
+    },
+    {
+        "name": "export_learning_maintenance_report",
+        "method": "POST",
+        "path": "/jobs/learning-health/report/export",
+        "description": "Export the consolidated learning-memory maintenance report as JSON and Markdown files.",
+    },
+    {
         "name": "create_learning_memory_backup",
         "method": "POST",
         "path": "/jobs/learning-health/backups",
@@ -72,6 +84,12 @@ CONTROL_PLANE_JOB_ITEMS = [
         "method": "POST",
         "path": "/jobs/learning-health/prune-invalid",
         "description": "Remove clearly invalid mapping, STG, and metadata completion learning records from local stores.",
+    },
+    {
+        "name": "backup_then_prune_invalid_learning_memory",
+        "method": "POST",
+        "path": "/jobs/learning-health/backup-then-prune-invalid",
+        "description": "Create a learning-memory backup before removing invalid records from local stores.",
     },
     {
         "name": "clear_learning_memory_field_key",

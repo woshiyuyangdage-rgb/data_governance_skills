@@ -9,6 +9,7 @@ from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.workflow_engine import WorkflowEngine
 from app.core.parser.loader import load_metadata_file
 from app.core.parser.manual_metadata_input import save_manual_metadata_records
+from app.core.parser.metadata_learning import learn_metadata_memory_from_file
 from app.core.parser.parser_exceptions import ParserError
 
 WorkflowRunner = Callable[[WorkflowEngine, list[TableMeta]], WorkflowResult]
@@ -55,6 +56,44 @@ def save_manual_metadata_to_file(
         output_dir=output_dir,
         base_filename=base_filename,
     )
+
+
+def learn_metadata_memory_from_quality_file(
+    file_path: str,
+    output_dir: str | None = None,
+) -> dict[str, object]:
+    """Learn metadata completion memory from one reviewed high-quality file."""
+    try:
+        summary = learn_metadata_memory_from_file(file_path, output_dir=output_dir)
+    except ParserError as exc:
+        return {
+            "status": "parser_error",
+            "message": str(exc),
+            "field_memory_count": 0,
+            "table_memory_count": 0,
+            "output_dir": output_dir,
+        }
+    except Exception as exc:
+        return {
+            "status": "failed",
+            "message": f"Unexpected error while learning metadata memory: {exc}",
+            "field_memory_count": 0,
+            "table_memory_count": 0,
+            "output_dir": output_dir,
+        }
+
+    return {
+        "status": "success",
+        "file_path": file_path,
+        "field_memory_count": summary.field_memory_count,
+        "table_memory_count": summary.table_memory_count,
+        "output_dir": summary.output_dir,
+        "summary": (
+            "Learned metadata completion memory from reviewed sample: "
+            f"{summary.field_memory_count} field records and "
+            f"{summary.table_memory_count} table records are now available."
+        ),
+    }
 
 
 def run_p0_plus_mapping_from_file(file_path: str) -> WorkflowResult:

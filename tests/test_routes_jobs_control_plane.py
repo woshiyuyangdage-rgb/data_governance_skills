@@ -4,13 +4,17 @@ from pathlib import Path
 
 from app.api.routes_jobs import (
     ConfigAssetSaveRequest,
+    LearningMaintenanceReportExportRequest,
     LearningMemoryClearRequest,
     LearningMemoryRestoreRequest,
+    backup_then_prune_invalid_learning_memory_route,
     clear_learning_memory_field_key_route,
     create_learning_memory_backup_route,
+    export_learning_maintenance_report_route,
     get_config_asset_route,
     learning_health_details_route,
     learning_health_route,
+    learning_maintenance_report_route,
     list_learning_memory_backups_route,
     list_config_assets_route,
     prune_invalid_learning_memory_route,
@@ -56,12 +60,58 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
                 "stg_standardization": {"invalid_records": []},
             }
 
+        def maintenance_report(self, backup_limit: int = 3):
+            return {
+                "health": {"total_memory_count": 3},
+                "backup_summary": {"backup_count": 1},
+                "recommendations": [],
+                "markdown": "# Learning Memory Maintenance Report",
+                "backup_limit": backup_limit,
+            }
+
+        def export_maintenance_report(
+            self,
+            *,
+            backup_limit: int = 3,
+            output_dir: str | None = None,
+            base_filename: str | None = None,
+        ):
+            return {
+                "status": "success",
+                "json_path": f"{output_dir}/{base_filename}.json",
+                "markdown_path": f"{output_dir}/{base_filename}.md",
+                "output_dir": str(output_dir),
+                "artifact_count": 2,
+                "artifacts": [
+                    {
+                        "format": "json",
+                        "path": f"{output_dir}/{base_filename}.json",
+                    },
+                    {
+                        "format": "markdown",
+                        "path": f"{output_dir}/{base_filename}.md",
+                    },
+                ],
+                "backup_count": backup_limit,
+                "recommendation_count": 1,
+                "summary": "Learning-memory maintenance report exported.",
+            }
+
         def prune_invalid(self):
             return {
                 "standard_mapping": {"removed_count": 1},
                 "stg_standardization": {"removed_count": 0},
                 "total_removed_count": 1,
                 "summary": "Removed 1 invalid learning-memory records.",
+            }
+
+        def backup_then_prune_invalid(self):
+            return {
+                "status": "success",
+                "backup": {"backup_id": "learning_memory_20260605_010203"},
+                "prune_result": {"total_removed_count": 1},
+                "removed_count": 1,
+                "summary": "Created backup before pruning invalid records.",
             }
 
         def create_backup(self):
@@ -110,6 +160,14 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     )
 
     details = learning_health_details_route()
+    report = learning_maintenance_report_route(backup_limit=1)
+    export_result = export_learning_maintenance_report_route(
+        LearningMaintenanceReportExportRequest(
+            backup_limit=2,
+            output_dir="outputs/reports/learning_memory",
+            base_filename="route_report",
+        )
+    )
     backup_result = create_learning_memory_backup_route()
     backups = list_learning_memory_backups_route()
     restore_result = restore_learning_memory_backup_route(
@@ -123,6 +181,7 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
         )
     )
     prune_result = prune_invalid_learning_memory_route()
+    safe_prune_result = backup_then_prune_invalid_learning_memory_route()
     clear_result = clear_learning_memory_field_key_route(
         LearningMemoryClearRequest(
             memory_type="standard_mapping",
@@ -131,11 +190,19 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     )
 
     assert details["standard_mapping"]["invalid_records"][0]["field_key"] == "broken"
+    assert report["backup_limit"] == 1
+    assert report["backup_summary"]["backup_count"] == 1
+    assert export_result["status"] == "success"
+    assert export_result["backup_count"] == 2
+    assert export_result["artifact_count"] == 2
+    assert str(export_result["json_path"]).endswith("route_report.json")
     assert backup_result["backed_up_file_count"] == 2
     assert backups[0]["backup_id"] == "learning_memory_20260605_010203"
     assert restore_result["restored_file_count"] == 2
     assert validation_result["is_valid"] is True
     assert prune_result["total_removed_count"] == 1
+    assert safe_prune_result["status"] == "success"
+    assert safe_prune_result["removed_count"] == 1
     assert clear_result["status"] == "cleared"
     assert clear_result["field_key"] == "buyer_name"
 

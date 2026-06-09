@@ -14,6 +14,12 @@ CORE_JOB_ITEMS = [
         "description": "Run the rule-based P0 pipeline on a local CSV or Excel file path.",
     },
     {
+        "name": "learn_metadata_memory_from_file",
+        "method": "POST",
+        "path": "/jobs/learn-metadata-memory-from-file",
+        "description": "Learn local metadata completion memory from a reviewed high-quality metadata file.",
+    },
+    {
         "name": "save_manual_metadata",
         "method": "POST",
         "path": "/jobs/save-manual-metadata",

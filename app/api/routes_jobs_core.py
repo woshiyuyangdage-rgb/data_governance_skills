@@ -8,6 +8,7 @@ from app.api.job_requests import (
     IntentTextRequest,
     ManualMetadataRequest,
     ManualMetadataRunRequest,
+    MetadataMemoryLearningRequest,
 )
 from app.core.intent.intent_task_service import (
     interpret_and_build_request,
@@ -19,6 +20,7 @@ from app.core.models.intent_execution_result import IntentExecutionResult
 from app.core.models.workflow_profile import WorkflowProfile
 from app.core.models.workflow_result import WorkflowResult
 from app.core.orchestrator.pipeline_service import (
+    learn_metadata_memory_from_quality_file,
     run_mapping_only_from_file,
     run_p0_pipeline_from_file,
     run_p0_plus_mapping_from_file,
@@ -56,6 +58,17 @@ def run_p0_demo() -> WorkflowResult:
 def run_p0_from_file(payload: FileRunRequest) -> WorkflowResult:
     """Run the rule-based P0 pipeline from a local metadata file path."""
     return run_p0_pipeline_from_file(payload.file_path)
+
+
+@router.post("/learn-metadata-memory-from-file", response_model=dict[str, object])
+def learn_metadata_memory_from_file_route(
+    payload: MetadataMemoryLearningRequest,
+) -> dict[str, object]:
+    """Learn metadata completion memory from one reviewed metadata file."""
+    return learn_metadata_memory_from_quality_file(
+        payload.file_path,
+        output_dir=payload.output_dir,
+    )
 
 
 @router.post("/save-manual-metadata")

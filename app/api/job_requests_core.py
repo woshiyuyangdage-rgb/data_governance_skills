@@ -11,6 +11,12 @@ class FileRunRequest(BaseModel):
     file_path: str
 
 
+class MetadataMemoryLearningRequest(FileRunRequest):
+    """Request body for learning metadata completion memory from a file."""
+
+    output_dir: str | None = None
+
+
 class ManualMetadataRequest(BaseModel):
     """Request body for small hand-entered metadata inputs."""
 
