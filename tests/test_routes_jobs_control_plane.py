@@ -7,6 +7,7 @@ from app.api.routes_jobs import (
     LearningMaintenanceReportExportRequest,
     LearningMemoryClearRequest,
     LearningMemoryRestoreRequest,
+    ReviewLearningRebuildRequest,
     backup_then_prune_invalid_learning_memory_route,
     clear_learning_memory_field_key_route,
     create_learning_memory_backup_route,
@@ -19,6 +20,7 @@ from app.api.routes_jobs import (
     list_config_assets_route,
     prune_invalid_learning_memory_route,
     publish_config_asset_route,
+    rebuild_review_learning_route,
     restore_learning_memory_backup_route,
     save_config_asset_route,
     validate_config_asset_route,
@@ -114,6 +116,25 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
                 "summary": "Created backup before pruning invalid records.",
             }
 
+        def rebuild_review_learning(
+            self,
+            memory_types=None,
+            *,
+            create_backup: bool = True,
+        ):
+            return {
+                "status": "success",
+                "memory_types": memory_types,
+                "backup": (
+                    {"backup_id": "learning_memory_20260605_010203"}
+                    if create_backup
+                    else None
+                ),
+                "results": {"standard_mapping": {"learned_count": 1}},
+                "total_review_record_count": 2,
+                "total_learned_count": 1,
+            }
+
         def create_backup(self):
             return {
                 "backup_id": "learning_memory_20260605_010203",
@@ -182,6 +203,12 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     )
     prune_result = prune_invalid_learning_memory_route()
     safe_prune_result = backup_then_prune_invalid_learning_memory_route()
+    rebuild_result = rebuild_review_learning_route(
+        ReviewLearningRebuildRequest(
+            memory_types=["standard_mapping"],
+            create_backup=False,
+        )
+    )
     clear_result = clear_learning_memory_field_key_route(
         LearningMemoryClearRequest(
             memory_type="standard_mapping",
@@ -203,6 +230,9 @@ def test_learning_health_detail_and_prune_routes(monkeypatch) -> None:
     assert prune_result["total_removed_count"] == 1
     assert safe_prune_result["status"] == "success"
     assert safe_prune_result["removed_count"] == 1
+    assert rebuild_result["status"] == "success"
+    assert rebuild_result["backup"] is None
+    assert rebuild_result["memory_types"] == ["standard_mapping"]
     assert clear_result["status"] == "cleared"
     assert clear_result["field_key"] == "buyer_name"
 

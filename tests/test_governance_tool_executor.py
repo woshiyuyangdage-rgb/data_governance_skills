@@ -314,3 +314,78 @@ def test_executor_can_validate_config_asset_and_record_trace(
     assert trace is not None
     assert trace.asset_name == "workflow_profiles"
     assert trace.operation == "validate"
+
+
+def test_executor_can_report_learning_health_and_record_trace(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_runtime_dirs(tmp_path, monkeypatch)
+    executor = GovernanceToolExecutor()
+
+    response = executor.learning_health({})
+
+    assert response.trace_id is not None
+    assert response.status == "success"
+    assert response.result is not None
+    assert "total_memory_count" in response.result
+    assert "quality_rules" in response.result
+
+    trace = get_trace(response.trace_id)
+    assert trace is not None
+    assert trace.operation == "learning_health"
+
+
+def test_executor_can_rebuild_review_learning_with_explicit_memory_types(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_runtime_dirs(tmp_path, monkeypatch)
+    executor = GovernanceToolExecutor()
+    calls: list[dict[str, object]] = []
+
+    class FakeLearningHealthService:
+        def rebuild_review_learning(
+            self,
+            memory_types: list[str] | None = None,
+            *,
+            create_backup: bool = True,
+        ) -> dict[str, object]:
+            calls.append(
+                {
+                    "memory_types": list(memory_types or []),
+                    "create_backup": create_backup,
+                }
+            )
+            return {
+                "status": "success",
+                "memory_types": list(memory_types or []),
+                "backup": None,
+                "results": {},
+                "total_review_record_count": 2,
+                "total_learned_count": 1,
+                "summary": "Review learning rebuilt for test.",
+            }
+
+    executor.learning_health_service = FakeLearningHealthService()
+
+    response = executor.rebuild_review_learning(
+        {
+            "memory_types": ["standard_mapping", "quality_rules"],
+            "create_backup": False,
+        }
+    )
+
+    assert response.status == "success"
+    assert response.result is not None
+    assert response.result["total_learned_count"] == 1
+    assert calls == [
+        {
+            "memory_types": ["standard_mapping", "quality_rules"],
+            "create_backup": False,
+        }
+    ]
+
+    trace = get_trace(response.trace_id)
+    assert trace is not None
+    assert trace.operation == "rebuild_review_learning"

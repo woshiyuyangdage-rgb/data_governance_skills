@@ -14,10 +14,19 @@ class _FakeControlPlaneService:
 
 
 class _FakeTool:
-    def __init__(self, name: str, handler: str, enabled: bool = True) -> None:
+    def __init__(
+        self,
+        name: str,
+        handler: str,
+        enabled: bool = True,
+        input_model: str = "dict",
+        output_model: str = "dict",
+    ) -> None:
         self.name = name
         self.handler = handler
         self.enabled = enabled
+        self.input_model = input_model
+        self.output_model = output_model
 
 
 class _FakeExecutor:
@@ -114,6 +123,16 @@ def test_maintenance_main_without_command_prints_help(capsys) -> None:
     assert "commands" in captured.out
 
 
+def test_quick_check_targets_include_tool_contract_checks() -> None:
+    targets = set(maintenance.QUICK_CHECK_TEST_TARGETS)
+
+    assert "tests/test_tool_loader.py" in targets
+    assert "tests/test_tool_service.py" in targets
+    assert "tests/test_agent_shell_service.py" in targets
+    assert "tests/test_schema_exporter.py" in targets
+    assert "tests/test_routes_jobs_tools.py" in targets
+
+
 def test_tool_handler_check_reports_unregistered_enabled_handler(monkeypatch) -> None:
     monkeypatch.setattr(
         maintenance,
@@ -139,6 +158,11 @@ def test_tool_handler_check_reports_unregistered_enabled_handler(monkeypatch) ->
             ),
         ],
     )
+    monkeypatch.setattr(
+        maintenance,
+        "_load_schema_export_contracts",
+        lambda: ({"dict"}, {}),
+    )
     _FakeExecutor.handler_names = {"governance_tool_executor.known_tool"}
 
     errors = maintenance._check_tool_handlers()
@@ -146,6 +170,59 @@ def test_tool_handler_check_reports_unregistered_enabled_handler(monkeypatch) ->
     assert errors == [
         "tool 'missing_tool' references unregistered handler "
         "'governance_tool_executor.missing_tool'"
+    ]
+
+
+def test_tool_handler_check_reports_schema_and_example_contract_issues(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        maintenance,
+        "_build_governance_tool_executor",
+        lambda: _FakeExecutor(),
+    )
+    monkeypatch.setattr(
+        maintenance,
+        "_load_tool_registry",
+        lambda: [
+            _FakeTool(
+                "known_tool",
+                "governance_tool_executor.known_tool",
+                input_model="KnownInput",
+                output_model="KnownOutput",
+            ),
+            _FakeTool(
+                "known_tool",
+                "governance_tool_executor.known_tool",
+                input_model="MissingInput",
+                output_model="MissingOutput",
+            ),
+        ],
+    )
+    monkeypatch.setattr(
+        maintenance,
+        "_load_schema_export_contracts",
+        lambda: (
+            {"KnownInput", "KnownOutput"},
+            {
+                "known_tool": [{"ok": True}, "bad_example"],
+                "missing_tool": [{"ok": True}],
+                "malformed_examples": {"not": "a list"},
+            },
+        ),
+    )
+    _FakeExecutor.handler_names = {"governance_tool_executor.known_tool"}
+
+    errors = maintenance._check_tool_handlers()
+
+    assert errors == [
+        "tool registry contains duplicate tool name 'known_tool'",
+        "tool 'known_tool' references missing input schema 'MissingInput'",
+        "tool 'known_tool' references missing output schema 'MissingOutput'",
+        "tool example 1 for 'known_tool' must be a mapping",
+        "tool examples reference missing tool 'missing_tool'",
+        "tool examples reference missing tool 'malformed_examples'",
+        "tool examples for 'malformed_examples' must be a list",
     ]
 
 

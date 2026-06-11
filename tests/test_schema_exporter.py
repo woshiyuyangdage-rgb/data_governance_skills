@@ -69,6 +69,12 @@ def test_schema_exporter_can_export_native_schemas() -> None:
     assert any(schema.tool_name == "diagnose_metadata_intake_template" for schema in schemas)
     assert any(schema.tool_name == "normalize_metadata_input" for schema in schemas)
     assert any(schema.tool_name == "run_governance_with_intake_profile" for schema in schemas)
+    assert any(schema.tool_name == "learning_health" for schema in schemas)
+    assert any(
+        schema.tool_name == "rebuild_review_learning"
+        and schema.input_model == "ReviewLearningRebuildArguments"
+        for schema in schemas
+    )
 
 
 def test_schema_exporter_can_export_openai_style_schemas() -> None:
@@ -157,6 +163,12 @@ def test_schema_exporter_can_export_openai_style_schemas() -> None:
         item["function"]["name"] == "diagnose_metadata_intake_template"
         for item in schemas
     )
+    rebuild_schema = next(
+        item
+        for item in schemas
+        if item["function"]["name"] == "rebuild_review_learning"
+    )
+    assert "memory_types" in rebuild_schema["function"]["parameters"]["properties"]
     assert all(item["type"] == "function" for item in schemas)
 
 
@@ -208,6 +220,8 @@ def test_schema_exporter_can_export_mcp_style_manifest() -> None:
     assert any(tool["name"] == "run_project_template" for tool in manifest["tools"])
     assert any(tool["name"] == "list_domain_governance_packs" for tool in manifest["tools"])
     assert any(tool["name"] == "normalize_metadata_input" for tool in manifest["tools"])
+    assert any(tool["name"] == "learning_health" for tool in manifest["tools"])
+    assert any(tool["name"] == "rebuild_review_learning" for tool in manifest["tools"])
 
 
 def test_schema_exporter_can_build_capability_manifest() -> None:

@@ -11,11 +11,14 @@ from app.core.agent.session_store import (
     set_last_exported_files,
     set_last_task_context,
 )
+from app.core.agent.tool_intent_resolver import AgentToolIntent, resolve_agent_tool_intent
 from app.core.intent.intent_interpreter import IntentInterpreter
 from app.core.models.agent_shell_result import AgentShellResult
+from app.core.models.execution_plan import ExecutionPlan
 from app.core.models.governance_task_request import GovernanceTaskRequest
 from app.core.models.interpreted_intent import InterpretedIntent
 from app.core.models.parameter_resolution_result import ParameterResolutionResult
+from app.core.models.tool_call_request import ToolCallRequest
 from app.core.orchestrator.task_service import run_governance_task
 
 
@@ -52,6 +55,85 @@ class AgentShellService:
             return create_session(session_id).session_id
         return create_session().session_id
 
+    @staticmethod
+    def _build_tool_task_request(tool_intent: AgentToolIntent) -> GovernanceTaskRequest:
+        return GovernanceTaskRequest(
+            profile_name=f"tool:{tool_intent.tool_name}",
+        )
+
+    @staticmethod
+    def _build_tool_intent(
+        text: str,
+        tool_intent: AgentToolIntent,
+    ) -> InterpretedIntent:
+        return InterpretedIntent(
+            raw_text=text,
+            matched_intent_name=f"tool:{tool_intent.tool_name}",
+            matched_profile_name=f"tool:{tool_intent.tool_name}",
+            confidence=0.95,
+            matched_keywords=list(tool_intent.matched_keywords),
+            inferred_parameters={
+                "tool_name": tool_intent.tool_name,
+                "tool_arguments": dict(tool_intent.arguments),
+            },
+            fallback_used=False,
+            match_source="local_tool_intent",
+            message=(
+                f"Matched local maintenance tool '{tool_intent.tool_name}'."
+            ),
+        )
+
+    @staticmethod
+    def _build_tool_plan(
+        text: str,
+        tool_intent: AgentToolIntent,
+    ) -> ExecutionPlan:
+        return ExecutionPlan(
+            raw_text=text,
+            plan_type="tool",
+            profile_name=f"tool:{tool_intent.tool_name}",
+            tool_name=tool_intent.tool_name,
+            tool_arguments=dict(tool_intent.arguments),
+            stages=[tool_intent.tool_name],
+            requires_confirmation=tool_intent.requires_confirmation,
+            validation_passed=True,
+            validation_messages=[],
+            suggested_output_mode="tool_call",
+            summary=tool_intent.summary,
+        )
+
+    def _try_tool_plan(
+        self,
+        text: str,
+        session_id: str | None = None,
+    ) -> AgentShellResult | None:
+        """Return a previewable tool-call plan for supported maintenance requests."""
+        tool_intent = resolve_agent_tool_intent(text)
+        if tool_intent is None:
+            return None
+
+        resolved_session_id = self._ensure_session(session_id)
+        interpreted_intent = self._build_tool_intent(text, tool_intent)
+        task_request = self._build_tool_task_request(tool_intent)
+        execution_plan = self._build_tool_plan(text, tool_intent)
+
+        append_request_to_session(resolved_session_id, text)
+        session = append_plan_to_session(resolved_session_id, execution_plan)
+        session.last_task_request = task_request
+        session.last_task_response = None
+        save_session(session)
+
+        return AgentShellResult(
+            interpreted_intent=interpreted_intent,
+            task_request=task_request,
+            execution_plan=execution_plan,
+            task_response=None,
+            tool_response=None,
+            session_id=resolved_session_id,
+            status="interpreted_only",
+            message="Tool call plan preview was generated successfully.",
+        )
+
     def _prepare_plan_inputs(
         self,
         text: str,
@@ -79,6 +161,10 @@ class AgentShellService:
         session_id: str | None = None,
     ) -> AgentShellResult:
         """Interpret a natural-language request and return a previewable plan."""
+        tool_plan = self._try_tool_plan(text, session_id=session_id)
+        if tool_plan is not None:
+            return tool_plan
+
         (
             resolved_session_id,
             interpreted_intent,
@@ -149,7 +235,45 @@ class AgentShellService:
             else:
                 preview_result.message = (
                     "Execution was blocked because plan validation failed."
+            )
+            return preview_result
+
+        if preview_result.execution_plan.plan_type == "tool":
+            if preview_result.execution_plan.requires_confirmation and not force_run:
+                preview_result.status = "preview_requires_confirmation"
+                preview_result.message = (
+                    "Tool call plan preview requires confirmation before execution."
                 )
+                return preview_result
+
+            tool_name = preview_result.execution_plan.tool_name
+            if not tool_name:
+                preview_result.status = "validation_failed"
+                preview_result.message = "Execution was blocked because tool_name is missing."
+                return preview_result
+            from app.core.tools.tool_service import call_tool
+
+            tool_response = call_tool(
+                ToolCallRequest(
+                    tool_name=tool_name,
+                    arguments=dict(preview_result.execution_plan.tool_arguments),
+                )
+            )
+            preview_result.tool_response = tool_response
+            if preview_result.session_id:
+                session = get_session(preview_result.session_id)
+                if session is not None:
+                    save_session(session)
+            preview_result.status = (
+                "executed_successfully"
+                if tool_response.status in {"success", "invalid"}
+                else "execution_failed"
+            )
+            preview_result.message = (
+                "Tool call executed successfully through the agent shell."
+                if preview_result.status == "executed_successfully"
+                else f"Tool call finished with status '{tool_response.status}'."
+            )
             return preview_result
 
         if preview_result.execution_plan.requires_confirmation and not force_run:

@@ -9,9 +9,13 @@ from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
     QualityRuleLearningHealth,
 )
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
+    StandardMappingLearningSummary,
     StandardMappingMemoryHealth,
 )
-from app.core.skills.stg_standardization_skill.stg_learning import StgMemoryHealth
+from app.core.skills.stg_standardization_skill.stg_learning import (
+    StgLearningSummary,
+    StgMemoryHealth,
+)
 
 
 def test_learning_health_service_summarizes_all_learning_memories(monkeypatch) -> None:
@@ -466,6 +470,127 @@ def test_learning_health_service_backs_up_before_pruning_invalid(
     assert result["before_health"]["total_invalid_record_count"] == 2
     assert result["after_health"]["total_invalid_record_count"] == 0
     assert "Created backup learning_memory_20260608_010203" in result["summary"]
+
+
+def test_learning_health_service_rebuilds_review_learning_memory(monkeypatch) -> None:
+    monkeypatch.setattr(
+        learning_health_service,
+        "load_mapping_overrides",
+        lambda: [object(), object()],
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "load_stg_overrides",
+        lambda: [object()],
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "load_quality_rule_overrides",
+        lambda: [object(), object(), object()],
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "learn_standard_mapping_memory_from_review_records",
+        lambda records: StandardMappingLearningSummary(
+            learned_count=len(records),
+            memory_count=5,
+            output_path="learned_mapping.csv",
+        ),
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "learn_stg_memory_from_review_records",
+        lambda records: StgLearningSummary(
+            learned_count=len(records),
+            memory_count=4,
+            output_path="learned_stg.csv",
+        ),
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "load_quality_rule_associations",
+        lambda: (
+            {"rule_type": "not_null"},
+            {"rule_type": "numeric_range"},
+        ),
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "summarize_quality_rule_learning",
+        lambda records=None, associations=None: QualityRuleLearningHealth(
+            enabled=True,
+            dependency_available=True,
+            accepted_record_count=3,
+            min_records=3,
+            association_rule_count=len(tuple(associations or ())),
+            learned_rule_types=("not_null", "numeric_range"),
+            status="active",
+        ),
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "clear_quality_rule_learning_caches",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        LearningHealthService,
+        "create_backup",
+        lambda self: {"backup_id": "learning_memory_20260609_010203"},
+    )
+
+    result = LearningHealthService().rebuild_review_learning()
+
+    assert result["status"] == "success"
+    assert result["memory_types"] == [
+        "standard_mapping",
+        "stg_standardization",
+        "quality_rules",
+    ]
+    assert result["backup"]["backup_id"] == "learning_memory_20260609_010203"
+    assert result["results"]["standard_mapping"]["learned_count"] == 2
+    assert result["results"]["stg_standardization"]["learned_count"] == 1
+    assert result["results"]["quality_rules"]["association_rule_count"] == 2
+    assert result["total_review_record_count"] == 6
+    assert result["total_learned_count"] == 5
+
+
+def test_learning_health_service_rebuilds_selected_review_learning_without_backup(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        learning_health_service,
+        "load_mapping_overrides",
+        lambda: [object()],
+    )
+    monkeypatch.setattr(
+        learning_health_service,
+        "learn_standard_mapping_memory_from_review_records",
+        lambda records: StandardMappingLearningSummary(
+            learned_count=1,
+            memory_count=1,
+            output_path="learned_mapping.csv",
+        ),
+    )
+
+    result = LearningHealthService().rebuild_review_learning(
+        ["mapping"],
+        create_backup=False,
+    )
+
+    assert result["memory_types"] == ["standard_mapping"]
+    assert result["backup"] is None
+    assert set(result["results"]) == {"standard_mapping"}
+
+
+def test_learning_health_service_rejects_unknown_rebuild_memory_type() -> None:
+    service = LearningHealthService()
+
+    try:
+        service.rebuild_review_learning(["unknown"])
+    except ValueError as exc:
+        assert "memory_types must contain only" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError for unknown memory type")
 
 
 def test_learning_health_service_rejects_unknown_memory_type() -> None:

@@ -88,6 +88,15 @@ class ToolDispatchMixin:
             "governance_tool_executor.validate_config_asset": self.validate_config_asset,
             "governance_tool_executor.save_config_asset": self.save_config_asset,
             "governance_tool_executor.publish_config_asset": self.publish_config_asset,
+            "governance_tool_executor.learning_health": self.learning_health,
+            "governance_tool_executor.learning_health_details": self.learning_health_details,
+            "governance_tool_executor.learning_maintenance_report": self.learning_maintenance_report,
+            "governance_tool_executor.export_learning_maintenance_report": self.export_learning_maintenance_report,
+            "governance_tool_executor.create_learning_memory_backup": self.create_learning_memory_backup,
+            "governance_tool_executor.list_learning_memory_backups": self.list_learning_memory_backups,
+            "governance_tool_executor.validate_learning_memory_backup": self.validate_learning_memory_backup,
+            "governance_tool_executor.backup_then_prune_invalid_learning_memory": self.backup_then_prune_invalid_learning_memory,
+            "governance_tool_executor.rebuild_review_learning": self.rebuild_review_learning,
         }
         return handler_map
 

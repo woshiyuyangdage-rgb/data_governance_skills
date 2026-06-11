@@ -31,6 +31,8 @@ def test_tool_service_can_list_tools() -> None:
     assert any(tool.name == "assess_governance_portfolio" for tool in tools)
     assert any(tool.name == "generate_progress_snapshot" for tool in tools)
     assert any(tool.name == "list_governance_progress_snapshots" for tool in tools)
+    assert any(tool.name == "learning_health" for tool in tools)
+    assert any(tool.name == "rebuild_review_learning" for tool in tools)
 
 
 def test_tool_service_can_call_enabled_tool(

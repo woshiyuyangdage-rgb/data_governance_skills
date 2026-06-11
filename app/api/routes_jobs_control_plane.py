@@ -7,6 +7,7 @@ from app.api.job_requests import (
     LearningMaintenanceReportExportRequest,
     LearningMemoryClearRequest,
     LearningMemoryRestoreRequest,
+    ReviewLearningRebuildRequest,
 )
 from app.core.control_plane.control_plane_service import ControlPlaneService
 from app.core.learning.learning_health_service import LearningHealthService
@@ -106,6 +107,23 @@ def prune_invalid_learning_memory_route() -> dict[str, object]:
 def backup_then_prune_invalid_learning_memory_route() -> dict[str, object]:
     """Create a backup before removing invalid learned-memory records."""
     return learning_health_service.backup_then_prune_invalid()
+
+
+@router.post(
+    "/learning-health/rebuild-review-learning",
+    response_model=dict[str, object],
+)
+def rebuild_review_learning_route(
+    payload: ReviewLearningRebuildRequest,
+) -> dict[str, object]:
+    """Rebuild learned memory from locally saved human review records."""
+    try:
+        return learning_health_service.rebuild_review_learning(
+            payload.memory_types,
+            create_backup=payload.create_backup,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/learning-health/clear-field-key", response_model=dict[str, object])

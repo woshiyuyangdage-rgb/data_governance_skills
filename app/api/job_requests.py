@@ -11,6 +11,7 @@ from app.api.job_requests_control_plane import (
     LearningMaintenanceReportExportRequest,
     LearningMemoryClearRequest,
     LearningMemoryRestoreRequest,
+    ReviewLearningRebuildRequest,
 )
 from app.api.job_requests_core import (
     FileRunRequest,

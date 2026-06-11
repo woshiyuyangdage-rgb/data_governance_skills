@@ -92,6 +92,12 @@ CONTROL_PLANE_JOB_ITEMS = [
         "description": "Create a learning-memory backup before removing invalid records from local stores.",
     },
     {
+        "name": "rebuild_review_learning",
+        "method": "POST",
+        "path": "/jobs/learning-health/rebuild-review-learning",
+        "description": "Rebuild mapping, STG, and quality-rule learning memory from saved human review records.",
+    },
+    {
         "name": "clear_learning_memory_field_key",
         "method": "POST",
         "path": "/jobs/learning-health/clear-field-key",

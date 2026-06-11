@@ -358,3 +358,75 @@ tools:
     output_model: ConfigEditResult
     handler: governance_tool_executor.publish_config_asset
     category: control_plane
+
+  - name: learning_health
+    enabled: true
+    description: Return local learning-memory health summary for maintenance.
+    input_model: dict
+    output_model: dict
+    handler: governance_tool_executor.learning_health
+    category: learning_memory
+
+  - name: learning_health_details
+    enabled: true
+    description: Return learned-memory records that need maintenance attention.
+    input_model: dict
+    output_model: dict
+    handler: governance_tool_executor.learning_health_details
+    category: learning_memory
+
+  - name: learning_maintenance_report
+    enabled: true
+    description: Build a consolidated learning-memory maintenance report.
+    input_model: LearningMaintenanceReportArguments
+    output_model: dict
+    handler: governance_tool_executor.learning_maintenance_report
+    category: learning_memory
+
+  - name: export_learning_maintenance_report
+    enabled: true
+    description: Export a learning-memory maintenance report as JSON and Markdown.
+    input_model: LearningMaintenanceReportExportArguments
+    output_model: dict
+    handler: governance_tool_executor.export_learning_maintenance_report
+    category: learning_memory
+
+  - name: create_learning_memory_backup
+    enabled: true
+    description: Create a timestamped local backup package for learning memory.
+    input_model: dict
+    output_model: dict
+    handler: governance_tool_executor.create_learning_memory_backup
+    category: learning_memory
+
+  - name: list_learning_memory_backups
+    enabled: true
+    description: List local learning-memory backup packages, newest first.
+    input_model: dict
+    output_model: list
+    handler: governance_tool_executor.list_learning_memory_backups
+    category: learning_memory
+
+  - name: validate_learning_memory_backup
+    enabled: true
+    description: Validate one local learning-memory backup package before restore.
+    input_model: LearningMemoryBackupValidateArguments
+    output_model: dict
+    handler: governance_tool_executor.validate_learning_memory_backup
+    category: learning_memory
+
+  - name: backup_then_prune_invalid_learning_memory
+    enabled: true
+    description: Create a backup before pruning invalid learning-memory records.
+    input_model: dict
+    output_model: dict
+    handler: governance_tool_executor.backup_then_prune_invalid_learning_memory
+    category: learning_memory
+
+  - name: rebuild_review_learning
+    enabled: true
+    description: Rebuild learning memory from saved human review records.
+    input_model: ReviewLearningRebuildArguments
+    output_model: dict
+    handler: governance_tool_executor.rebuild_review_learning
+    category: learning_memory

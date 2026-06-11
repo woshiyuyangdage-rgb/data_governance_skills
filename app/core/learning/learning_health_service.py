@@ -20,14 +20,18 @@ from app.core.parser.metadata_learning import (
     prune_invalid_metadata_completion_memory,
     summarize_metadata_completion_memory,
 )
+from app.core.review.override_store import load_mapping_overrides, load_stg_overrides
+from app.core.review.quality_override_store import load_quality_rule_overrides
 from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
     QualityRuleLearningHealth,
+    clear_quality_rule_learning_caches,
     load_quality_rule_associations,
     summarize_quality_rule_learning,
 )
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     StandardMappingMemoryHealth,
     clear_standard_mapping_memory_by_field_key,
+    learn_standard_mapping_memory_from_review_records,
     prune_invalid_standard_mapping_memory,
     summarize_standard_mapping_memory,
     standard_mapping_memory_details,
@@ -35,6 +39,7 @@ from app.core.skills.data_standard_mapping_skill.mapping_learning import (
 from app.core.skills.stg_standardization_skill.stg_learning import (
     StgMemoryHealth,
     clear_stg_field_memory_by_field_key,
+    learn_stg_memory_from_review_records,
     prune_invalid_stg_field_memory,
     summarize_stg_field_memory,
     stg_field_memory_details,
@@ -45,6 +50,22 @@ from app.core.utils.time_utils import utc_now_compact, utc_now_seconds
 DEFAULT_LEARNING_REPORT_OUTPUT_DIR = (
     Path(__file__).resolve().parents[3] / "outputs" / "reports" / "learning_memory"
 )
+REVIEW_LEARNING_MEMORY_TYPES = (
+    "standard_mapping",
+    "stg_standardization",
+    "quality_rules",
+)
+REVIEW_LEARNING_MEMORY_TYPE_ALIASES = {
+    "mapping": "standard_mapping",
+    "standard_mapping": "standard_mapping",
+    "data_standard_mapping": "standard_mapping",
+    "stg": "stg_standardization",
+    "stg_standardization": "stg_standardization",
+    "quality": "quality_rules",
+    "quality_rule": "quality_rules",
+    "quality_rules": "quality_rules",
+    "data_quality_rule": "quality_rules",
+}
 
 
 def _record_count(section: dict[str, object], key: str) -> int:
@@ -76,6 +97,32 @@ def _file_artifact(path: Path, artifact_format: str) -> dict[str, object]:
         "size_bytes": path.stat().st_size,
         "sha256": digest.hexdigest(),
     }
+
+
+def _normalize_review_learning_memory_types(
+    memory_types: list[str] | tuple[str, ...] | None,
+) -> list[str]:
+    if not memory_types:
+        return list(REVIEW_LEARNING_MEMORY_TYPES)
+
+    normalized: list[str] = []
+    invalid_types: list[str] = []
+    for raw_type in memory_types:
+        key = str(raw_type or "").strip().lower()
+        resolved = REVIEW_LEARNING_MEMORY_TYPE_ALIASES.get(key)
+        if resolved is None:
+            invalid_types.append(str(raw_type))
+            continue
+        if resolved not in normalized:
+            normalized.append(resolved)
+
+    if invalid_types:
+        raise ValueError(
+            "memory_types must contain only: "
+            f"{', '.join(REVIEW_LEARNING_MEMORY_TYPES)}. "
+            f"Invalid values: {', '.join(invalid_types)}"
+        )
+    return normalized
 
 
 @dataclass(frozen=True)
@@ -382,6 +429,80 @@ class LearningHealthService:
             "summary": (
                 f"Created backup {backup_id} before pruning; removed "
                 f"{removed_count} invalid learning-memory records."
+            ),
+        }
+
+    def rebuild_review_learning(
+        self,
+        memory_types: list[str] | tuple[str, ...] | None = None,
+        *,
+        create_backup: bool = True,
+    ) -> dict[str, object]:
+        """Rebuild learned memory from locally saved human review records."""
+        selected_types = _normalize_review_learning_memory_types(memory_types)
+        backup = self.create_backup() if create_backup else None
+        results: dict[str, dict[str, object]] = {}
+
+        if "standard_mapping" in selected_types:
+            records = load_mapping_overrides()
+            learning_summary = learn_standard_mapping_memory_from_review_records(records)
+            results["standard_mapping"] = {
+                "status": "success",
+                "review_record_count": len(records),
+                "learned_count": learning_summary.learned_count,
+                "memory_count": learning_summary.memory_count,
+                "learning_memory_path": learning_summary.output_path,
+            }
+
+        if "stg_standardization" in selected_types:
+            records = load_stg_overrides()
+            learning_summary = learn_stg_memory_from_review_records(records)
+            results["stg_standardization"] = {
+                "status": "success",
+                "review_record_count": len(records),
+                "learned_count": learning_summary.learned_count,
+                "memory_count": learning_summary.memory_count,
+                "learning_memory_path": learning_summary.output_path,
+            }
+
+        if "quality_rules" in selected_types:
+            records = load_quality_rule_overrides()
+            clear_quality_rule_learning_caches()
+            associations = tuple(load_quality_rule_associations())
+            health = summarize_quality_rule_learning(
+                records=records,
+                associations=associations,
+            )
+            results["quality_rules"] = {
+                "status": health.status,
+                "review_record_count": len(records),
+                "accepted_record_count": health.accepted_record_count,
+                "association_rule_count": health.association_rule_count,
+                "learned_rule_types": list(health.learned_rule_types),
+                "dependency_available": health.dependency_available,
+                "enabled": health.enabled,
+            }
+
+        total_review_record_count = sum(
+            int(result.get("review_record_count") or 0)
+            for result in results.values()
+        )
+        total_learned_count = sum(
+            int(result.get("learned_count") or 0)
+            + int(result.get("association_rule_count") or 0)
+            for result in results.values()
+        )
+        return {
+            "status": "success",
+            "memory_types": selected_types,
+            "backup": backup,
+            "results": results,
+            "total_review_record_count": total_review_record_count,
+            "total_learned_count": total_learned_count,
+            "summary": (
+                "Rebuilt review-based learning memory for "
+                f"{', '.join(selected_types)} from {total_review_record_count} "
+                f"review records; produced {total_learned_count} learned signals."
             ),
         }
 

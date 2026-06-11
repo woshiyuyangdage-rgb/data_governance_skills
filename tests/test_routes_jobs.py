@@ -60,6 +60,7 @@ def test_jobs_catalog_lists_unified_task_routes() -> None:
     assert "/jobs/learning-health/backups/validate" in paths
     assert "/jobs/learning-health/prune-invalid" in paths
     assert "/jobs/learning-health/backup-then-prune-invalid" in paths
+    assert "/jobs/learning-health/rebuild-review-learning" in paths
     assert "/jobs/learning-health/clear-field-key" in paths
     assert "/jobs/run-p0-plus-mapping-plus-stg-plus-quality" in paths
     assert "/jobs/run-p0-plus-mapping-plus-stg-plus-quality-with-review" in paths

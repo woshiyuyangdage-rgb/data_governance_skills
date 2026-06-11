@@ -52,6 +52,8 @@ def test_list_tools_route_returns_enabled_tools() -> None:
     assert any(tool.name == "assess_governance_portfolio" for tool in tools)
     assert any(tool.name == "generate_progress_snapshot" for tool in tools)
     assert any(tool.name == "list_governance_progress_snapshots" for tool in tools)
+    assert any(tool.name == "learning_health" for tool in tools)
+    assert any(tool.name == "rebuild_review_learning" for tool in tools)
 
 
 def test_agent_shell_plan_returns_preview_result() -> None:
@@ -64,6 +66,17 @@ def test_agent_shell_plan_returns_preview_result() -> None:
 
     assert response.execution_plan.profile_name == "diagnosis_mapping_stg"
     assert response.task_response is None
+
+
+def test_agent_shell_plan_can_preview_learning_memory_tool() -> None:
+    response = agent_shell_plan(
+        AgentShellPlanRequest(text="check learning memory health")
+    )
+
+    assert response.execution_plan.plan_type == "tool"
+    assert response.execution_plan.tool_name == "learning_health"
+    assert response.task_response is None
+    assert response.tool_response is None
 
 
 def test_agent_shell_resolve_context_returns_resolved_plan(

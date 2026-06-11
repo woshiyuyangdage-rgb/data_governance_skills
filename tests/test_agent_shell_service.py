@@ -173,3 +173,54 @@ def test_agent_shell_session_id_can_be_reused(
     session = session_store.get_session(first.session_id or "")
     assert session is not None
     assert len(session.recent_requests) == 2
+
+
+def test_agent_shell_can_preview_learning_health_tool_plan(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_session_snapshot_dir(tmp_path, monkeypatch)
+    service = AgentShellService()
+
+    result = service.interpret_to_plan("check learning memory health")
+
+    assert result.status == "interpreted_only"
+    assert result.execution_plan.plan_type == "tool"
+    assert result.execution_plan.tool_name == "learning_health"
+    assert result.execution_plan.validation_passed is True
+    assert result.task_request.profile_name == "tool:learning_health"
+    assert result.tool_response is None
+
+
+def test_agent_shell_requires_confirmation_for_learning_memory_prune(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_session_snapshot_dir(tmp_path, monkeypatch)
+    service = AgentShellService()
+
+    result = service.confirm_and_run("safe prune invalid learning memory")
+
+    assert result.status == "preview_requires_confirmation"
+    assert result.execution_plan.plan_type == "tool"
+    assert result.execution_plan.tool_name == "backup_then_prune_invalid_learning_memory"
+    assert result.execution_plan.requires_confirmation is True
+    assert result.tool_response is None
+
+
+def test_agent_shell_can_execute_learning_health_tool(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_session_snapshot_dir(tmp_path, monkeypatch)
+    service = AgentShellService()
+
+    result = service.confirm_and_run("check learning memory health", force_run=True)
+
+    assert result.status == "executed_successfully"
+    assert result.execution_plan.plan_type == "tool"
+    assert result.tool_response is not None
+    assert result.tool_response.tool_name == "learning_health"
+    assert result.tool_response.status == "success"
+    assert result.tool_response.result is not None
+    assert "total_memory_count" in result.tool_response.result

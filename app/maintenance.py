@@ -14,7 +14,11 @@ QUICK_CHECK_TEST_TARGETS = (
     "tests/test_maintenance.py",
     "tests/test_control_plane_service.py",
     "tests/test_tool_loader.py",
+    "tests/test_tool_service.py",
     "tests/test_governance_tool_executor.py",
+    "tests/test_agent_shell_service.py",
+    "tests/test_schema_exporter.py",
+    "tests/test_routes_jobs_tools.py",
     "tests/test_project_template_loader.py",
     "tests/test_domain_pack_loader.py",
 )
@@ -86,12 +90,40 @@ def validate_config_assets() -> int:
 def _check_tool_handlers() -> list[str]:
     executor = _build_governance_tool_executor()
     registered_handlers = executor.list_registered_handler_names()
+    schema_names, tool_examples = _load_schema_export_contracts()
+    seen_tool_names: set[str] = set()
     errors: list[str] = []
     for tool in _load_tool_registry():
+        if tool.name in seen_tool_names:
+            errors.append(f"tool registry contains duplicate tool name '{tool.name}'")
+        seen_tool_names.add(tool.name)
+
         if tool.enabled and tool.handler not in registered_handlers:
             errors.append(
                 f"tool '{tool.name}' references unregistered handler '{tool.handler}'"
             )
+        if tool.input_model not in schema_names:
+            errors.append(
+                f"tool '{tool.name}' references missing input schema "
+                f"'{tool.input_model}'"
+            )
+        if tool.output_model not in schema_names:
+            errors.append(
+                f"tool '{tool.name}' references missing output schema "
+                f"'{tool.output_model}'"
+            )
+
+    for tool_name, examples in tool_examples.items():
+        if tool_name not in seen_tool_names:
+            errors.append(f"tool examples reference missing tool '{tool_name}'")
+        if not isinstance(examples, list):
+            errors.append(f"tool examples for '{tool_name}' must be a list")
+            continue
+        for index, example in enumerate(examples):
+            if not isinstance(example, dict):
+                errors.append(
+                    f"tool example {index} for '{tool_name}' must be a mapping"
+                )
     return errors
 
 
@@ -147,6 +179,15 @@ def _load_tool_registry() -> list[Any]:
     from app.core.tools.tool_loader import load_tool_registry
 
     return load_tool_registry()
+
+
+def _load_schema_export_contracts() -> tuple[set[str], dict[str, Any]]:
+    from app.core.adapters.schema_export_definitions import (
+        MODEL_SCHEMA_MAP,
+        TOOL_EXAMPLES,
+    )
+
+    return set(MODEL_SCHEMA_MAP), dict(TOOL_EXAMPLES)
 
 
 def _list_enabled_profiles() -> list[Any]:

@@ -29,6 +29,7 @@ from app.api.job_requests import (
     ProgressSnapshotRequest,
     QualityRuleReviewRequest,
     RagQualityAssessmentRequest,
+    ReviewLearningRebuildRequest,
     TextToSqlReadinessAssessmentRequest,
 )
 from app.api.routes_jobs_backlog import (
@@ -66,6 +67,7 @@ from app.api.routes_jobs_control_plane import (
     list_config_assets_route,
     prune_invalid_learning_memory_route,
     publish_config_asset_route,
+    rebuild_review_learning_route,
     restore_learning_memory_backup_route,
     router as control_plane_router,
     save_config_asset_route,
@@ -149,6 +151,7 @@ __all__ = [
     "ProgressSnapshotRequest",
     "QualityRuleReviewRequest",
     "RagQualityAssessmentRequest",
+    "ReviewLearningRebuildRequest",
     "TextToSqlReadinessAssessmentRequest",
     "agent_shell_plan",
     "agent_shell_resolve_context",
@@ -198,6 +201,7 @@ __all__ = [
     "prune_invalid_learning_memory_route",
     "quality_rule_review_summary_route",
     "review_quality_rules_route",
+    "rebuild_review_learning_route",
     "router",
     "run_governance_task_route",
     "run_interpreted_governance_task",

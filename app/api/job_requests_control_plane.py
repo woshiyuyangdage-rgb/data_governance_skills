@@ -28,3 +28,10 @@ class LearningMaintenanceReportExportRequest(BaseModel):
     backup_limit: int = 3
     output_dir: str | None = None
     base_filename: str | None = None
+
+
+class ReviewLearningRebuildRequest(BaseModel):
+    """Request body for rebuilding learning memory from review records."""
+
+    memory_types: list[str] | None = None
+    create_backup: bool = True

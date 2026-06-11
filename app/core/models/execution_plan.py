@@ -7,7 +7,10 @@ class ExecutionPlan(BaseModel):
     """Previewable execution plan built from intent plus task request."""
 
     raw_text: str
+    plan_type: str = "workflow"
     profile_name: str
+    tool_name: str | None = None
+    tool_arguments: dict[str, object] = Field(default_factory=dict)
     stages: list[str] = Field(default_factory=list)
     apply_review_replay: bool = False
     export_reports: bool = False

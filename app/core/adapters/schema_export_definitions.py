@@ -544,6 +544,48 @@ MODEL_SCHEMA_MAP: dict[str, dict[str, object]] = {
         },
         "required": ["asset_name", "content"],
     },
+    "LearningMaintenanceReportArguments": {
+        "type": "object",
+        "properties": {
+            "backup_limit": {"type": "integer"},
+            "session_id": {"type": "string"},
+        },
+    },
+    "LearningMaintenanceReportExportArguments": {
+        "type": "object",
+        "properties": {
+            "backup_limit": {"type": "integer"},
+            "output_dir": {"type": "string"},
+            "base_filename": {"type": "string"},
+            "session_id": {"type": "string"},
+        },
+    },
+    "LearningMemoryBackupValidateArguments": {
+        "type": "object",
+        "properties": {
+            "backup_id": {"type": "string"},
+            "session_id": {"type": "string"},
+        },
+        "required": ["backup_id"],
+    },
+    "ReviewLearningRebuildArguments": {
+        "type": "object",
+        "properties": {
+            "memory_types": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "enum": [
+                        "standard_mapping",
+                        "stg_standardization",
+                        "quality_rules",
+                    ],
+                },
+            },
+            "create_backup": {"type": "boolean"},
+            "session_id": {"type": "string"},
+        },
+    },
     "ValidationResult": {
         "type": "object",
         "properties": {
@@ -788,4 +830,27 @@ TOOL_EXAMPLES: dict[str, list[dict[str, object]]] = {
     "list_config_assets": [{}],
     "validate_config_asset": [{"asset_name": "workflow_profiles"}],
     "publish_config_asset": [{"asset_name": "tool_registry"}],
+    "learning_health": [{}],
+    "learning_health_details": [{}],
+    "learning_maintenance_report": [{"backup_limit": 3}],
+    "export_learning_maintenance_report": [
+        {
+            "backup_limit": 3,
+            "base_filename": "learning_memory_report",
+        }
+    ],
+    "create_learning_memory_backup": [{}],
+    "list_learning_memory_backups": [{}],
+    "validate_learning_memory_backup": [{"backup_id": "learning_memory_20260101000000"}],
+    "backup_then_prune_invalid_learning_memory": [{}],
+    "rebuild_review_learning": [
+        {
+            "memory_types": [
+                "standard_mapping",
+                "stg_standardization",
+                "quality_rules",
+            ],
+            "create_backup": True,
+        }
+    ],
 }
