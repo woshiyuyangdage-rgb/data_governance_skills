@@ -224,3 +224,18 @@ def test_agent_shell_can_execute_learning_health_tool(
     assert result.tool_response.status == "success"
     assert result.tool_response.result is not None
     assert "total_memory_count" in result.tool_response.result
+
+    loaded = session_store.get_session(result.session_id or "")
+    assert loaded is not None
+    assert loaded.last_tool_response is not None
+    assert loaded.last_tool_response.tool_name == "learning_health"
+    assert loaded.last_tool_response.trace_id == result.tool_response.trace_id
+    assert loaded.last_trace_id == result.tool_response.trace_id
+    assert result.tool_response.trace_id in loaded.recent_trace_ids
+
+    session_store.clear_session_store()
+    restored = session_store.load_latest_session_snapshot()
+    assert restored is not None
+    assert restored.session_id == result.session_id
+    assert restored.last_tool_response is not None
+    assert restored.last_tool_response.tool_name == "learning_health"

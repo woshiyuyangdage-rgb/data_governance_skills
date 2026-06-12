@@ -173,6 +173,16 @@ def set_last_task_context(
     return save_session(session)
 
 
+def set_last_tool_response(
+    session_id: str,
+    tool_response,
+) -> AgentSession:
+    """Persist the latest tool-call response for one session."""
+    session = get_session(session_id) or create_session(session_id)
+    session.last_tool_response = tool_response
+    return save_session(session)
+
+
 def get_recent_file_candidates(session_id: str) -> list[str]:
     """Return recent unique file candidates for one session."""
     session = get_session(session_id)

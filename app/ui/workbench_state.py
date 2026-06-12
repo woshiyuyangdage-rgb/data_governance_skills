@@ -265,6 +265,9 @@ class WorkbenchState:
             if getattr(task_response, "exported_files", None):
                 self.session_state[keys.LATEST_REPORT_PATHS] = dict(task_response.exported_files)
 
+        if getattr(session, "last_tool_response", None) is not None:
+            self.session_state[keys.LATEST_TOOL_CALL_RESPONSE] = session.last_tool_response
+
         if getattr(session, "last_exported_files", None):
             self.session_state[keys.LATEST_REPORT_PATHS] = dict(session.last_exported_files)
 

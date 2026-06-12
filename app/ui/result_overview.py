@@ -15,6 +15,7 @@ from app.core.models.result_overview import (
 )
 from app.core.models.validation_result import ValidationResult
 from app.core.models.workflow_result import WorkflowResult
+from app.core.models.tool_call_response import ToolCallResponse
 from app.ui.status_blocks import render_key_value_block, render_metric_row
 from app.ui.workbench_cache import file_cache_key, read_file_bytes_cached
 
@@ -36,6 +37,39 @@ def build_result_artifacts(
         )
         for label, path in exported_files.items()
     ]
+
+
+def _summarize_tool_result(result: object | None) -> str:
+    """Build a compact summary for a tool response payload."""
+    if result is None:
+        return "N/A"
+    if isinstance(result, dict):
+        keys = [str(key) for key in result.keys()]
+        preview = ", ".join(keys[:6])
+        if len(keys) > 6:
+            preview = f"{preview}, ..."
+        return f"字典 {len(keys)} 项: {preview}" if preview else f"字典 {len(keys)} 项"
+    if isinstance(result, list):
+        return f"列表 {len(result)} 项"
+
+    text = str(result).strip()
+    if len(text) > 160:
+        return f"{text[:157]}..."
+    return text
+
+
+def _tool_response_details(tool_response: ToolCallResponse) -> list[tuple[str, object | None]]:
+    """Build shared detail rows for tool-call responses."""
+    details: list[tuple[str, object | None]] = [
+        ("工具名称", tool_response.tool_name),
+        ("工具状态", tool_response.status),
+        ("工具跟踪 ID", tool_response.trace_id or "N/A"),
+        ("工具开始时间", tool_response.started_at or "N/A"),
+        ("工具结束时间", tool_response.finished_at or "N/A"),
+    ]
+    if tool_response.result is not None:
+        details.append(("工具结果摘要", _summarize_tool_result(tool_response.result)))
+    return details
 
 
 def artifact_download_key(label: str, path: Path) -> str:
@@ -216,6 +250,8 @@ def build_agent_shell_overview(
     artifacts: list[ResultOverviewArtifact] = []
     if result.task_response is not None:
         artifacts = build_result_artifacts(result.task_response.exported_files)
+    if result.tool_response is not None:
+        details.extend(_tool_response_details(result.tool_response))
 
     return ResultOverview(
         title=title,
@@ -231,9 +267,29 @@ def build_agent_shell_overview(
         artifacts=artifacts,
         next_step=(
             "先看校验和上下文解析，再决定是否执行。"
-            if result.task_response is None
-            else "任务已执行，可回到报告页或评审页继续处理。"
+            if result.task_response is None and result.tool_response is None
+            else (
+                "工具已执行，可先查看工具响应，再回到报告页或评审页继续处理。"
+                if result.tool_response is not None
+                else "任务已执行，可回到报告页或评审页继续处理。"
+            )
         ),
+    )
+
+
+def build_tool_response_overview(
+    tool_response: ToolCallResponse,
+    *,
+    title: str = "最近工具响应",
+) -> ResultOverview:
+    """Build a normalized overview for a tool-call response."""
+    return ResultOverview(
+        title=title,
+        summary=tool_response.message,
+        status=tool_response.status,
+        details=_tool_response_details(tool_response),
+        metrics=[],
+        next_step="如需复核结果，可以展开工具响应内容或返回工具台继续执行。",
     )
 
 

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from app.core.models.execution_plan import ExecutionPlan
 from app.core.models.governance_task_request import GovernanceTaskRequest
 from app.core.models.governance_task_response import GovernanceTaskResponse
+from app.core.models.tool_call_response import ToolCallResponse
 
 
 class AgentSession(BaseModel):
@@ -21,3 +22,4 @@ class AgentSession(BaseModel):
     last_exported_files: dict[str, str] = Field(default_factory=dict)
     last_task_request: GovernanceTaskRequest | None = None
     last_task_response: GovernanceTaskResponse | None = None
+    last_tool_response: ToolCallResponse | None = None

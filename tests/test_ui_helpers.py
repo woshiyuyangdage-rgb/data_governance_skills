@@ -37,7 +37,11 @@ from app.ui.review_form_helpers import (
     collect_stg_review_inputs,
 )
 from app.ui import status_blocks
-from app.ui.result_overview import artifact_download_key, build_result_artifacts
+from app.ui.result_overview import (
+    artifact_download_key,
+    build_result_artifacts,
+    build_tool_response_overview,
+)
 from app.ui.result_detail_viewer import build_result_detail_sections
 from app.ui import session_keys as keys
 from app.ui.session_keys import build_session_defaults
@@ -391,6 +395,26 @@ def test_page_overview_forwards_workflow_overview_options() -> None:
     assert overview.title == "Custom title"
     assert overview.summary == "Custom summary"
     assert overview.next_step == "Custom next step"
+
+
+def test_tool_response_overview_includes_summary_rows() -> None:
+    tool_response = SimpleNamespace(
+        tool_name="learning_health",
+        status="success",
+        message="ok",
+        result={"total_memory_count": 3, "stale_count": 1},
+        trace_id="trace-1",
+        started_at="2026-06-12T10:00:00Z",
+        finished_at="2026-06-12T10:00:01Z",
+    )
+
+    overview = build_tool_response_overview(tool_response)
+
+    assert overview.title == "最近工具响应"
+    assert overview.status == "success"
+    assert ("工具名称", "learning_health") in overview.details
+    assert ("工具跟踪 ID", "trace-1") in overview.details
+    assert any(label == "工具结果摘要" for label, _ in overview.details)
 
 
 def test_page_utils_confirmation_import_accessors(monkeypatch) -> None:

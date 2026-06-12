@@ -27,7 +27,7 @@ from app.core.agent.session_store import get_session, set_last_uploaded_file
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_agent_overview
 from app.ui.performance_helpers import render_json_section, render_lazy_dataframe_section
-from app.ui.result_overview import render_result_overview
+from app.ui.result_overview import build_tool_response_overview, render_result_overview
 from app.ui.status_blocks import (
     render_bullet_list,
     render_key_value_block,
@@ -264,6 +264,9 @@ if shell_result is not None:
         if task_response.exported_files:
             render_json_section("导出文件", task_response.exported_files)
 
+    if shell_result.tool_response is not None:
+        render_result_overview(build_tool_response_overview(shell_result.tool_response))
+
 resolved_session_id = get_agent_shell_session_id()
 if resolved_session_id:
     session = get_session(resolved_session_id)
@@ -283,6 +286,9 @@ if resolved_session_id:
                 ("最近执行跟踪 ID 列表", ", ".join(session.recent_trace_ids) or "N/A"),
             ],
         )
+        if session.last_tool_response is not None:
+            render_result_overview(build_tool_response_overview(session.last_tool_response))
+
         if session.last_exported_files:
             render_json_section("最近导出文件", session.last_exported_files)
 

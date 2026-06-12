@@ -10,6 +10,7 @@ from app.core.agent.session_store import (
     save_session,
     set_last_exported_files,
     set_last_task_context,
+    set_last_tool_response,
 )
 from app.core.agent.tool_intent_resolver import AgentToolIntent, resolve_agent_tool_intent
 from app.core.intent.intent_interpreter import IntentInterpreter
@@ -253,17 +254,18 @@ class AgentShellService:
                 return preview_result
             from app.core.tools.tool_service import call_tool
 
+            tool_arguments = dict(preview_result.execution_plan.tool_arguments)
+            if preview_result.session_id and "session_id" not in tool_arguments:
+                tool_arguments["session_id"] = preview_result.session_id
             tool_response = call_tool(
                 ToolCallRequest(
                     tool_name=tool_name,
-                    arguments=dict(preview_result.execution_plan.tool_arguments),
+                    arguments=tool_arguments,
                 )
             )
             preview_result.tool_response = tool_response
             if preview_result.session_id:
-                session = get_session(preview_result.session_id)
-                if session is not None:
-                    save_session(session)
+                set_last_tool_response(preview_result.session_id, tool_response)
             preview_result.status = (
                 "executed_successfully"
                 if tool_response.status in {"success", "invalid"}
