@@ -12,6 +12,7 @@ from app.ui.control_plane_helpers import (
 )
 from app.ui import page_utils
 from app.ui import performance_helpers
+from app.ui import workbench_cache
 from app.ui.column_labels import localize_dataframe
 from app.ui.manual_metadata_editor import (
     MANUAL_METADATA_DELETE_COLUMN,
@@ -296,6 +297,24 @@ def test_page_utils_uploaded_file_state_resets_workflow(monkeypatch, tmp_path: P
     assert fake_st.session_state[keys.WORKFLOW_RESULT] is None
     assert fake_st.session_state[keys.LATEST_REPORT_PATHS] == {}
     assert fake_st.session_state[keys.RESTORED_SESSION_SOURCE] == "sample"
+
+
+def test_sample_cache_tokens_keep_bytes_and_dataframe_separate(tmp_path: Path) -> None:
+    sample_path = tmp_path / "sample.csv"
+    sample_path.write_text("table_name,field_name\ncustomer,cust_id\n", encoding="utf-8")
+    cache_token = workbench_cache.file_cache_key(str(sample_path))
+
+    sample_bytes = workbench_cache.read_file_bytes_cached(
+        str(sample_path),
+        f"bytes::{cache_token}",
+    )
+    sample_df = workbench_cache.read_csv_dataframe_cached(
+        str(sample_path),
+        f"dataframe::{cache_token}",
+    )
+
+    assert isinstance(sample_bytes, bytes)
+    assert sample_df.head(1).iloc[0]["table_name"] == "customer"
 
 
 def test_page_utils_task_response_state_records_exports(monkeypatch) -> None:

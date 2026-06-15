@@ -10,14 +10,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import (
-    INPUT_TEMPLATE_DOC_PATH,
     SAMPLE_METADATA_PATH,
-    get_agent_shell_session_id,
-    get_restored_session_id,
-    get_restored_session_source,
     ensure_project_root_on_path,
+    get_uploaded_file_path,
+    get_uploaded_file_signature,
     initialize_session_state,
-    restore_agent_session_to_state,
     set_uploaded_file_state,
 )
 from app.ui.workbench_cache import (
@@ -33,13 +30,53 @@ from app.ui.navigation import (
     build_page_registry,
     build_quick_start_links,
 )
-from app.ui.status_blocks import render_key_value_block, render_page_header
+from app.ui.status_blocks import render_page_header
 
 ensure_project_root_on_path()
 st.set_page_config(page_title="数据治理技能工作台", layout="wide")
 initialize_session_state()
 
-from app.core.agent.session_store import load_latest_session_snapshot, list_session_snapshots
+METADATA_TEMPLATE_COLUMNS = [
+    "table_name",
+    "table_name_cn",
+    "table_description",
+    "schema_name",
+    "system_name",
+    "field_name",
+    "field_name_cn",
+    "field_description",
+    "data_type",
+    "nullable",
+]
+
+
+def _metadata_template_csv_bytes() -> bytes:
+    """Return an empty metadata CSV template with standard headers."""
+    return (",".join(METADATA_TEMPLATE_COLUMNS) + "\n").encode("utf-8")
+
+
+def _ensure_sample_metadata_as_default(sample_bytes: bytes) -> bool:
+    """Register the built-in sample as the active input without clearing results."""
+    uploaded_file_path = get_uploaded_file_path()
+    sample_signature = content_signature(sample_bytes)
+    if (
+        uploaded_file_path == str(SAMPLE_METADATA_PATH)
+        and get_uploaded_file_signature() == sample_signature
+    ):
+        return True
+    if uploaded_file_path:
+        return True
+
+    try:
+        set_uploaded_file_state(
+            file_path=SAMPLE_METADATA_PATH,
+            file_signature=sample_signature,
+            source_label="sample_metadata",
+            reset_workflow=False,
+        )
+    except Exception:
+        return False
+    return True
 
 
 def render_home_page() -> None:
@@ -47,52 +84,39 @@ def render_home_page() -> None:
     render_page_header(
         "治理启动台",
         "先上传，再诊断，再评审，最后导出。治理能力也可以进入意图、Agent 和控制面。",
-        caption=f"输入模板: `{INPUT_TEMPLATE_DOC_PATH}` | 示例元数据: `{SAMPLE_METADATA_PATH}`",
+        caption="内置输入模板和示例元数据已准备好，可直接载入测试。",
     )
 
-    top_left, top_right = st.columns([2, 1])
+    sample_cache_token = file_cache_key(str(SAMPLE_METADATA_PATH))
+    sample_bytes = read_file_bytes_cached(
+        str(SAMPLE_METADATA_PATH),
+        f"bytes::{sample_cache_token}",
+    )
+    sample_df = read_csv_dataframe_cached(
+        str(SAMPLE_METADATA_PATH),
+        f"dataframe::{sample_cache_token}",
+    )
+    sample_is_ready = _ensure_sample_metadata_as_default(sample_bytes)
 
-    with top_left:
-        st.subheader("恢复上次会话")
-        snapshots = list_session_snapshots()
-        if snapshots:
-            latest_snapshot = snapshots[0]
-            st.caption(f"最近会话快照: {latest_snapshot.name}")
-            if st.button("恢复最近会话", use_container_width=True):
-                session = load_latest_session_snapshot()
-                if session is None:
-                    st.warning("没有可恢复的会话快照。")
-                else:
-                    restore_agent_session_to_state(
-                        session,
-                        source_label=str(latest_snapshot),
-                    )
-                    st.success(f"已恢复会话 {session.session_id}")
-        else:
-            st.info("还没有可恢复的会话快照。")
-
-    with top_right:
-        render_key_value_block(
-            "当前状态",
-            rows=[
-                ("读取模板", INPUT_TEMPLATE_DOC_PATH.name),
-                ("示例数据", SAMPLE_METADATA_PATH.name),
-                ("当前会话", get_agent_shell_session_id() or "N/A"),
-            ],
-        )
-
-    demo_left, demo_right = st.columns(2)
-
-    with demo_left:
+    sample_title_col, template_download_col = st.columns([3, 1])
+    with sample_title_col:
         st.subheader("示例数据")
-        sample_cache_token = file_cache_key(str(SAMPLE_METADATA_PATH))
-        sample_bytes = read_file_bytes_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
-        sample_df = read_csv_dataframe_cached(str(SAMPLE_METADATA_PATH), sample_cache_token)
-        st.dataframe(
-            localize_dataframe_columns(sample_df.head(8)),
+    with template_download_col:
+        st.download_button(
+            label="下载元数据模板",
+            data=_metadata_template_csv_bytes(),
+            file_name="metadata_input_template.csv",
+            mime="text/csv",
             use_container_width=True,
         )
-        if st.button("载入示例数据", use_container_width=True):
+
+    st.caption("以下为内置示例元数据前 10 条，可直接用于页面功能测试。")
+    st.table(localize_dataframe_columns(sample_df.head(10)))
+    if sample_is_ready:
+        st.caption("没有当前输入时，示例数据会自动作为默认输入；已有上传文件时不会被覆盖。")
+    else:
+        st.warning("示例数据已展示，但未能自动设为默认输入。")
+        if st.button("手动载入示例数据", use_container_width=True):
             set_uploaded_file_state(
                 file_path=SAMPLE_METADATA_PATH,
                 file_signature=content_signature(sample_bytes),
@@ -107,9 +131,15 @@ def render_home_page() -> None:
             use_container_width=True,
         )
 
-    with demo_right:
-        st.subheader("一键入口")
-        for page, label, icon in build_quick_start_links(PAGE_BY_KEY):
+    st.subheader("一键入口")
+    quick_start_links = build_quick_start_links(PAGE_BY_KEY)
+    quick_start_cols = st.columns(len(quick_start_links))
+    for column, (page, label, icon) in zip(
+        quick_start_cols,
+        quick_start_links,
+        strict=True,
+    ):
+        with column:
             st.page_link(page, label=label, icon=icon, use_container_width=True)
 
     st.subheader("维护者入口")
@@ -118,13 +148,6 @@ def render_home_page() -> None:
     for column, (page, label, icon) in zip(maintainer_cols, maintainer_links, strict=True):
         with column:
             st.page_link(page, label=label, icon=icon, use_container_width=True)
-
-    restored_session_id = get_restored_session_id()
-    if restored_session_id:
-        st.info(
-            f"已恢复会话 `{restored_session_id}` "
-            f"来自 `{get_restored_session_source() or 'N/A'}`"
-        )
 
     st.caption("左侧功能树已按治理流程分组，适合继续处理、回放或维护。")
 
