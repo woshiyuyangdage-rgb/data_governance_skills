@@ -166,6 +166,7 @@ class ControlPlaneService:
             "incremental_rerun_policies",
             "workbook_import_policies",
             "workbook_column_aliases",
+            "intake_field_mapping_specs",
             "confirmation_workbook_template_profiles",
             "confirmation_workbook_mapping_specs",
             "confirmation_workbook_diagnosis_policies",
@@ -229,6 +230,10 @@ class ControlPlaneService:
 
                 confirmation_template_loader.load_confirmation_template_profiles.cache_clear()
                 confirmation_template_loader.load_confirmation_template_mapping_specs.cache_clear()
+            if asset_name == "intake_field_mapping_specs":
+                from app.core.intake import intake_profile_loader
+
+                intake_profile_loader.load_intake_mapping_specs.cache_clear()
         elif asset_name == "abbreviation_dict":
             knowledge_loader._load_abbreviation_dict_cached.cache_clear()
         elif asset_name == "root_word_dict":

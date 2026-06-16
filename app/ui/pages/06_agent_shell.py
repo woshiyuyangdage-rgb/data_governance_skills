@@ -45,9 +45,7 @@ service = AgentShellService()
 
 render_page_header(
     "Agent 控制台",
-    (
-        "预览规则化执行计划，校验必需参数，并在策略允许后执行。"
-    ),
+    "输入治理任务，预览或运行本地规则化 Agent。",
 )
 
 uploaded_file_path = get_uploaded_file_path()
@@ -55,9 +53,7 @@ default_session_id = get_agent_shell_session_id() or ""
 active_session_id = ensure_agent_shell_session_id()
 if uploaded_file_path:
     set_last_uploaded_file(active_session_id, uploaded_file_path)
-    st.caption(
-        f"当前上传文件可用于会话自动补全: {uploaded_file_path}"
-    )
+    st.caption("当前输入文件已就绪，可直接使用“当前文件”类任务。")
 
 task_text = st.text_area(
     "任务文本",
@@ -65,21 +61,18 @@ task_text = st.text_area(
     height=120,
     key="agent_shell_text_input",
 )
-st.caption(
-    "示例：检查当前文件 | 对上传文件做标准映射并导出报告 | 基于最近文件生成 STG 建议 | 为当前文件推荐质量规则 | 使用已确认结果重新运行"
-)
-file_path = st.text_input(
-    "文件路径",
-    value="",
-    help="留空时会让上下文解析器安全复用当前会话文件。",
-    key="agent_shell_file_path_input",
-)
-session_id_input = st.text_input(
-    "会话 ID",
-    value=default_session_id or active_session_id,
-    help="留空时会自动创建新的本地会话。",
-    key="agent_shell_session_id_input",
-)
+
+with st.expander("高级参数", expanded=False):
+    file_path = st.text_input(
+        "文件路径",
+        value="",
+        key="agent_shell_file_path_input",
+    )
+    session_id_input = st.text_input(
+        "会话 ID",
+        value=default_session_id or active_session_id,
+        key="agent_shell_session_id_input",
+    )
 
 preview_col, run_col = st.columns(2)
 preview_clicked = preview_col.button("预览计划", type="primary")
@@ -132,53 +125,42 @@ if shell_result is not None:
 
     plan = shell_result.execution_plan
     interpreted_intent = shell_result.interpreted_intent
-    render_explanation_block(
-        "计划预览",
-        summary=plan.summary,
-        details=[
-            ("会话 ID", shell_result.session_id),
-            ("匹配方案", interpreted_intent.matched_profile_name),
-            ("匹配来源", interpreted_intent.match_source),
-            ("阶段", plan.stages),
-            ("需要确认", plan.requires_confirmation),
-            ("验证通过", plan.validation_passed),
-            ("输出模式", plan.suggested_output_mode or "N/A"),
-        ],
-        confidence=interpreted_intent.confidence,
-        next_step=(
-            "如果计划需要确认，先检查验证说明；如果没有问题，可以直接执行。"
-        ),
-    )
-
-    resolved_context = shell_result.resolved_context
-    if resolved_context is not None:
+    with st.expander("执行计划明细", expanded=False):
         render_explanation_block(
-            "解析出的上下文",
+            "计划预览",
+            summary=plan.summary,
             details=[
-                ("文件路径", resolved_context.resolved_file_path or "N/A"),
-                ("输出目录", resolved_context.resolved_output_dir or "N/A"),
-                ("解析来源", resolved_context.resolved_from),
-                ("参考命中", resolved_context.reference_matches),
-                ("自动补全", shell_result.resolution_applied),
-                ("歧义检测", resolved_context.ambiguity_detected),
+                ("会话 ID", shell_result.session_id),
+                ("匹配方案", interpreted_intent.matched_profile_name),
+                ("匹配来源", interpreted_intent.match_source),
+                ("阶段", plan.stages),
+                ("需要确认", plan.requires_confirmation),
+                ("验证通过", plan.validation_passed),
+                ("输出模式", plan.suggested_output_mode or "N/A"),
             ],
-            evidence=resolved_context.messages,
-            next_step="确认自动补全是否合理，再决定是否强制执行。",
+            confidence=interpreted_intent.confidence,
         )
-        if resolved_context.autofilled_parameters:
-            render_json_section(
-                "自动补全参数",
-                resolved_context.autofilled_parameters,
-                compact=True,
+
+        resolved_context = shell_result.resolved_context
+        if resolved_context is not None:
+            render_explanation_block(
+                "解析出的上下文",
+                details=[
+                    ("文件路径", resolved_context.resolved_file_path or "N/A"),
+                    ("输出目录", resolved_context.resolved_output_dir or "N/A"),
+                    ("解析来源", resolved_context.resolved_from),
+                    ("参考命中", resolved_context.reference_matches),
+                    ("自动补全", shell_result.resolution_applied),
+                    ("歧义检测", resolved_context.ambiguity_detected),
+                ],
+                evidence=resolved_context.messages,
             )
 
-    render_bullet_list(
-        "验证说明",
-        plan.validation_messages,
-        empty_message="暂无校验提示。",
-    )
-
-    render_json_section("任务请求", shell_result.task_request)
+        render_bullet_list(
+            "验证说明",
+            plan.validation_messages,
+            empty_message="暂无校验提示。",
+        )
 
     if plan.requires_confirmation and shell_result.task_response is None:
         if st.button("强制运行"):
@@ -264,47 +246,39 @@ if shell_result is not None:
         if task_response.exported_files:
             render_json_section("导出文件", task_response.exported_files)
 
-    if shell_result.tool_response is not None:
-        render_result_overview(build_tool_response_overview(shell_result.tool_response))
-
 resolved_session_id = get_agent_shell_session_id()
 if resolved_session_id:
     session = get_session(resolved_session_id)
     if session is not None:
-        render_key_value_block(
-            "会话总览",
-            rows=[
-                ("当前会话 ID", session.session_id),
-                ("最近请求数", len(session.recent_requests)),
-                ("最近计划数", len(session.recent_plans)),
-                ("最近执行跟踪 ID", session.last_trace_id or "N/A"),
-                ("最近上传文件", session.last_uploaded_file_path or "N/A"),
-                (
-                    "最近上传文件列表",
-                    ", ".join(session.recent_uploaded_files) or "N/A",
-                ),
-                ("最近执行跟踪 ID 列表", ", ".join(session.recent_trace_ids) or "N/A"),
-            ],
-        )
-        if session.last_tool_response is not None:
-            render_result_overview(build_tool_response_overview(session.last_tool_response))
+        with st.expander("会话与历史", expanded=False):
+            render_key_value_block(
+                "会话总览",
+                rows=[
+                    ("当前会话 ID", session.session_id),
+                    ("最近请求数", len(session.recent_requests)),
+                    ("最近计划数", len(session.recent_plans)),
+                    ("最近执行跟踪 ID", session.last_trace_id or "N/A"),
+                ],
+            )
+            if session.last_tool_response is not None:
+                render_result_overview(build_tool_response_overview(session.last_tool_response))
 
-        if session.last_exported_files:
-            render_json_section("最近导出文件", session.last_exported_files)
+            if session.last_exported_files:
+                render_json_section("最近导出文件", session.last_exported_files)
 
-        if session.recent_plans:
-            st.subheader("最近计划")
-            for index, recent_plan in enumerate(reversed(session.recent_plans), start=1):
-                with st.expander(
-                    f"计划 {index}: {recent_plan.profile_name}",
-                    expanded=False,
-                ):
-                    render_key_value_block(
-                        None,
-                        summary=recent_plan.summary,
-                        rows=[
-                            ("阶段", ", ".join(recent_plan.stages) or "N/A"),
-                            ("校验通过", recent_plan.validation_passed),
-                            ("需要确认", recent_plan.requires_confirmation),
-                        ],
-                    )
+            if session.recent_plans:
+                st.subheader("最近计划")
+                for index, recent_plan in enumerate(reversed(session.recent_plans), start=1):
+                    with st.expander(
+                        f"计划 {index}: {recent_plan.profile_name}",
+                        expanded=False,
+                    ):
+                        render_key_value_block(
+                            None,
+                            summary=recent_plan.summary,
+                            rows=[
+                                ("阶段", ", ".join(recent_plan.stages) or "N/A"),
+                                ("校验通过", recent_plan.validation_passed),
+                                ("需要确认", recent_plan.requires_confirmation),
+                            ],
+                        )

@@ -11,6 +11,7 @@ from app.core.parser.parser_exceptions import (
     MissingRequiredColumnsError,
     ParserError,
 )
+from app.core.rules.config_loader import get_intake_field_mapping_specs_config
 
 STANDARD_COLUMNS = [
     "table_name",
@@ -72,6 +73,54 @@ def clean_text(value: object) -> str | None:
     return text or None
 
 
+def _normalize_column_name(value: object) -> str:
+    """Return a lightweight normalized header for alias matching."""
+    normalized = clean_text(str(value or "")) or ""
+    return normalized.replace(" ", "").replace("_", "").lower()
+
+
+def _standard_metadata_alias_lookup() -> dict[str, str]:
+    """Return canonical column names for standard metadata aliases."""
+    lookup = {_normalize_column_name(column): column for column in STANDARD_COLUMNS}
+    try:
+        config = get_intake_field_mapping_specs_config()
+    except Exception:
+        return lookup
+
+    mapping_specs = config.get("mapping_specs")
+    if not isinstance(mapping_specs, dict):
+        return lookup
+
+    standard_spec = mapping_specs.get("standard_metadata_spec")
+    if not isinstance(standard_spec, dict):
+        return lookup
+
+    for canonical_column, aliases in standard_spec.items():
+        if canonical_column not in STANDARD_COLUMNS or not isinstance(aliases, list):
+            continue
+        for alias in aliases:
+            alias_text = clean_text(alias)
+            if alias_text is None:
+                continue
+            lookup[_normalize_column_name(alias_text)] = canonical_column
+    return lookup
+
+
+def _collapse_duplicate_columns(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Merge duplicate headers by keeping the first non-null value per row."""
+    if not dataframe.columns.duplicated().any():
+        return dataframe
+
+    merged: OrderedDict[str, pd.Series] = OrderedDict()
+    for position, column in enumerate(dataframe.columns):
+        series = dataframe.iloc[:, position]
+        if column in merged:
+            merged[column] = merged[column].combine_first(series)
+        else:
+            merged[column] = series.copy()
+    return pd.DataFrame(merged, index=dataframe.index)
+
+
 def normalize_nullable(value: object) -> bool | None:
     """Map common nullable tokens to boolean values."""
     normalized = clean_text(value)
@@ -105,8 +154,15 @@ def _first_non_null(current: str | None, candidate: str | None) -> str | None:
 def prepare_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     """Validate shape and normalize raw dataframe columns."""
     normalized_columns = [clean_text(column) or "" for column in dataframe.columns]
+    alias_lookup = _standard_metadata_alias_lookup()
+    canonical_columns = [
+        alias_lookup.get(_normalize_column_name(column), column)
+        for column in normalized_columns
+    ]
     dataframe = dataframe.copy()
-    dataframe.columns = normalized_columns
+    dataframe.columns = canonical_columns
+    dataframe = _collapse_duplicate_columns(dataframe)
+    normalized_columns = [clean_text(column) or "" for column in dataframe.columns]
 
     if not normalized_columns:
         raise EmptyInputFileError("The input file does not contain any columns.")

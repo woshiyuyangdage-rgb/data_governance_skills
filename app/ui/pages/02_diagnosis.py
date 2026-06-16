@@ -59,9 +59,6 @@ render_page_header(
     (
         "选择工作流方案，运行统一治理任务入口，然后查看诊断、映射、STG 和质量规则结果。"
     ),
-    info=(
-        "如果希望先用自然语言预览执行计划，可以先进入意图运行器或 Agent 控制台。"
-    ),
 )
 
 uploaded_file_path = get_uploaded_file_path()

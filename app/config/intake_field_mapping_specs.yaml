@@ -1,15 +1,15 @@
 mapping_specs:
   standard_metadata_spec:
-    table_name: [table_name]
-    table_name_cn: [table_name_cn, table_cn_name, 中文表名]
-    table_description: [table_description, table_desc, 表描述]
-    schema_name: [schema_name, schema]
-    system_name: [system_name, source_system, 系统名称]
-    field_name: [field_name, column_name, 字段名]
-    field_name_cn: [field_name_cn, field_cn_name, 中文字段名]
-    field_description: [field_description, field_desc, 字段描述]
-    data_type: [data_type, field_type, 类型]
-    nullable: [nullable, is_nullable, 是否可空]
+    table_name: [table_name, 表英文名 / table_name]
+    table_name_cn: [table_name_cn, table_cn_name, 中文表名, 表中文名 / table_name_cn]
+    table_description: [table_description, table_desc, 表描述 / table_description]
+    schema_name: [schema_name, schema, 所属schema / schema_name]
+    system_name: [system_name, source_system, 系统名称 / system_name]
+    field_name: [field_name, column_name, 字段名, 字段英文名 / field_name]
+    field_name_cn: [field_name_cn, field_cn_name, 中文字段名, 字段中文名 / field_name_cn]
+    field_description: [field_description, field_desc, 字段描述 / field_description]
+    data_type: [data_type, field_type, 类型, 数据类型 / data_type]
+    nullable: [nullable, is_nullable, 是否可空, 是否可空 / nullable]
 
   governance_platform_export_spec:
     table_name: [物理表名, table_name, 表名]

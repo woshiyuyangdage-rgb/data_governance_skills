@@ -1,8 +1,11 @@
 """Tests for lightweight Streamlit UI helper logic."""
 
+import io
 from pathlib import Path
 from types import SimpleNamespace
 from contextlib import contextmanager
+
+import pandas as pd
 
 from app.ui.control_plane_helpers import (
     can_publish_without_save,
@@ -838,6 +841,29 @@ def test_json_ready_payload_normalizes_nested_values() -> None:
         "items": [1, 2],
         "child": {"value": "nested"},
     }
+
+
+def test_metadata_template_csv_has_bilingual_headers_and_samples() -> None:
+    import app.ui.streamlit_app as streamlit_app
+
+    template_bytes = streamlit_app._metadata_template_csv_bytes(
+        pd.read_csv(streamlit_app.SAMPLE_METADATA_PATH)
+    )
+    template_df = pd.read_csv(io.BytesIO(template_bytes))
+
+    assert list(template_df.columns) == [
+        "表英文名 / table_name",
+        "表中文名 / table_name_cn",
+        "表描述 / table_description",
+        "所属schema / schema_name",
+        "来源系统 / system_name",
+        "字段英文名 / field_name",
+        "字段中文名 / field_name_cn",
+        "字段描述 / field_description",
+        "数据类型 / data_type",
+        "是否可空 / nullable",
+    ]
+    assert len(template_df) == 3
 
 
 def test_dataframe_filter_helpers_cover_options_and_selection() -> None:

@@ -61,7 +61,6 @@ initialize_session_state()
 render_page_header(
     "人工评审工作台",
     "确认、拒绝、编辑或标记建议，并把覆盖结果写回本地。",
-    caption="质量规则评审和规则导出在“质量规则”页面处理。",
 )
 
 result = get_workflow_result()

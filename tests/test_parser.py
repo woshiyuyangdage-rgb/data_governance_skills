@@ -58,6 +58,39 @@ def test_parse_csv_supports_extended_metadata_columns(tmp_path: Path) -> None:
     assert table.fields[0].is_sensitive is True
 
 
+def test_parse_csv_supports_bilingual_template_headers(tmp_path: Path) -> None:
+    csv_path = tmp_path / "bilingual_template.csv"
+    csv_path.write_text(
+        (
+            "表英文名 / table_name,表中文名 / table_name_cn,表描述 / table_description,"
+            "所属schema / schema_name,来源系统 / system_name,字段英文名 / field_name,"
+            "字段中文名 / field_name_cn,字段描述 / field_description,数据类型 / data_type,"
+            "是否可空 / nullable\n"
+            "customer_master,客户主数据,Active customer master data.,dim,crm,customer_id,"
+            "客户ID,Unique customer identifier.,varchar,false\n"
+            "customer_master,客户主数据,Active customer master data.,dim,crm,customer_name,"
+            "客户名称,Official customer display name.,varchar,false\n"
+            "customer_master,客户主数据,Active customer master data.,dim,crm,created_dt,"
+            "创建日期,Creation date of the customer record.,datetime,true\n"
+        ),
+        encoding="utf-8",
+    )
+
+    tables = parse_csv(str(csv_path))
+
+    assert len(tables) == 1
+    table = tables[0]
+    assert table.table_name == "customer_master"
+    assert table.table_name_cn == "客户主数据"
+    assert len(table.fields) == 3
+    assert [field.field_name for field in table.fields] == [
+        "customer_id",
+        "customer_name",
+        "created_dt",
+    ]
+    assert table.fields[2].nullable is True
+
+
 def test_parse_excel_with_sample_metadata_rows_returns_tables(tmp_path: Path) -> None:
     sample_df = pd.read_csv(SAMPLE_METADATA_PATH)
     excel_path = tmp_path / "sample_metadata.xlsx"

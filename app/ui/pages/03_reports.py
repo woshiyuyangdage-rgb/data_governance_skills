@@ -64,7 +64,6 @@ else:
     )
 
     st.subheader("页面明细")
-    st.caption("明细表默认延迟加载，适合大文件结果核对；展开模块后再点击加载表格。")
     render_result_detail_viewer(result, key_prefix="reports_result_detail")
 
     export_col1, export_col2 = st.columns([1, 2])

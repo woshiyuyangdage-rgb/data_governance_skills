@@ -60,92 +60,91 @@ render_page_header(
     ),
 )
 
-st.subheader("能力清单")
-render_metric_row(
-    [
-        ("服务", manifest.service_name),
-        ("版本", manifest.version),
-        ("工具数", len(manifest.tools)),
-    ],
-)
-st.caption(manifest.description)
-
-with st.expander("能力清单 JSON", expanded=False):
+with st.expander("能力清单", expanded=False):
+    render_metric_row(
+        [
+            ("服务", manifest.service_name),
+            ("版本", manifest.version),
+            ("工具数", len(manifest.tools)),
+        ],
+    )
     render_json_section("能力清单 JSON", manifest, compact=True)
 
-tab_native, tab_openai, tab_mcp = st.tabs(
-    ["本地结构定义", "OpenAI 风格结构定义", "MCP 风格清单"]
-)
-
-with tab_native:
-    render_json_section(
-        "本地结构定义",
-        records_to_dataframe(native_schemas).to_dict("records"),
-        compact=True,
+with st.expander("结构定义", expanded=False):
+    tab_native, tab_openai, tab_mcp = st.tabs(
+        ["本地结构定义", "OpenAI 风格结构定义", "MCP 风格清单"]
     )
 
-with tab_openai:
-    render_json_section("OpenAI 风格结构定义", openai_schemas, compact=True)
+    with tab_native:
+        render_json_section(
+            "本地结构定义",
+            records_to_dataframe(native_schemas).to_dict("records"),
+            compact=True,
+        )
 
-with tab_mcp:
-    render_json_section("MCP 风格清单", mcp_manifest, compact=True)
+    with tab_openai:
+        render_json_section("OpenAI 风格结构定义", openai_schemas, compact=True)
 
-st.subheader("本地适配器调用")
-adapter_mode = st.selectbox(
-    "适配器模式",
-    options=["native", "openai_style", "manifest"],
-    format_func=lambda value: ADAPTER_MODE_LABELS.get(value, value),
-)
-selected_tool_name = st.selectbox("工具", options=tool_names)
-selected_schema = native_schema_lookup[selected_tool_name]
-st.caption(
-    f"分类: {selected_schema.category or '未知'} | "
-    f"说明: {selected_schema.description}"
-)
+    with tab_mcp:
+        render_json_section("MCP 风格清单", mcp_manifest, compact=True)
 
-default_arguments_json = json.dumps(
-    default_arguments.get(selected_tool_name, {}),
-    ensure_ascii=False,
-    indent=2,
-)
-arguments_text = st.text_area(
-    "参数",
-    value=default_arguments_json,
-    height=220,
-    key=f"adapter_console_arguments_{adapter_mode}_{selected_tool_name}",
-)
+with st.expander("本地适配器调用", expanded=False):
+    adapter_mode = st.selectbox(
+        "适配器模式",
+        options=["native", "openai_style", "manifest"],
+        format_func=lambda value: ADAPTER_MODE_LABELS.get(value, value),
+    )
+    selected_tool_name = st.selectbox("工具", options=tool_names)
+    selected_schema = native_schema_lookup[selected_tool_name]
+    st.caption(
+        f"分类: {selected_schema.category or '未知'} | "
+        f"说明: {selected_schema.description}"
+    )
 
-if st.button("通过适配器调用", type="primary"):
-    try:
-        parsed_arguments = json.loads(arguments_text or "{}")
-        if not isinstance(parsed_arguments, dict):
-            raise ValueError("参数必须是 JSON 对象。")
-        if adapter_mode == "native":
-            result = adapter.invoke_native_tool(selected_tool_name, parsed_arguments)
-        elif adapter_mode == "openai_style":
-            result = adapter.invoke_openai_style(selected_tool_name, arguments_text)
+    default_arguments_json = json.dumps(
+        default_arguments.get(selected_tool_name, {}),
+        ensure_ascii=False,
+        indent=2,
+    )
+    arguments_text = st.text_area(
+        "参数",
+        value=default_arguments_json,
+        height=220,
+        key=f"adapter_console_arguments_{adapter_mode}_{selected_tool_name}",
+    )
+
+    if st.button("通过适配器调用", type="primary"):
+        try:
+            parsed_arguments = json.loads(arguments_text or "{}")
+            if not isinstance(parsed_arguments, dict):
+                raise ValueError("参数必须是 JSON 对象。")
+            if adapter_mode == "native":
+                result = adapter.invoke_native_tool(selected_tool_name, parsed_arguments)
+            elif adapter_mode == "openai_style":
+                result = adapter.invoke_openai_style(selected_tool_name, arguments_text)
+            else:
+                result = adapter.invoke_manifest_tool(selected_tool_name, parsed_arguments)
+        except Exception as exc:
+            st.error(f"适配器调用失败: {exc}")
         else:
-            result = adapter.invoke_manifest_tool(selected_tool_name, parsed_arguments)
-    except Exception as exc:
-        st.error(f"适配器调用失败: {exc}")
-    else:
-        set_latest_adapter_invocation_result(result)
-        if result.status in {"success", "executed_successfully", "interpreted_only"}:
-            st.success("适配器调用完成。")
-        else:
-            st.error(result.message)
+            set_latest_adapter_invocation_result(result)
+            if result.status in {"success", "executed_successfully", "interpreted_only"}:
+                st.success("适配器调用完成。")
+            else:
+                st.error(result.message)
 
 result = get_latest_adapter_invocation_result()
 if result is not None:
-    render_key_value_block(
-        "调用结果",
-        summary=result.message,
-        rows=[
-            ("适配器", result.adapter_name),
-            ("工具", result.tool_name),
-            ("状态", result.status),
-            ("执行跟踪 ID", result.trace_id or "N/A"),
-        ],
-    )
-    if result.tool_response is not None:
-        render_json_section("工具响应", result.tool_response, compact=True)
+    with st.expander("调用结果", expanded=False):
+        render_key_value_block(
+            None,
+            summary=result.message,
+            rows=[
+                ("适配器", result.adapter_name),
+                ("工具", result.tool_name),
+                ("状态", result.status),
+                ("执行跟踪 ID", result.trace_id or "N/A"),
+            ],
+        )
+        if result.tool_response is not None:
+            render_json_section("工具响应", result.tool_response, compact=True)

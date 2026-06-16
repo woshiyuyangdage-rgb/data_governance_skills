@@ -47,12 +47,10 @@ task_text = st.text_area(
     "任务文本",
     value="运行标准映射并导出报告",
     height=120,
-    help="示例：运行标准映射并导出报告",
 )
 file_path = st.text_input(
     "文件路径",
     value=default_file_path,
-    help="如果已经上传文件，这里会自动带入已保存的本地路径。",
 )
 execution_mode = st.radio(
     "执行模式",
@@ -89,7 +87,6 @@ if execution_result is not None:
     render_result_overview(
         build_intent_overview(execution_result)
     )
-    render_json_section("任务请求", execution_result.task_request)
 
     interpreted_intent = execution_result.interpreted_intent
     render_key_value_block(
@@ -105,7 +102,6 @@ if execution_result is not None:
             ("置信度", interpreted_intent.confidence),
         ],
     )
-    st.info("如果结果可用，可以直接运行；如果不对，回到上传页或诊断页补充文件上下文。")
     render_json_section(
         "推断参数",
         interpreted_intent.inferred_parameters,
