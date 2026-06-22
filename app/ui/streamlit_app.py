@@ -3,7 +3,6 @@
 from pathlib import Path
 import sys
 
-import pandas as pd
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -25,6 +24,7 @@ from app.ui.workbench_cache import (
     read_file_bytes_cached,
 )
 from app.ui.column_labels import localize_dataframe_columns
+from app.ui.metadata_template import render_metadata_template_download
 from app.ui.navigation import (
     build_maintainer_links,
     build_navigation_sections,
@@ -32,33 +32,18 @@ from app.ui.navigation import (
     build_quick_start_links,
 )
 from app.ui.status_blocks import render_page_header
+from app.ui.streamlit_chrome import apply_streamlit_chrome_localization
 
 ensure_project_root_on_path()
-st.set_page_config(page_title="数据治理技能工作台", layout="wide")
+st.set_page_config(
+    page_title="数据治理技能工作台",
+    layout="wide",
+    menu_items={
+        "About": "数据治理技能工作台：本地运行的数据治理与 AI-ready 评估工具。",
+    },
+)
 initialize_session_state()
-
-METADATA_TEMPLATE_COLUMNS = [
-    ("table_name", "表英文名 / table_name"),
-    ("table_name_cn", "表中文名 / table_name_cn"),
-    ("table_description", "表描述 / table_description"),
-    ("schema_name", "所属schema / schema_name"),
-    ("system_name", "来源系统 / system_name"),
-    ("field_name", "字段英文名 / field_name"),
-    ("field_name_cn", "字段中文名 / field_name_cn"),
-    ("field_description", "字段描述 / field_description"),
-    ("data_type", "数据类型 / data_type"),
-    ("nullable", "是否可空 / nullable"),
-]
-
-
-def _metadata_template_csv_bytes(sample_dataframe: pd.DataFrame) -> bytes:
-    """Return a bilingual metadata CSV template with a few sample rows."""
-    canonical_columns = [column for column, _ in METADATA_TEMPLATE_COLUMNS]
-    display_columns = [label for _, label in METADATA_TEMPLATE_COLUMNS]
-    template_dataframe = sample_dataframe.head(3).copy()
-    template_dataframe = template_dataframe.reindex(columns=canonical_columns)
-    template_dataframe.columns = display_columns
-    return template_dataframe.to_csv(index=False, encoding="utf-8").encode("utf-8")
+apply_streamlit_chrome_localization()
 
 
 def _ensure_sample_metadata_as_default(sample_bytes: bytes) -> bool:
@@ -108,13 +93,7 @@ def render_home_page() -> None:
     with sample_title_col:
         st.subheader("示例数据")
     with template_download_col:
-        st.download_button(
-            label="下载元数据模板",
-            data=_metadata_template_csv_bytes(sample_df),
-            file_name="metadata_input_template.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
+        render_metadata_template_download(key_prefix="home")
 
     st.caption("以下为内置示例元数据前 10 条，可直接用于页面功能测试；下载模板已内置 3 条示例记录。")
     st.table(localize_dataframe_columns(sample_df.head(10)))

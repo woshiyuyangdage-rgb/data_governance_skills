@@ -9,6 +9,7 @@ from app.core.parser.csv_parser import parse_csv
 from app.core.parser.excel_parser import parse_excel
 from app.core.parser.loader import load_metadata_file
 from app.core.parser.parser_exceptions import MissingRequiredColumnsError
+from app.ui.metadata_template import build_metadata_template_dataframe
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "samples" / "sample_metadata.csv"
@@ -89,6 +90,35 @@ def test_parse_csv_supports_bilingual_template_headers(tmp_path: Path) -> None:
         "created_dt",
     ]
     assert table.fields[2].nullable is True
+
+
+def test_parse_csv_supports_downloaded_metadata_template(tmp_path: Path) -> None:
+    csv_path = tmp_path / "downloaded_metadata_template.csv"
+    build_metadata_template_dataframe().to_csv(csv_path, index=False, encoding="utf-8")
+
+    tables = parse_csv(str(csv_path))
+
+    assert len(tables) == 2
+    customer_table = next(table for table in tables if table.table_name == "customer_master")
+    contract_table = next(table for table in tables if table.table_name == "contract_info")
+    assert customer_table.business_domain == "客户域"
+    assert customer_table.owner_role == "客户数据负责人"
+    assert customer_table.fields[0].standard_code == "STD_CUST_ID"
+    assert customer_table.fields[0].is_primary_key is True
+    assert contract_table.fields[1].field_name == "contract_amt"
+    assert contract_table.fields[1].data_length == "18,2"
+
+
+def test_parse_excel_supports_downloaded_metadata_template(tmp_path: Path) -> None:
+    excel_path = tmp_path / "downloaded_metadata_template.xlsx"
+    build_metadata_template_dataframe().to_excel(excel_path, index=False)
+
+    tables = parse_excel(str(excel_path))
+
+    assert len(tables) == 2
+    assert tables[0].table_name == "customer_master"
+    assert tables[0].fields[0].field_name_cn == "客户编号"
+    assert tables[1].fields[0].standard_name == "合同编号"
 
 
 def test_parse_excel_with_sample_metadata_rows_returns_tables(tmp_path: Path) -> None:

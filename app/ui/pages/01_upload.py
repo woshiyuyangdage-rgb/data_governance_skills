@@ -33,6 +33,7 @@ from app.ui.manual_metadata_editor import (
     manual_metadata_rows_to_editor_dataframe,
     reset_manual_metadata_rows,
 )
+from app.ui.metadata_template import render_metadata_template_download
 from app.ui.performance_helpers import ensure_large_file_runtime_ready
 from app.ui.status_blocks import render_metric_row, render_page_header
 from app.ui.workbench_cache import (
@@ -65,16 +66,22 @@ render_page_header(
     "上传符合模板的本地 CSV 或 Excel 文件，或手工录入少量元数据，作为后续诊断与评审的输入。",
 )
 
-st.subheader("模板说明")
-st.caption(f"详细说明: {INPUT_TEMPLATE_DOC_PATH}")
-st.markdown(
-    """
-    - 支持格式: `csv`, `xlsx`
-    - 推荐粒度: `table + field-level`
-    - 必填列: `table_name`
-    - 推荐字段列: `field_name`
-    """
-)
+template_info_col, template_download_col = st.columns([3, 1])
+with template_info_col:
+    st.subheader("模板说明")
+    st.caption(f"详细说明: {INPUT_TEMPLATE_DOC_PATH}")
+    st.markdown(
+        """
+        - 支持上传格式: `csv`, `xlsx`
+        - 可下载模板格式: `CSV`, `Excel`
+        - 推荐粒度: `table + field-level`
+        - 必填列: `table_name`
+        - 推荐字段列: `field_name`
+        """
+    )
+with template_download_col:
+    st.caption("下载模板")
+    render_metadata_template_download(key_prefix="upload")
 
 uploaded_file = st.file_uploader(
     "选择元数据文件",

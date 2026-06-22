@@ -1,0 +1,5 @@
+table_key,table_name,table_name_cn,table_description,business_domain,source
+customer_master,customer_master,客户主数据,Active customer master data.,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
+sales_order_header,Sales Order Header,销售订单头,Sales order header from ERP.,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
+ods_customer_snapshot,ods_customer_snapshot,客户快照,Snapshot extract for customer records.,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
+user_audit_log,user_audit_log,用户审计日志,System audit log table for internal operations.,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv

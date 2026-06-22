@@ -6,7 +6,9 @@ venv/
 .pytest_runtime/
 .codex-test/
 .codex_tmp_asar_extract/
-.streamlit/
+.streamlit/*
+!.streamlit/
+!.streamlit/config.toml
 .vscode/
 .DS_Store
 pytest-cache-files-*/

@@ -27,6 +27,7 @@ from app.ui.manual_metadata_editor import (
     manual_metadata_rows_to_editor_dataframe,
     reset_manual_metadata_rows,
 )
+from app.ui.metadata_template import build_metadata_template_file
 from app.ui.navigation import (
     build_maintainer_links,
     build_navigation_sections,
@@ -34,6 +35,10 @@ from app.ui.navigation import (
     build_quick_start_links,
 )
 from app.ui.page_overview import build_workflow_overview
+from app.ui.streamlit_chrome import (
+    STREAMLIT_CHROME_TRANSLATIONS,
+    build_streamlit_chrome_localizer_html,
+)
 from app.ui.review_form_helpers import (
     candidate_evidence,
     collect_mapping_review_inputs,
@@ -844,26 +849,69 @@ def test_json_ready_payload_normalizes_nested_values() -> None:
 
 
 def test_metadata_template_csv_has_bilingual_headers_and_samples() -> None:
-    import app.ui.streamlit_app as streamlit_app
-
-    template_bytes = streamlit_app._metadata_template_csv_bytes(
-        pd.read_csv(streamlit_app.SAMPLE_METADATA_PATH)
-    )
+    template_bytes, file_name, mime = build_metadata_template_file("CSV")
     template_df = pd.read_csv(io.BytesIO(template_bytes))
 
-    assert list(template_df.columns) == [
+    assert file_name == "metadata_input_template.csv"
+    assert mime == "text/csv"
+    assert list(template_df.columns)[:10] == [
         "表英文名 / table_name",
         "表中文名 / table_name_cn",
         "表描述 / table_description",
         "所属schema / schema_name",
         "来源系统 / system_name",
+        "业务域 / business_domain",
+        "责任角色 / owner_role",
+        "生命周期状态 / lifecycle_status",
+        "数据分层 / data_layer",
+        "字段英文名 / field_name",
+    ]
+    assert list(template_df.columns)[-3:] == [
+        "是否主键 / is_primary_key",
+        "是否外键 / is_foreign_key",
+        "是否敏感 / is_sensitive",
+    ]
+    assert len(template_df) == 3
+
+
+def test_metadata_template_excel_can_be_generated() -> None:
+    template_bytes, file_name, mime = build_metadata_template_file("Excel")
+    template_df = pd.read_excel(io.BytesIO(template_bytes))
+
+    assert file_name == "metadata_input_template.xlsx"
+    assert mime == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    assert list(template_df.columns)[:6] == [
+        "表英文名 / table_name",
+        "表中文名 / table_name_cn",
+        "表描述 / table_description",
+        "所属schema / schema_name",
+        "来源系统 / system_name",
+        "业务域 / business_domain",
+    ]
+    assert list(template_df.columns)[9:16] == [
         "字段英文名 / field_name",
         "字段中文名 / field_name_cn",
         "字段描述 / field_description",
         "数据类型 / data_type",
+        "数据长度 / data_length",
+        "样例值 / sample_values",
         "是否可空 / nullable",
     ]
     assert len(template_df) == 3
+
+
+def test_streamlit_chrome_localizer_contains_chinese_menu_labels() -> None:
+    html = build_streamlit_chrome_localizer_html()
+
+    assert STREAMLIT_CHROME_TRANSLATIONS["Rerun"] == "重新运行"
+    assert STREAMLIT_CHROME_TRANSLATIONS["Always rerun"] == "始终重新运行"
+    assert STREAMLIT_CHROME_TRANSLATIONS["Clear cache"] == "清除缓存"
+    assert STREAMLIT_CHROME_TRANSLATIONS["Made with Streamlit"] == "基于 Streamlit 构建"
+    assert STREAMLIT_CHROME_TRANSLATIONS["Deploy this app using..."] == "选择部署方式"
+    assert STREAMLIT_CHROME_TRANSLATIONS["Deploy now"] == "立即部署"
+    assert STREAMLIT_CHROME_TRANSLATIONS["Start trial"] == "开始试用"
+    assert STREAMLIT_CHROME_TRANSLATIONS["Other platforms"] == "其他平台"
+    assert "MutationObserver" in html
 
 
 def test_dataframe_filter_helpers_cover_options_and_selection() -> None:
