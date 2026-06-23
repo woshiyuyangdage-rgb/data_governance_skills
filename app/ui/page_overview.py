@@ -33,7 +33,7 @@ def build_status_overview(status: ConfigStatus) -> ResultOverview:
             ResultOverviewMetric(label="状态", value=status.current_status),
         ],
         warnings=[status.last_error_message] if status.last_error_message else [],
-        next_step="查看变更预览，再决定是否保存、发布或回滚。",
+        next_step="先校验当前配置；校验通过后再发布，必要时可从备份回滚。",
     )
 
 
