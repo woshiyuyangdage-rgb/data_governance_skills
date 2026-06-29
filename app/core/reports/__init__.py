@@ -16,7 +16,9 @@ from app.core.reports.markdown_reporter import (
 
 def export_all_reports(*args, **kwargs):
     """Lazily export all reports without triggering router/report import cycles."""
-    from app.core.reports.report_service import export_all_reports as _export_all_reports
+    from app.core.reports.report_service import (
+        export_all_reports as _export_all_reports,
+    )
 
     return _export_all_reports(*args, **kwargs)
 

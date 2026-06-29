@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from app.api import routes_jobs_control_plane
 from app.api.routes_jobs import (
     ConfigAssetSaveRequest,
     LearningMaintenanceReportExportRequest,
@@ -16,8 +17,8 @@ from app.api.routes_jobs import (
     learning_health_details_route,
     learning_health_route,
     learning_maintenance_report_route,
-    list_learning_memory_backups_route,
     list_config_assets_route,
+    list_learning_memory_backups_route,
     prune_invalid_learning_memory_route,
     publish_config_asset_route,
     rebuild_review_learning_route,
@@ -26,7 +27,6 @@ from app.api.routes_jobs import (
     validate_config_asset_route,
     validate_learning_memory_backup_route,
 )
-from app.api import routes_jobs_control_plane
 
 
 def test_config_asset_routes_can_list_get_and_validate_assets(

@@ -1,7 +1,7 @@
 """Agent shell page for plan preview, validation, confirmation, and execution."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -9,13 +9,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
 from app.ui.page_utils import (
     ensure_agent_shell_session_id,
+    ensure_project_root_on_path,
     get_agent_shell_session_id,
     get_latest_agent_shell_result,
-    get_uploaded_file_path,
     get_session_value,
+    get_uploaded_file_path,
+    initialize_session_state,
     set_latest_agent_shell_result,
     set_task_response_state,
 )
@@ -26,7 +27,10 @@ from app.core.agent.agent_shell_service import AgentShellService
 from app.core.agent.session_store import get_session, set_last_uploaded_file
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_agent_overview
-from app.ui.performance_helpers import render_json_section, render_lazy_dataframe_section
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_lazy_dataframe_section,
+)
 from app.ui.result_overview import build_tool_response_overview, render_result_overview
 from app.ui.status_blocks import (
     render_bullet_list,

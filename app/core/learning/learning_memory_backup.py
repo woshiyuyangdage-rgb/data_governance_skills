@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import shutil
-from hashlib import sha256
 from dataclasses import asdict, dataclass
+from hashlib import sha256
 from pathlib import Path
 
 from app.core.parser.metadata_learning import FIELD_MEMORY_PATH, TABLE_MEMORY_PATH

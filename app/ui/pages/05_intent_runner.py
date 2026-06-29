@@ -1,7 +1,7 @@
 """Natural-language task interpreter page."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -26,9 +26,16 @@ from app.core.intent.intent_task_service import (
 )
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_intent_overview
-from app.ui.performance_helpers import render_json_section, render_lazy_dataframe_section
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_lazy_dataframe_section,
+)
 from app.ui.result_overview import render_result_overview
-from app.ui.status_blocks import render_key_value_block, render_metric_row, render_page_header
+from app.ui.status_blocks import (
+    render_key_value_block,
+    render_metric_row,
+    render_page_header,
+)
 from app.ui.workbench_cache import review_summary_to_dataframe
 
 initialize_session_state()

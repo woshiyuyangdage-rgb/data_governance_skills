@@ -1,8 +1,8 @@
 """Tests for review record helpers and override application."""
 
 from app.core.models.mapping_result import MappingResult
-from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.mapping_review_record import MappingReviewRecord
+from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_review_record import StgReviewRecord
 from app.core.review.review_service import (
     apply_mapping_overrides_to_results,

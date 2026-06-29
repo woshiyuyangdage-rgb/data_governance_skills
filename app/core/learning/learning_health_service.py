@@ -33,16 +33,16 @@ from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     clear_standard_mapping_memory_by_field_key,
     learn_standard_mapping_memory_from_review_records,
     prune_invalid_standard_mapping_memory,
-    summarize_standard_mapping_memory,
     standard_mapping_memory_details,
+    summarize_standard_mapping_memory,
 )
 from app.core.skills.stg_standardization_skill.stg_learning import (
     StgMemoryHealth,
     clear_stg_field_memory_by_field_key,
     learn_stg_memory_from_review_records,
     prune_invalid_stg_field_memory,
-    summarize_stg_field_memory,
     stg_field_memory_details,
+    summarize_stg_field_memory,
 )
 from app.core.utils.file_utils import ensure_directory, sanitize_filename
 from app.core.utils.time_utils import utc_now_compact, utc_now_seconds

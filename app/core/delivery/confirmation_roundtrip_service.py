@@ -4,7 +4,9 @@ from typing import Any
 
 from app.core.delivery.confirmation_workbook_importer import WorkbookImportPayload
 from app.core.governance import backlog_store
-from app.core.governance.backlog_tracking_service import GovernanceBacklogTrackingService
+from app.core.governance.backlog_tracking_service import (
+    GovernanceBacklogTrackingService,
+)
 from app.core.models.confirmation_roundtrip_result import ConfirmationRoundTripResult
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord

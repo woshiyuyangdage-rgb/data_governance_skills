@@ -16,13 +16,13 @@ from app.core.models.governance_task_response import GovernanceTaskResponse
 from app.core.models.workflow_profile import WorkflowProfile
 from app.core.orchestrator.profile_loader import list_enabled_profiles
 from app.core.orchestrator.task_service import run_governance_task
+from app.ui.page_overview import build_workflow_overview
 from app.ui.page_utils import (
     ensure_agent_shell_session_id,
     get_selected_workflow_profile,
     set_selected_workflow_profile,
     set_task_response_state,
 )
-from app.ui.page_overview import build_workflow_overview
 from app.ui.result_overview import render_result_overview
 
 

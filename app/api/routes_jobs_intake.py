@@ -8,7 +8,9 @@ from app.api.job_requests import (
     MetadataIntakeRequest,
     ProjectTemplateRunRequest,
 )
-from app.core.delivery.confirmation_workbook_importer import ConfirmationWorkbookImporter
+from app.core.delivery.confirmation_workbook_importer import (
+    ConfirmationWorkbookImporter,
+)
 from app.core.domain.domain_pack_loader import list_enabled_domain_packs
 from app.core.domain.domain_pack_matcher import DomainPackMatcher
 from app.core.intake.intake_adapter_service import IntakeAdapterService

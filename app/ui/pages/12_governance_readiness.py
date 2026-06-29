@@ -1,9 +1,9 @@
 """Governance readiness and remediation workbench."""
 
-from datetime import datetime
 import json
-from pathlib import Path
 import sys
+from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 
@@ -28,9 +28,16 @@ from app.core.governance import (
     RemediationPlanner,
 )
 from app.core.models.workflow_result import WorkflowResult
-from app.core.orchestrator.pipeline_service import run_full_governance_work_package_from_file
+from app.core.orchestrator.pipeline_service import (
+    run_full_governance_work_package_from_file,
+)
 from app.ui.page_overview import build_workflow_overview
+from app.ui.performance_helpers import (
+    render_dataframe_multiselect_filter,
+    render_lazy_dataframe_section,
+)
 from app.ui.result_overview import render_result_overview
+from app.ui.status_blocks import render_metric_row, render_page_header
 from app.ui.workbench_cache import (
     ai_ready_scores_to_dataframe,
     governance_gaps_to_dataframe,
@@ -38,11 +45,6 @@ from app.ui.workbench_cache import (
     readiness_scores_to_dataframe,
     remediation_actions_to_dataframe,
 )
-from app.ui.performance_helpers import (
-    render_dataframe_multiselect_filter,
-    render_lazy_dataframe_section,
-)
-from app.ui.status_blocks import render_metric_row, render_page_header
 
 initialize_session_state()
 

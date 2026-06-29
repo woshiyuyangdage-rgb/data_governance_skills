@@ -1,7 +1,7 @@
 """Diagnosis page for uploaded metadata files."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -9,25 +9,25 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_project_root_on_path, initialize_session_state
+from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_workflow_overview
 from app.ui.page_utils import (
     ensure_agent_shell_session_id,
+    ensure_project_root_on_path,
     get_selected_workflow_profile,
     get_task_response,
     get_uploaded_file_path,
     get_uploaded_file_signature,
     get_workflow_result,
+    initialize_session_state,
     set_selected_workflow_profile,
     set_task_response_state,
 )
-from app.ui.explanation_blocks import render_explanation_block
-from app.ui.page_overview import build_workflow_overview
-from app.ui.result_overview import render_result_overview
 from app.ui.performance_helpers import (
     ensure_large_file_runtime_ready,
     render_deferred_dataframe_section,
-    render_lazy_dataframe_section,
 )
+from app.ui.result_overview import render_result_overview
 from app.ui.status_blocks import render_page_header
 
 ensure_project_root_on_path()

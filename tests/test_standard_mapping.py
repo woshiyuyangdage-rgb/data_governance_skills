@@ -5,15 +5,15 @@ from pathlib import Path
 import pandas as pd
 
 from app.core.models.field_meta import FieldMeta
-from app.core.models.table_meta import TableMeta
 from app.core.models.mapping_review_record import MappingReviewRecord
+from app.core.models.table_meta import TableMeta
 from app.core.orchestrator.pipeline_service import run_p0_plus_mapping_from_file
 from app.core.skills.data_standard_mapping_skill import (
     StandardMappingInput,
     StandardMappingRecommendationSkill,
+    semantic_index,
+    standard_mapping_recommendation,
 )
-from app.core.skills.data_standard_mapping_skill import semantic_index
-from app.core.skills.data_standard_mapping_skill import standard_mapping_recommendation
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "samples" / "sample_metadata.csv"

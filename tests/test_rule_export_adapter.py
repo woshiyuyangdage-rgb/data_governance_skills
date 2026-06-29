@@ -5,8 +5,8 @@ from pathlib import Path
 
 import yaml
 
-from app.core.adapters.rule_export_adapter import RuleExportAdapter
 from app.core.adapters.execution_package_builder import ExecutionPackageBuilder
+from app.core.adapters.rule_export_adapter import RuleExportAdapter
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 
 OUTPUT_DIR = (

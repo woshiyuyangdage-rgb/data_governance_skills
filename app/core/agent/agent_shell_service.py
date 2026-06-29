@@ -1,6 +1,5 @@
 """Lightweight agent shell service for preview, validation, and controlled execution."""
 
-from app.core.context.context_resolver import ContextResolver
 from app.core.agent.execution_planner import ExecutionPlanner
 from app.core.agent.session_store import (
     append_plan_to_session,
@@ -12,7 +11,11 @@ from app.core.agent.session_store import (
     set_last_task_context,
     set_last_tool_response,
 )
-from app.core.agent.tool_intent_resolver import AgentToolIntent, resolve_agent_tool_intent
+from app.core.agent.tool_intent_resolver import (
+    AgentToolIntent,
+    resolve_agent_tool_intent,
+)
+from app.core.context.context_resolver import ContextResolver
 from app.core.intent.intent_interpreter import IntentInterpreter
 from app.core.models.agent_shell_result import AgentShellResult
 from app.core.models.execution_plan import ExecutionPlan

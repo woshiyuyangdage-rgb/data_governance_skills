@@ -1,7 +1,7 @@
 """Shared render helpers for normalized result overviews."""
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 import streamlit as st
 
@@ -13,9 +13,9 @@ from app.core.models.result_overview import (
     ResultOverviewArtifact,
     ResultOverviewMetric,
 )
+from app.core.models.tool_call_response import ToolCallResponse
 from app.core.models.validation_result import ValidationResult
 from app.core.models.workflow_result import WorkflowResult
-from app.core.models.tool_call_response import ToolCallResponse
 from app.ui.status_blocks import render_key_value_block, render_metric_row
 from app.ui.workbench_cache import file_cache_key, read_file_bytes_cached
 

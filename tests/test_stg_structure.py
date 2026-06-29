@@ -7,8 +7,8 @@ from app.core.models.table_meta import TableMeta
 from app.core.skills.stg_standardization_skill import (
     StgStructureSuggestionInput,
     StgStructureSuggestionSkill,
+    stg_structure_suggestion,
 )
-from app.core.skills.stg_standardization_skill import stg_structure_suggestion
 
 
 def _disable_stg_learning(monkeypatch) -> None:

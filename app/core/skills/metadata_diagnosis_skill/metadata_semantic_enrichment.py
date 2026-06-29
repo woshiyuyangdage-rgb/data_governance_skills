@@ -332,13 +332,6 @@ class MetadataSemanticEnrichmentSkill(BaseSkill):
         standard_name: str | None,
     ) -> tuple[str, float, list[str], list[str], str, bool]:
         field_tokens = cls._tokens(field_name, field_name_cn, standard_name)
-        table_tokens = cls._tokens(
-            table.table_name,
-            table.table_name_cn,
-            table.table_description,
-            business_domain,
-            table.business_domain,
-        )
         quality_tags = cls._description_quality_tags(
             field_name,
             field_description,
@@ -417,10 +410,8 @@ class MetadataSemanticEnrichmentSkill(BaseSkill):
             quality_tags.append("description_needs_manual_confirmation")
 
         if "description_usable" in quality_tags and field_description:
-            optimized = field_description
             action = "keep_current"
         else:
-            optimized = generated
             action = "auto_complete" if score >= 0.78 else "manual_review"
 
         requires_manual_review = score < 0.78 or weak_context or any(
@@ -536,7 +527,6 @@ class MetadataSemanticEnrichmentSkill(BaseSkill):
         domain_phrase = (
             f" in the {table.business_domain} domain" if table.business_domain else ""
         )
-        concept_phrase = ", ".join(key_concepts[:4]) or "its core business fields"
         core_field_phrase = ", ".join(core_fields[:5]) or "core fields"
         scenario_phrase = ", ".join(applicable_scenarios[:4]) or "business analysis"
         risk_phrase = "; ".join(ai_usage_risks[:3])

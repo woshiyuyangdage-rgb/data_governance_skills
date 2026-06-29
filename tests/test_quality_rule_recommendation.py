@@ -10,8 +10,8 @@ from app.core.review import quality_override_store
 from app.core.skills.data_quality_rule_skill import (
     QualityRuleRecommendationInput,
     QualityRuleRecommendationSkill,
+    quality_rule_learning,
 )
-from app.core.skills.data_quality_rule_skill import quality_rule_learning
 
 
 def test_identifier_field_recommends_not_null_and_uniqueness() -> None:

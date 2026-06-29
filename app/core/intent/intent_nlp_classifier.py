@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import math
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import lru_cache
-import math
-from typing import Iterable
 
 from app.core.intent.intent_loader import get_intent_definitions
 from app.core.normalize import clean_text

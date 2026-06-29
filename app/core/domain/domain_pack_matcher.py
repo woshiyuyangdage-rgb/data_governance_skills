@@ -1,6 +1,9 @@
 """Rule-based domain governance pack matcher."""
 
-from app.core.domain.domain_pack_loader import get_domain_pack, list_enabled_domain_packs
+from app.core.domain.domain_pack_loader import (
+    get_domain_pack,
+    list_enabled_domain_packs,
+)
 from app.core.models.domain_governance_pack import DomainGovernancePack
 from app.core.models.domain_pack_match_result import DomainPackMatchResult
 from app.core.models.table_meta import TableMeta

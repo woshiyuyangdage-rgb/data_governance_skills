@@ -1,7 +1,7 @@
 """Streamlit workbench homepage."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -9,20 +9,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import (
-    SAMPLE_METADATA_PATH,
-    ensure_project_root_on_path,
-    get_uploaded_file_path,
-    get_uploaded_file_signature,
-    initialize_session_state,
-    set_uploaded_file_state,
-)
-from app.ui.workbench_cache import (
-    content_signature,
-    file_cache_key,
-    read_csv_dataframe_cached,
-    read_file_bytes_cached,
-)
 from app.ui.column_labels import localize_dataframe_columns
 from app.ui.metadata_template import render_metadata_template_download
 from app.ui.navigation import (
@@ -31,8 +17,22 @@ from app.ui.navigation import (
     build_page_registry,
     build_quick_start_links,
 )
+from app.ui.page_utils import (
+    SAMPLE_METADATA_PATH,
+    ensure_project_root_on_path,
+    get_uploaded_file_path,
+    get_uploaded_file_signature,
+    initialize_session_state,
+    set_uploaded_file_state,
+)
 from app.ui.status_blocks import render_page_header
 from app.ui.streamlit_chrome import apply_streamlit_chrome_localization
+from app.ui.workbench_cache import (
+    content_signature,
+    file_cache_key,
+    read_csv_dataframe_cached,
+    read_file_bytes_cached,
+)
 
 ensure_project_root_on_path()
 st.set_page_config(

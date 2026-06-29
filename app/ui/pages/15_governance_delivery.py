@@ -1,7 +1,7 @@
 """Governance delivery package page."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -25,7 +25,10 @@ from app.core.orchestrator.pipeline_service import (
     run_full_governance_delivery_package_with_review_from_file,
 )
 from app.ui.page_overview import build_workflow_overview
-from app.ui.performance_helpers import render_json_section, render_records_dataframe_section
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_records_dataframe_section,
+)
 from app.ui.result_overview import render_result_overview
 from app.ui.status_blocks import render_key_value_block, render_page_header
 

@@ -1,8 +1,8 @@
 """Shared data models for metadata governance."""
 
+from app.core.models.adapter_invocation_result import AdapterInvocationResult
 from app.core.models.agent_session import AgentSession
 from app.core.models.agent_shell_result import AgentShellResult
-from app.core.models.adapter_invocation_result import AdapterInvocationResult
 from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.backlog_summary import BacklogSummary
 from app.core.models.backlog_update_result import BacklogUpdateResult
@@ -20,17 +20,24 @@ from app.core.models.execution_trace import ExecutionTrace
 from app.core.models.exported_tool_schema import ExportedToolSchema
 from app.core.models.field_meta import FieldMeta
 from app.core.models.governance_backlog_item import GovernanceBacklogItem
+from app.core.models.governance_gap import GovernanceGap
+from app.core.models.governance_task import GovernanceTask
 from app.core.models.governance_task_request import GovernanceTaskRequest
 from app.core.models.governance_task_response import GovernanceTaskResponse
-from app.core.models.governance_gap import GovernanceGap
 from app.core.models.governance_work_package import GovernanceWorkPackage
 from app.core.models.intent_execution_result import IntentExecutionResult
 from app.core.models.interpreted_intent import InterpretedIntent
-from app.core.models.parameter_resolution_result import ParameterResolutionResult
-from app.core.models.governance_task import GovernanceTask
 from app.core.models.issue import Issue
 from app.core.models.mapping_result import MappingResult, UnmappedField
 from app.core.models.mapping_review_record import MappingReviewRecord
+from app.core.models.parameter_resolution_result import ParameterResolutionResult
+from app.core.models.project_workspace import (
+    ProjectWorkspace,
+    ProjectWorkspaceArtifact,
+    ProjectWorkspaceReviewState,
+    ProjectWorkspaceRun,
+    ProjectWorkspaceSummary,
+)
 from app.core.models.quality_rule_package import QualityRulePackage
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
@@ -44,14 +51,14 @@ from app.core.models.rag_quality import (
     RagRetrievalLog,
 )
 from app.core.models.readiness_score import ReadinessScore
-from app.core.models.resolved_context import ResolvedContext
 from app.core.models.remediation_action import RemediationAction
+from app.core.models.resolved_context import ResolvedContext
 from app.core.models.review_summary import ReviewSummary
+from app.core.models.rule_export_result import RuleExportResult
 from app.core.models.semantic_enrichment_result import (
     FieldDescriptionSuggestion,
     TableSemanticSummary,
 )
-from app.core.models.rule_export_result import RuleExportResult
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_review_record import StgReviewRecord
 from app.core.models.stg_table_suggestion import StgTableSuggestion
@@ -109,6 +116,11 @@ __all__ = [
     "InterpretedIntent",
     "IntentExecutionResult",
     "ParameterResolutionResult",
+    "ProjectWorkspace",
+    "ProjectWorkspaceArtifact",
+    "ProjectWorkspaceReviewState",
+    "ProjectWorkspaceRun",
+    "ProjectWorkspaceSummary",
     "GovernanceTask",
     "MappingResult",
     "MappingReviewRecord",

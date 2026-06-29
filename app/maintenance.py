@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -24,8 +25,8 @@ QUICK_CHECK_TEST_TARGETS = (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CLEAN_ARTIFACT_NAMES = {"__pycache__", ".pytest_cache"}
-CLEAN_ARTIFACT_PREFIXES = ("pytest-cache-files-", ".pytest_runtime")
+CLEAN_ARTIFACT_NAMES = {"__pycache__", ".pytest_cache", ".ruff_cache"}
+CLEAN_ARTIFACT_PREFIXES = ("pytest-cache-files-", ".pytest_runtime", "pytest_tmp")
 
 COMMON_COMMAND_GROUPS = (
     (
@@ -203,7 +204,9 @@ def _list_enabled_domain_packs() -> list[Any]:
 
 
 def _list_enabled_project_templates() -> list[Any]:
-    from app.core.templates.project_template_loader import list_enabled_project_templates
+    from app.core.templates.project_template_loader import (
+        list_enabled_project_templates,
+    )
 
     return list_enabled_project_templates()
 
@@ -277,29 +280,42 @@ def _is_cleanable_artifact(path: Path) -> bool:
     )
 
 
+def _iter_project_directories_bottom_up() -> list[Path]:
+    directories: list[Path] = []
+    for root, dirnames, _ in os.walk(PROJECT_ROOT, onerror=lambda _error: None):
+        root_path = Path(root)
+        directories.extend(root_path / dirname for dirname in dirnames)
+    return sorted(directories, key=lambda item: len(item.parts), reverse=True)
+
+
 def clean_local_artifacts() -> int:
     """Remove local Python and pytest cache artifacts from the project tree."""
     removed: list[Path] = []
-    paths = sorted(
-        PROJECT_ROOT.rglob("*"),
-        key=lambda item: len(item.parts),
-        reverse=True,
-    )
-    for path in paths:
-        if not path.is_dir() or not _is_cleanable_artifact(path):
+    skipped: list[tuple[Path, str]] = []
+    for path in _iter_project_directories_bottom_up():
+        if not _is_cleanable_artifact(path):
             continue
-        shutil.rmtree(path)
+        try:
+            shutil.rmtree(path)
+        except OSError as exc:
+            skipped.append((path.relative_to(PROJECT_ROOT), str(exc)))
+            continue
         removed.append(path.relative_to(PROJECT_ROOT))
 
     print("Local artifact cleanup")
-    if not removed:
+    if not removed and not skipped:
         print("No local cache artifacts found.")
         return 0
 
-    print(f"Removed {len(removed)} directories:")
-    for path in removed:
-        print(f"  {path}")
-    return 0
+    if removed:
+        print(f"Removed {len(removed)} directories:")
+        for path in removed:
+            print(f"  {path}")
+    if skipped:
+        print(f"Skipped {len(skipped)} directories:")
+        for path, reason in skipped:
+            print(f"  {path}: {reason}")
+    return 1 if skipped else 0
 
 
 def build_parser() -> argparse.ArgumentParser:

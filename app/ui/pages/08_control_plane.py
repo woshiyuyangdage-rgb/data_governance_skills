@@ -1,7 +1,7 @@
 """Lightweight governance control plane page."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -10,16 +10,23 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from app.ui.page_overview import build_config_edit_overview, build_validation_overview
 from app.ui.page_utils import (
     ensure_project_root_on_path,
     get_latest_control_plane_result,
     initialize_session_state,
     set_latest_control_plane_result,
 )
-from app.ui.page_overview import build_config_edit_overview, build_validation_overview
-from app.ui.performance_helpers import render_json_section, render_lazy_dataframe_section
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_lazy_dataframe_section,
+)
 from app.ui.result_overview import render_result_overview
-from app.ui.status_blocks import render_bullet_list, render_metric_row, render_page_header
+from app.ui.status_blocks import (
+    render_bullet_list,
+    render_metric_row,
+    render_page_header,
+)
 
 ensure_project_root_on_path()
 

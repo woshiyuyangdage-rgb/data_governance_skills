@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+.ruff_cache/
 .pytest_runtime/
 .codex-test/
 .codex_tmp_asar_extract/
@@ -34,6 +35,11 @@ app/data/control_plane/backups/*
 !app/data/control_plane/backups/.gitkeep
 app/data/control_plane/snapshots/*
 !app/data/control_plane/snapshots/.gitkeep
+app/data/project_workspaces/*
+!app/data/project_workspaces/.gitkeep
+!app/data/project_workspaces/_snapshots/
+app/data/project_workspaces/_snapshots/*
+!app/data/project_workspaces/_snapshots/.gitkeep
 app/data/pytest_tmp*/
 
 outputs/*

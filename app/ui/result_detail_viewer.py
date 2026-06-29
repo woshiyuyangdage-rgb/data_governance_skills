@@ -358,7 +358,7 @@ def render_result_detail_viewer(
         return
 
     groups = list(dict.fromkeys(section.group for section in sections))
-    tab_by_group = dict(zip(groups, st.tabs(groups)))
+    tab_by_group = dict(zip(groups, st.tabs(groups), strict=True))
     for group in groups:
         group_sections = [section for section in sections if section.group == group]
         total_count = sum(section.count for section in group_sections)

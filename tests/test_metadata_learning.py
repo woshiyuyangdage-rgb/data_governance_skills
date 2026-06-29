@@ -4,8 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.core.parser import metadata_completion
-from app.core.parser import metadata_learning
+from app.core.parser import metadata_completion, metadata_learning
 from app.core.parser.metadata_learning import (
     clear_metadata_completion_memory_by_field_key,
     learn_metadata_memory_from_dataframe,

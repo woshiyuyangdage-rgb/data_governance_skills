@@ -3,16 +3,33 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
+from app.core.parser import metadata_completion as metadata_completion_module
 from app.core.parser.loader import load_metadata_file
 from app.core.parser.metadata_completion import (
     apply_reviewed_completion_changes,
     apply_reviewed_completion_values,
-    completion_change_key,
     complete_metadata_dataframe,
+    completion_change_key,
     metadata_completion_changes_to_dataframe,
     save_completed_metadata,
 )
+
+
+@pytest.fixture(autouse=True)
+def empty_completion_memory(monkeypatch) -> None:
+    """Keep completion tests independent from local learned metadata files."""
+    monkeypatch.setattr(
+        metadata_completion_module,
+        "load_field_completion_memory",
+        lambda: pd.DataFrame(),
+    )
+    monkeypatch.setattr(
+        metadata_completion_module,
+        "load_table_completion_memory",
+        lambda: pd.DataFrame(),
+    )
 
 
 def test_metadata_completion_generates_field_cn_suggestions() -> None:

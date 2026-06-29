@@ -1,7 +1,7 @@
 """Governance portfolio and progress page."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -30,18 +30,18 @@ from app.core.orchestrator.pipeline_service import (
 )
 from app.core.reports.report_service import export_all_reports
 from app.ui.page_overview import build_workflow_overview
+from app.ui.performance_helpers import (
+    render_dataframe_multiselect_filter,
+    render_lazy_dataframe_section,
+)
 from app.ui.result_overview import render_result_overview
+from app.ui.status_blocks import render_metric_row, render_page_header
 from app.ui.workbench_cache import (
     backlog_sla_statuses_to_dataframe,
     governance_backlog_items_to_dataframe,
     governance_portfolio_summary_to_dataframe,
     progress_snapshot_to_dataframe,
 )
-from app.ui.performance_helpers import (
-    render_dataframe_multiselect_filter,
-    render_lazy_dataframe_section,
-)
-from app.ui.status_blocks import render_metric_row, render_page_header
 
 initialize_session_state()
 
@@ -193,7 +193,7 @@ if not items_df.empty:
     items_df = render_dataframe_multiselect_filter(items_df, "status", "筛选状态")
     overdue_only = st.checkbox("只看逾期")
     if overdue_only:
-        items_df = items_df[items_df["is_overdue"] == True]
+        items_df = items_df[items_df["is_overdue"].fillna(False)]
     render_lazy_dataframe_section(
         "待办明细",
         items_df,

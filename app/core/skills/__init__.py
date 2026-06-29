@@ -2,7 +2,9 @@
 
 from app.core.skills.base_skill import BaseSkill
 from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
-from app.core.skills.data_standard_mapping_skill import StandardMappingRecommendationSkill
+from app.core.skills.data_standard_mapping_skill import (
+    StandardMappingRecommendationSkill,
+)
 from app.core.skills.metadata_diagnosis_skill import (
     GovernanceTaskPackagingSkill,
     MetadataCompletenessCheckSkill,

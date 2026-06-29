@@ -298,7 +298,6 @@ class RagQualityAssessor:
         for chunk in chunks:
             content = _text(chunk.content)
             char_count = len(content)
-            token_count = chunk.token_count or _estimate_tokens(content)
             doc = documents_by_id.get(chunk.document_id)
             if chunk.document_id not in documents_by_id:
                 issues.append(

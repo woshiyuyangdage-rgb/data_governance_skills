@@ -4,20 +4,24 @@ from typing import Any
 
 import pandas as pd
 
+from app.core.delivery.confirmation_template_loader import (
+    get_confirmation_template_profile,
+)
 from app.core.delivery.confirmation_workbook_importer_constants import REQUIRED_COLUMNS
-from app.core.delivery.confirmation_workbook_importer_payload import WorkbookImportPayload
+from app.core.delivery.confirmation_workbook_importer_payload import (
+    WorkbookImportPayload,
+)
 from app.core.delivery.confirmation_workbook_importer_template import (
     build_match_result_for_template,
     build_template_mapping_result,
     dataframe_from_template_mapping,
     diagnose_confirmation_template,
 )
-from app.core.delivery.confirmation_template_loader import get_confirmation_template_profile
-from app.core.models.confirmation_template_match_result import (
-    ConfirmationTemplateMatchResult,
-)
 from app.core.models.confirmation_template_mapping_result import (
     ConfirmationTemplateMappingResult,
+)
+from app.core.models.confirmation_template_match_result import (
+    ConfirmationTemplateMatchResult,
 )
 from app.core.models.workbook_import_row_result import WorkbookImportRowResult
 from app.core.models.workbook_import_summary import WorkbookImportSummary

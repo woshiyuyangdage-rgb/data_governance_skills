@@ -1,9 +1,9 @@
 """Adapters for exporting confirmed rules and execution-ready rule packages."""
 
-from collections import defaultdict
 import json
-from pathlib import Path
 import re
+from collections import defaultdict
+from pathlib import Path
 from typing import Any
 
 import yaml

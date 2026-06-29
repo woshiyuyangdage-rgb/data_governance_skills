@@ -15,18 +15,18 @@ from app.core.normalize import (
     normalize_tokens,
     split_tokens,
 )
-from app.core.rules.config_loader import get_issue_severity
 from app.core.review.override_store import load_mapping_overrides
 from app.core.review.review_service import apply_mapping_overrides_to_results
+from app.core.rules.config_loader import get_issue_severity
 from app.core.skills.base_skill import BaseSkill
-from app.core.skills.data_standard_mapping_skill.semantic_index import (
-    SemanticFieldMatch,
-    semantic_match_source_fields,
-)
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     LearnedStandardMapping,
     explain_standard_mapping_memory_lookup,
     load_standard_mapping_memory,
+)
+from app.core.skills.data_standard_mapping_skill.semantic_index import (
+    SemanticFieldMatch,
+    semantic_match_source_fields,
 )
 
 EMPTY_TEXT_VALUES = {"", "nan", "none", "null"}
@@ -910,7 +910,11 @@ class StandardMappingRecommendationSkill(BaseSkill):
         )
         semantic_match_by_key = {
             f"{table.table_name}.{field.field_name}": semantic_match
-            for (table, field), semantic_match in zip(field_entries, semantic_matches)
+            for (table, field), semantic_match in zip(
+                field_entries,
+                semantic_matches,
+                strict=True,
+            )
         }
 
         for table in payload.tables:

@@ -1,3 +1,13 @@
 """Compatibility wrapper for metadata diagnosis skill modules."""
 
-from app.core.skills.metadata_diagnosis_skill.metadata_quality_diagnosis import *
+from app.core.skills.metadata_diagnosis_skill.metadata_quality_diagnosis import (
+    MetadataQualityDiagnosisInput,
+    MetadataQualityDiagnosisOutput,
+    MetadataQualityDiagnosisSkill,
+)
+
+__all__ = [
+    "MetadataQualityDiagnosisInput",
+    "MetadataQualityDiagnosisOutput",
+    "MetadataQualityDiagnosisSkill",
+]

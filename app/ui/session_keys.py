@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Union
+from typing import Any
 
 UPLOADED_FILE_PATH = "uploaded_file_path"
 UPLOADED_FILE_NAME = "uploaded_file_name"
@@ -33,7 +33,7 @@ CONFIRMATION_IMPORT_FILE_PATH = "confirmation_import_file_path"
 CONFIRMATION_VALIDATION_RESULT = "confirmation_validation_result"
 CONFIRMATION_TEMPLATE_DIAGNOSIS = "confirmation_template_diagnosis"
 
-SessionDefault = Union[Any, Callable[[], Any]]
+SessionDefault = Any | Callable[[], Any]
 
 SESSION_DEFAULTS: dict[str, SessionDefault] = {
     UPLOADED_FILE_PATH: None,

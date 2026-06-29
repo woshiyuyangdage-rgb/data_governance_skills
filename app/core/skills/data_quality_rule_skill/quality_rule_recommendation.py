@@ -14,8 +14,8 @@ from app.core.skills.data_quality_rule_skill.quality_rule_cross_field import (
     build_cross_field_rule,
     cross_field_rule_to_suggestion,
     deduplicate_cross_field_rules,
-    detect_cross_table_reference_rules,
     detect_cross_field_patterns,
+    detect_cross_table_reference_rules,
     detect_domain_rule_candidates,
     find_field_by_tokens,
 )
@@ -42,12 +42,12 @@ from app.core.skills.data_quality_rule_skill.quality_rule_field_rules import (
     table_tokens,
     tokenize_name,
 )
-from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
-    apply_learned_quality_rule_priority,
-)
 from app.core.skills.data_quality_rule_skill.quality_rule_io import (
     QualityRuleRecommendationInput,
     QualityRuleRecommendationOutput,
+)
+from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
+    apply_learned_quality_rule_priority,
 )
 
 

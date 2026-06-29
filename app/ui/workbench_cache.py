@@ -3,103 +3,144 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 import pandas as pd
 import streamlit as st
 
+from app.core.adapters.adapter_loader import load_adapter_config
 from app.core.adapters.manifest_service import (
     get_capability_manifest,
     get_mcp_style_manifest,
     get_native_tool_schemas,
     get_openai_tool_schemas,
 )
-from app.core.adapters.adapter_loader import load_adapter_config
 from app.core.delivery.confirmation_workbook_importer import (
     ConfirmationWorkbookImporter,
 )
 from app.core.domain.domain_pack_matcher import DomainPackMatcher
 from app.core.intake.intake_adapter_service import IntakeAdapterService
 from app.core.models.capability_manifest import CapabilityManifest
-from app.core.models.ai_ready_score import AiReadyScore
-from app.core.models.backlog_sla_status import BacklogSlaStatus
-from app.core.models.backlog_summary import BacklogSummary
-from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
-from app.core.models.cross_field_quality_rule import CrossFieldQualityRule
-from app.core.models.domain_pack_match_result import DomainPackMatchResult
-from app.core.models.execution_package_export_result import (
-    ExecutionPackageExportResult,
-)
-from app.core.models.execution_ready_package import ExecutionReadyPackage
-from app.core.models.governance_backlog_item import GovernanceBacklogItem
-from app.core.models.governance_gap import GovernanceGap
-from app.core.models.governance_portfolio_summary import GovernancePortfolioSummary
-from app.core.models.governance_work_package import GovernanceWorkPackage
-from app.core.models.issue import Issue
-from app.core.models.mapping_result import MappingResult, UnmappedField
-from app.core.models.mapping_review_record import MappingReviewRecord
-from app.core.models.progress_snapshot import ProgressSnapshot
-from app.core.models.quality_rule_package import QualityRulePackage
-from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
-from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
-from app.core.models.readiness_score import ReadinessScore
-from app.core.models.remediation_action import RemediationAction
-from app.core.models.review_summary import ReviewSummary
-from app.core.models.rule_export_result import RuleExportResult
-from app.core.models.exported_tool_schema import ExportedToolSchema
-from app.core.models.stg_field_suggestion import StgFieldSuggestion
-from app.core.models.stg_review_record import StgReviewRecord
-from app.core.models.stg_table_suggestion import StgTableSuggestion
-from app.core.models.tool_definition import ToolDefinition
-from app.core.models.table_meta import TableMeta
-from app.core.models.workflow_result import WorkflowResult
 from app.core.models.confirmation_template_match_result import (
     ConfirmationTemplateMatchResult,
 )
+from app.core.models.domain_pack_match_result import DomainPackMatchResult
+from app.core.models.exported_tool_schema import ExportedToolSchema
 from app.core.models.intake_match_result import IntakeMatchResult
 from app.core.models.intake_normalization_result import IntakeNormalizationResult
+from app.core.models.mapping_review_record import MappingReviewRecord
+from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
+from app.core.models.stg_review_record import StgReviewRecord
+from app.core.models.table_meta import TableMeta
+from app.core.models.tool_definition import ToolDefinition
+from app.core.models.workflow_result import WorkflowResult
 from app.core.parser.loader import load_metadata_file
 from app.core.review.override_store import (
     load_mapping_overrides,
     load_stg_overrides,
 )
 from app.core.review.quality_override_store import load_quality_rule_overrides
-from app.core.tools.tool_service import list_tools
 from app.core.tools.tool_loader import load_tool_registry
+from app.core.tools.tool_service import list_tools
 from app.core.utils.result_utils import (
     ai_ready_scores_to_dataframe as core_ai_ready_scores_to_dataframe,
+)
+from app.core.utils.result_utils import (
     backlog_sla_statuses_to_dataframe as core_backlog_sla_statuses_to_dataframe,
+)
+from app.core.utils.result_utils import (
     backlog_summary_to_dataframe as core_backlog_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
     confirmed_quality_rules_to_dataframe as core_confirmed_quality_rules_to_dataframe,
+)
+from app.core.utils.result_utils import (
     cross_field_quality_rules_to_dataframe as core_cross_field_quality_rules_to_dataframe,
+)
+from app.core.utils.result_utils import (
     execution_package_export_results_to_dataframe as core_execution_package_export_results_to_dataframe,
+)
+from app.core.utils.result_utils import (
     execution_package_summary_to_dataframe as core_execution_package_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
     execution_ready_rules_to_dataframe as core_execution_ready_rules_to_dataframe,
+)
+from app.core.utils.result_utils import (
     field_description_suggestions_to_dataframe as core_field_description_suggestions_to_dataframe,
+)
+from app.core.utils.result_utils import (
     governance_backlog_items_to_dataframe as core_governance_backlog_items_to_dataframe,
+)
+from app.core.utils.result_utils import (
     governance_gaps_to_dataframe as core_governance_gaps_to_dataframe,
+)
+from app.core.utils.result_utils import (
     governance_portfolio_summary_to_dataframe as core_governance_portfolio_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
     governance_work_package_summary_to_dataframe as core_governance_work_package_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
     issues_to_dataframe as core_issues_to_dataframe,
+)
+from app.core.utils.result_utils import (
     mapping_results_to_dataframe as core_mapping_results_to_dataframe,
+)
+from app.core.utils.result_utils import (
     progress_snapshot_to_dataframe as core_progress_snapshot_to_dataframe,
-    quality_rule_packages_to_dataframe as core_quality_rule_packages_to_dataframe,
-    quality_rule_review_summary_to_dataframe as core_quality_rule_review_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
     quality_review_queue_summary_to_dataframe as core_quality_review_queue_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
+    quality_rule_packages_to_dataframe as core_quality_rule_packages_to_dataframe,
+)
+from app.core.utils.result_utils import (
+    quality_rule_review_summary_to_dataframe as core_quality_rule_review_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
     quality_rules_to_dataframe as core_quality_rules_to_dataframe,
+)
+from app.core.utils.result_utils import (
     rag_quality_issues_to_dataframe as core_rag_quality_issues_to_dataframe,
+)
+from app.core.utils.result_utils import (
     readiness_scores_to_dataframe as core_readiness_scores_to_dataframe,
+)
+from app.core.utils.result_utils import (
     remediation_actions_to_dataframe as core_remediation_actions_to_dataframe,
+)
+from app.core.utils.result_utils import (
     review_summary_to_dataframe as core_review_summary_to_dataframe,
+)
+from app.core.utils.result_utils import (
     rule_export_results_to_dataframe as core_rule_export_results_to_dataframe,
+)
+from app.core.utils.result_utils import (
     skill_outputs_to_dataframe as core_skill_outputs_to_dataframe,
+)
+from app.core.utils.result_utils import (
     stg_fields_to_dataframe as core_stg_fields_to_dataframe,
+)
+from app.core.utils.result_utils import (
     stg_tables_to_dataframe as core_stg_tables_to_dataframe,
+)
+from app.core.utils.result_utils import (
     table_semantic_summaries_to_dataframe as core_table_semantic_summaries_to_dataframe,
+)
+from app.core.utils.result_utils import (
     tasks_to_dataframe as core_tasks_to_dataframe,
+)
+from app.core.utils.result_utils import (
     text_to_sql_readiness_issues_to_dataframe as core_text_to_sql_readiness_issues_to_dataframe,
+)
+from app.core.utils.result_utils import (
     text_to_sql_readiness_scores_to_dataframe as core_text_to_sql_readiness_scores_to_dataframe,
+)
+from app.core.utils.result_utils import (
     unmapped_fields_to_dataframe as core_unmapped_fields_to_dataframe,
 )
 

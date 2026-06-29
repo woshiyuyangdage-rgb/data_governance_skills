@@ -14,8 +14,8 @@ from app.core.normalize import (
     split_tokens,
 )
 from app.core.rules.config_loader import (
-    get_issue_severity,
     get_execution_package_policies_config,
+    get_issue_severity,
     get_quality_review_policies_config,
     get_quality_rule_policies_config,
     get_quality_rule_templates_config,

@@ -12,8 +12,8 @@ from app.core.skills.stg_standardization_skill.stg_learning import (
     load_stg_field_memory,
     lookup_learned_stg_field,
     prune_invalid_stg_field_memory,
-    summarize_stg_field_memory,
     stg_field_memory_details,
+    summarize_stg_field_memory,
 )
 
 

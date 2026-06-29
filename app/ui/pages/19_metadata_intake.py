@@ -3,14 +3,16 @@
 import streamlit as st
 
 from app.core.intake.intake_profile_loader import list_enabled_intake_template_profiles
-from app.ui.performance_helpers import render_json_section, render_records_dataframe_section
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_records_dataframe_section,
+)
 from app.ui.status_blocks import render_page_header
 from app.ui.workbench_cache import (
-    file_cache_key,
     diagnose_intake_template_cached,
+    file_cache_key,
     normalize_metadata_input_cached,
 )
-
 
 render_page_header(
     "企业元数据接入",

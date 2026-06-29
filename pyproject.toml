@@ -7,6 +7,9 @@ requires-python = ">=3.10"
 target-version = "py310"
 line-length = 88
 extend-exclude = [
+    ".pytest_runtime",
+    ".ruff_cache",
+    "app/data/pytest_tmp*",
     "outputs",
     "pytest-cache-files-*",
 ]
@@ -22,6 +25,10 @@ select = [
 ignore = [
     "E501",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"app/ui/pages/*.py" = ["E402"]
+"app/ui/streamlit_app.py" = ["E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

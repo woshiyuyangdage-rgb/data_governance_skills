@@ -5,10 +5,12 @@ import streamlit as st
 from app.core.domain.domain_pack_loader import list_enabled_domain_packs
 from app.core.templates.project_template_loader import list_enabled_project_templates
 from app.core.templates.project_template_service import ProjectTemplateService
-from app.ui.performance_helpers import render_json_section, render_records_dataframe_section
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_records_dataframe_section,
+)
 from app.ui.status_blocks import render_page_header
 from app.ui.workbench_cache import file_cache_key, match_domain_pack_from_file_cached
-
 
 render_page_header(
     "领域治理包与项目模板",

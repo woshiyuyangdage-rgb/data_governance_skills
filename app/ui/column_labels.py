@@ -6,7 +6,6 @@ import pandas as pd
 
 from app.ui.value_formatters import format_value
 
-
 COLUMN_LABELS: dict[str, str] = {
     "accepted_count": "已接受数",
     "acceptance_criteria": "验收标准",

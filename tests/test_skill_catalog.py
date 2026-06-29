@@ -7,26 +7,25 @@ from app.core.skills.data_quality_rule_skill import (
 from app.core.skills.data_standard_mapping_skill import (
     StandardMappingRecommendationSkill as NewStandardMappingRecommendationSkill,
 )
+from app.core.skills.metadata_completeness_check import (
+    MetadataCompletenessCheckSkill as LegacyMetadataCompletenessCheckSkill,
+)
 from app.core.skills.metadata_diagnosis_skill import (
     MetadataCompletenessCheckSkill as NewMetadataCompletenessCheckSkill,
 )
 from app.core.skills.quality_rule_recommendation import (
     QualityRuleRecommendationSkill as LegacyQualityRuleRecommendationSkill,
 )
+from app.core.skills.skill_catalog import list_enabled_skills
 from app.core.skills.standard_mapping_recommendation import (
     StandardMappingRecommendationSkill as LegacyStandardMappingRecommendationSkill,
 )
-from app.core.skills.skill_catalog import list_enabled_skills
 from app.core.skills.stg_standardization_skill import (
     StgStructureSuggestionSkill as NewStgStructureSuggestionSkill,
 )
 from app.core.skills.stg_structure_suggestion import (
     StgStructureSuggestionSkill as LegacyStgStructureSuggestionSkill,
 )
-from app.core.skills.metadata_completeness_check import (
-    MetadataCompletenessCheckSkill as LegacyMetadataCompletenessCheckSkill,
-)
-
 
 EXPECTED_SKILL_NAMES = {
     "metadata-diagnosis-skill",

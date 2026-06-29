@@ -5,13 +5,13 @@ from app.core.skills.metadata_diagnosis_skill.governance_task_packaging import (
     GovernanceTaskPackagingOutput,
     GovernanceTaskPackagingSkill,
 )
-from app.core.skills.metadata_diagnosis_skill.metadata_diagnosis_finding import (
-    MetadataDiagnosisFinding,
-)
 from app.core.skills.metadata_diagnosis_skill.metadata_completeness_check import (
     MetadataCompletenessCheckSkill,
     MetadataCompletenessInput,
     MetadataCompletenessOutput,
+)
+from app.core.skills.metadata_diagnosis_skill.metadata_diagnosis_finding import (
+    MetadataDiagnosisFinding,
 )
 from app.core.skills.metadata_diagnosis_skill.metadata_quality_diagnosis import (
     MetadataQualityDiagnosisInput,

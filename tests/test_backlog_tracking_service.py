@@ -3,7 +3,9 @@
 from pathlib import Path
 
 from app.core.governance import backlog_store
-from app.core.governance.backlog_tracking_service import GovernanceBacklogTrackingService
+from app.core.governance.backlog_tracking_service import (
+    GovernanceBacklogTrackingService,
+)
 from app.core.models.governance_gap import GovernanceGap
 from app.core.models.governance_work_package import GovernanceWorkPackage
 from app.core.models.readiness_score import ReadinessScore

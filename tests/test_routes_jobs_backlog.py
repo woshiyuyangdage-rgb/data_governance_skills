@@ -17,8 +17,7 @@ from app.api.routes_jobs import (
     update_governance_backlog_status_route,
 )
 from app.core.audit import trace_store
-from app.core.governance import backlog_store
-from app.core.governance import progress_snapshot_service
+from app.core.governance import backlog_store, progress_snapshot_service
 
 
 def test_governance_backlog_routes(

@@ -105,7 +105,10 @@ class GovernanceTaskPackagingSkill(BaseSkill):
         tasks: list[GovernanceTask] = []
         priority_summary: dict[str, int] = defaultdict(int)
 
-        for task_index, (object_name, grouped) in enumerate(grouped_issues.items(), start=1):
+        for task_index, (_object_name, grouped) in enumerate(
+            grouped_issues.items(),
+            start=1,
+        ):
             defect_types = {issue.issue_type for issue in grouped}
             priority = self.infer_priority(grouped)
             tasks.append(

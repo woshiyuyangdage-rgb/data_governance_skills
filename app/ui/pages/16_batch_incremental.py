@@ -1,7 +1,7 @@
 """Batch processing and incremental rerun page."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -10,8 +10,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import (
-    get_batch_file_paths,
     ensure_project_root_on_path,
+    get_batch_file_paths,
     get_workflow_result,
     initialize_session_state,
     set_batch_file_paths,

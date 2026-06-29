@@ -1,8 +1,8 @@
 """Lightweight local control plane service for managed governance assets."""
 
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 from typing import Any
 
 from app.core.control_plane.config_io import (
@@ -12,12 +12,12 @@ from app.core.control_plane.config_io import (
     write_asset_file,
 )
 from app.core.control_plane.validators import validate_asset_content
+from app.core.intent import intent_loader
 from app.core.knowledge import knowledge_loader
 from app.core.models.config_asset import ConfigAsset
 from app.core.models.config_edit_result import ConfigEditResult
 from app.core.models.config_status import ConfigStatus
 from app.core.models.validation_result import ValidationResult
-from app.core.intent import intent_loader
 from app.core.orchestrator import profile_loader
 from app.core.rules.config_loader import load_yaml_config
 from app.core.tools import tool_loader

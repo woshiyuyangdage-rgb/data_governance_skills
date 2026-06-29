@@ -22,7 +22,7 @@ class WorkbenchState:
     def current(
         cls,
         session_state: MutableMapping[str, Any] | None = None,
-    ) -> "WorkbenchState":
+    ) -> WorkbenchState:
         return cls(session_state)
 
     def initialize_defaults(self) -> None:

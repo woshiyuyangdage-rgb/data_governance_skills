@@ -6,16 +6,16 @@ from collections.abc import Callable
 from app.core.models.cross_field_quality_rule import CrossFieldQualityRule
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
 from app.core.models.table_meta import TableMeta
+from app.core.rules.config_loader import (
+    get_cross_field_rule_patterns_config,
+    get_domain_rule_templates_config,
+)
 from app.core.skills.data_quality_rule_skill.quality_rule_field_rules import (
     export_formats_for_rule,
     field_tokens,
     risk_level_for_severity,
     rule_description_for,
     rule_name_for,
-)
-from app.core.rules.config_loader import (
-    get_cross_field_rule_patterns_config,
-    get_domain_rule_templates_config,
 )
 
 BuildRule = Callable[..., CrossFieldQualityRule]

@@ -1,7 +1,7 @@
 """Confirmation workbook import page."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -10,10 +10,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.ui.page_utils import (
+    ensure_project_root_on_path,
     get_confirmation_import_file_path,
     get_confirmation_template_diagnosis,
     get_confirmation_validation_result,
-    ensure_project_root_on_path,
     get_workflow_result,
     initialize_session_state,
     set_confirmation_import_file_path,
@@ -24,13 +24,18 @@ from app.ui.page_utils import (
 
 ensure_project_root_on_path()
 
-from app.core.delivery.confirmation_workbook_importer import ConfirmationWorkbookImporter
 from app.core.delivery.confirmation_template_loader import (
     list_enabled_confirmation_template_profiles,
 )
+from app.core.delivery.confirmation_workbook_importer import (
+    ConfirmationWorkbookImporter,
+)
 from app.core.orchestrator.workflow_engine import WorkflowEngine
 from app.core.utils.file_utils import save_uploaded_file
-from app.ui.performance_helpers import render_json_section, render_records_dataframe_section
+from app.ui.performance_helpers import (
+    render_json_section,
+    render_records_dataframe_section,
+)
 from app.ui.status_blocks import render_page_header
 from app.ui.workbench_cache import (
     diagnose_confirmation_template_cached,

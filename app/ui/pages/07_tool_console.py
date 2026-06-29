@@ -1,8 +1,8 @@
 """Tool console page for direct local tool execution and trace inspection."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -10,8 +10,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.ui.page_utils import ensure_agent_shell_session_id, ensure_project_root_on_path
 from app.ui.page_utils import (
+    ensure_agent_shell_session_id,
+    ensure_project_root_on_path,
     get_latest_tool_call_response,
     get_uploaded_file_path,
     get_workflow_result,
@@ -24,11 +25,11 @@ ensure_project_root_on_path()
 
 from app.core.audit.trace_store import get_trace, list_recent_traces
 from app.core.models.execution_ready_package import ExecutionReadyPackage
-from app.ui.status_blocks import render_key_value_block, render_page_header
+from app.core.models.tool_call_request import ToolCallRequest
 from app.core.models.workflow_result import WorkflowResult
 from app.core.tools.tool_service import call_tool
-from app.core.models.tool_call_request import ToolCallRequest
 from app.ui.performance_helpers import render_json_section
+from app.ui.status_blocks import render_key_value_block, render_page_header
 from app.ui.workbench_cache import (
     build_tool_console_default_arguments,
     list_tools_cached,

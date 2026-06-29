@@ -8,6 +8,7 @@ from app.core.parser.csv_parser import parse_csv
 from app.core.parser.excel_parser import parse_excel
 from app.core.parser.parser_exceptions import ParserError, UnsupportedFileFormatError
 
+
 def _file_signature(path: Path) -> str:
     """Build a stable cache token for one local file."""
     try:

@@ -4,7 +4,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.core.delivery.confirmation_workbook_importer import ConfirmationWorkbookImporter
+from app.core.delivery.confirmation_workbook_importer import (
+    ConfirmationWorkbookImporter,
+)
 
 
 def _write_workbook(path: Path, sheet_name: str, rows: list[dict[str, object]]) -> str:

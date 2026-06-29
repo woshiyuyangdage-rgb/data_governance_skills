@@ -1,7 +1,7 @@
 """Tests for shared timestamp helpers."""
 
-from datetime import date, datetime
 import re
+from datetime import date, datetime
 
 from app.core.utils.time_utils import utc_now_compact, utc_now_seconds, utc_today
 

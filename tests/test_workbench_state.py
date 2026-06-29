@@ -1,8 +1,8 @@
 """Tests for Streamlit workbench state restoration."""
 
 from app.core.models.tool_call_response import ToolCallResponse
-from app.ui.workbench_state import WorkbenchState
 from app.ui import session_keys as keys
+from app.ui.workbench_state import WorkbenchState
 
 
 class _FakeSession:

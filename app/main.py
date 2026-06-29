@@ -11,6 +11,7 @@ from app.core.skills.data_standard_mapping_skill.semantic_index import (
     warm_semantic_mapping_index,
 )
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Preload runtime caches used by local governance workflows."""

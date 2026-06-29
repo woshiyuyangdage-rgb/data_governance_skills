@@ -5,8 +5,8 @@ from app.core.domain.domain_pack_matcher import DomainPackMatcher
 from app.core.models.governance_task_request import GovernanceTaskRequest
 from app.core.models.project_template_run_result import ProjectTemplateRunResult
 from app.core.models.workflow_result import WorkflowResult
-from app.core.orchestrator.task_service import run_governance_task
 from app.core.orchestrator.profile_loader import get_workflow_profile
+from app.core.orchestrator.task_service import run_governance_task
 from app.core.parser.loader import load_metadata_file
 from app.core.rules.config_loader import get_domain_delivery_templates_config
 from app.core.templates.project_template_loader import get_project_template

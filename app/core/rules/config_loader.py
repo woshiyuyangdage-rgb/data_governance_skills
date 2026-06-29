@@ -1,6 +1,6 @@
 """Lightweight YAML configuration loader for rule-based skills."""
 
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +9,7 @@ import yaml
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "config"
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_yaml_config(file_name: str) -> dict[str, Any]:
     """Load a YAML configuration file from the application config directory."""
     config_path = CONFIG_DIR / file_name

@@ -4,19 +4,21 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.core.models.ai_ready_score import AiReadyScore
+from app.core.models.backlog_sla_status import BacklogSlaStatus
+from app.core.models.backlog_summary import BacklogSummary
 from app.core.models.batch_group_result import BatchGroupResult
 from app.core.models.batch_run_result import BatchRunResult
-from app.core.models.backlog_summary import BacklogSummary
-from app.core.models.backlog_sla_status import BacklogSlaStatus
 from app.core.models.confirmation_roundtrip_result import ConfirmationRoundTripResult
-from app.core.models.confirmation_template_match_result import ConfirmationTemplateMatchResult
 from app.core.models.confirmation_template_mapping_result import (
     ConfirmationTemplateMappingResult,
+)
+from app.core.models.confirmation_template_match_result import (
+    ConfirmationTemplateMatchResult,
 )
 from app.core.models.confirmation_workbook_result import ConfirmationWorkbookResult
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 from app.core.models.cross_field_quality_rule import CrossFieldQualityRule
-from app.core.models.ai_ready_score import AiReadyScore
 from app.core.models.domain_pack_match_result import DomainPackMatchResult
 from app.core.models.execution_package_export_result import ExecutionPackageExportResult
 from app.core.models.execution_ready_package import ExecutionReadyPackage
@@ -25,26 +27,26 @@ from app.core.models.governance_delivery_manifest import GovernanceDeliveryManif
 from app.core.models.governance_delivery_package_result import (
     GovernanceDeliveryPackageResult,
 )
+from app.core.models.governance_gap import GovernanceGap
 from app.core.models.governance_portfolio_summary import GovernancePortfolioSummary
 from app.core.models.governance_task import GovernanceTask
-from app.core.models.governance_gap import GovernanceGap
 from app.core.models.governance_work_package import GovernanceWorkPackage
 from app.core.models.incremental_diff_item import IncrementalDiffItem
 from app.core.models.incremental_diff_summary import IncrementalDiffSummary
-from app.core.models.intake_match_result import IntakeMatchResult
 from app.core.models.intake_mapping_result import IntakeMappingResult
+from app.core.models.intake_match_result import IntakeMatchResult
 from app.core.models.intake_normalization_result import IntakeNormalizationResult
 from app.core.models.issue import Issue
 from app.core.models.mapping_result import MappingResult, UnmappedField
-from app.core.models.quality_rule_package import QualityRulePackage
-from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
 from app.core.models.progress_snapshot import ProgressSnapshot
 from app.core.models.project_template_run_result import ProjectTemplateRunResult
+from app.core.models.quality_rule_package import QualityRulePackage
+from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
 from app.core.models.rag_quality import RagQualityAssessmentResult, RagQualityIssue
 from app.core.models.readiness_score import ReadinessScore
 from app.core.models.remediation_action import RemediationAction
-from app.core.models.rule_export_result import RuleExportResult
 from app.core.models.review_summary import ReviewSummary
+from app.core.models.rule_export_result import RuleExportResult
 from app.core.models.semantic_enrichment_result import (
     FieldDescriptionSuggestion,
     TableSemanticSummary,

@@ -1,13 +1,5 @@
 """Helpers for building page-level result overviews."""
 
-from app.ui.result_overview import (
-    build_agent_shell_overview as _build_agent_shell_overview,
-    build_config_edit_overview as _build_config_edit_overview,
-    build_intent_execution_overview as _build_intent_execution_overview,
-    build_validation_overview as _build_validation_overview,
-    build_workflow_result_overview as _build_workflow_result_overview,
-)
-
 from app.core.models.agent_shell_result import AgentShellResult
 from app.core.models.config_edit_result import ConfigEditResult
 from app.core.models.config_status import ConfigStatus
@@ -15,6 +7,21 @@ from app.core.models.intent_execution_result import IntentExecutionResult
 from app.core.models.result_overview import ResultOverview, ResultOverviewMetric
 from app.core.models.validation_result import ValidationResult
 from app.core.models.workflow_result import WorkflowResult
+from app.ui.result_overview import (
+    build_agent_shell_overview as _build_agent_shell_overview,
+)
+from app.ui.result_overview import (
+    build_config_edit_overview as _build_config_edit_overview,
+)
+from app.ui.result_overview import (
+    build_intent_execution_overview as _build_intent_execution_overview,
+)
+from app.ui.result_overview import (
+    build_validation_overview as _build_validation_overview,
+)
+from app.ui.result_overview import (
+    build_workflow_result_overview as _build_workflow_result_overview,
+)
 
 
 def build_status_overview(status: ConfigStatus) -> ResultOverview:

@@ -1,7 +1,7 @@
 """Object fingerprint builder for lightweight incremental rerun."""
 
-from hashlib import sha256
 import json
+from hashlib import sha256
 from typing import Any
 
 from app.core.models.object_fingerprint import ObjectFingerprint

@@ -4,6 +4,7 @@ from app.api.job_catalog_backlog import BACKLOG_JOB_ITEMS
 from app.api.job_catalog_control_plane import CONTROL_PLANE_JOB_ITEMS
 from app.api.job_catalog_core import CORE_JOB_ITEMS
 from app.api.job_catalog_delivery import DELIVERY_JOB_ITEMS
+from app.api.job_catalog_project import PROJECT_WORKSPACE_JOB_ITEMS
 from app.api.job_catalog_quality import (
     QUALITY_JOB_ITEMS,
     QUALITY_SUMMARY_JOB_ITEMS,
@@ -28,6 +29,7 @@ def build_job_catalog() -> dict[str, object]:
             *TEXT_TO_SQL_JOB_ITEMS,
             *DELIVERY_JOB_ITEMS,
             *BACKLOG_JOB_ITEMS,
+            *PROJECT_WORKSPACE_JOB_ITEMS,
             *QUALITY_SUMMARY_JOB_ITEMS,
         ],
     }

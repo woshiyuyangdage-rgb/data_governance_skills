@@ -1,8 +1,8 @@
 """Quality rule review and export workbench."""
 
+import sys
 from datetime import datetime
 from pathlib import Path
-import sys
 
 import streamlit as st
 
@@ -13,9 +13,9 @@ if str(PROJECT_ROOT) not in sys.path:
 from app.ui.page_utils import (
     ensure_project_root_on_path,
     get_current_input_file_path,
+    get_session_value,
     get_uploaded_file_signature,
     get_workflow_result,
-    get_session_value,
     initialize_session_state,
     set_latest_execution_ready_package,
     set_workflow_result_state,
@@ -50,18 +50,18 @@ from app.core.review.quality_review_service import (
 from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
 from app.ui.explanation_blocks import render_explanation_block
 from app.ui.page_overview import build_workflow_overview
-from app.ui.result_overview import render_result_overview
-from app.ui.review_form_helpers import collect_quality_review_inputs
 from app.ui.performance_helpers import (
     records_to_dataframe,
     render_deferred_dataframe_section,
     render_lazy_dataframe_section,
 )
+from app.ui.result_overview import render_result_overview
+from app.ui.review_form_helpers import collect_quality_review_inputs
 from app.ui.status_blocks import render_metric_row, render_page_header
 from app.ui.workbench_cache import (
+    clear_review_override_caches,
     confirmed_quality_rules_to_dataframe,
     cross_field_quality_rules_to_dataframe,
-    clear_review_override_caches,
     load_quality_rule_overrides_cached,
     quality_review_queue_summary_to_dataframe,
     quality_rule_review_summary_to_dataframe,
@@ -357,14 +357,12 @@ else:
                         "最终严重度",
                         ["high", "medium", "low"],
                         index=["high", "medium", "low"].index(
-                            (
-                                existing.final_severity
-                                if existing is not None
-                                and existing.final_severity in {"high", "medium", "low"}
-                                else rule.severity
-                                if rule.severity in {"high", "medium", "low"}
-                                else "medium"
-                            )
+                            existing.final_severity
+                            if existing is not None
+                            and existing.final_severity in {"high", "medium", "low"}
+                            else rule.severity
+                            if rule.severity in {"high", "medium", "low"}
+                            else "medium"
                         ),
                         key=f"quality_severity_{key}",
                     )

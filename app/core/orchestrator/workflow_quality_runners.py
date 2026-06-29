@@ -15,8 +15,10 @@ from app.core.skills.data_quality_rule_skill import (
     QualityRuleRecommendationInput,
 )
 from app.core.skills.data_standard_mapping_skill import StandardMappingInput
-from app.core.skills.metadata_diagnosis_skill import NamingStandardCheckInput
-from app.core.skills.metadata_diagnosis_skill import MetadataSemanticEnrichmentInput
+from app.core.skills.metadata_diagnosis_skill import (
+    MetadataSemanticEnrichmentInput,
+    NamingStandardCheckInput,
+)
 from app.core.skills.stg_standardization_skill import StgStructureSuggestionInput
 
 

@@ -1,8 +1,8 @@
 """Reports page for viewing and exporting workflow outputs."""
 
+import sys
 from datetime import datetime
 from pathlib import Path
-import sys
 
 import streamlit as st
 
@@ -10,6 +10,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from app.ui.explanation_blocks import render_explanation_block
+from app.ui.page_overview import build_workflow_overview
 from app.ui.page_utils import (
     REPORT_OUTPUT_DIR,
     ensure_agent_shell_session_id,
@@ -21,16 +23,13 @@ from app.ui.page_utils import (
     initialize_session_state,
     record_report_paths,
 )
-from app.ui.explanation_blocks import render_explanation_block
-from app.ui.page_overview import build_workflow_overview
 from app.ui.result_detail_viewer import render_result_detail_viewer
 from app.ui.result_overview import (
     build_result_artifacts,
     render_result_artifacts,
     render_result_overview,
 )
-from app.ui.status_blocks import render_bullet_list
-from app.ui.status_blocks import render_page_header
+from app.ui.status_blocks import render_bullet_list, render_page_header
 
 ensure_project_root_on_path()
 

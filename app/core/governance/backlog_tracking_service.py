@@ -5,8 +5,8 @@ from typing import Any
 import app.core.governance.backlog_store as backlog_store
 from app.core.governance.backlog_builder import GovernanceBacklogBuilder
 from app.core.governance.backlog_sla_calculator import BacklogSlaCalculator
-from app.core.models.backlog_summary import BacklogSummary
 from app.core.models.backlog_sla_status import BacklogSlaStatus
+from app.core.models.backlog_summary import BacklogSummary
 from app.core.models.backlog_update_result import BacklogUpdateResult
 from app.core.models.governance_backlog_item import GovernanceBacklogItem
 from app.core.models.governance_work_package import GovernanceWorkPackage

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from app.core.agent.agent_shell_service import AgentShellService
 from app.core.agent import session_store
+from app.core.agent.agent_shell_service import AgentShellService
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "samples" / "sample_metadata.csv"

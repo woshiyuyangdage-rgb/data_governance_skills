@@ -1,7 +1,7 @@
 """Upload page for local metadata files."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -9,6 +9,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from app.ui.manual_metadata_editor import (
+    MANUAL_METADATA_DELETE_COLUMN,
+    append_manual_metadata_row,
+    apply_manual_metadata_editor_changes,
+    delete_selected_manual_metadata_rows,
+    editor_dataframe_to_manual_records,
+    ensure_manual_metadata_rows,
+    manual_metadata_editor_version,
+    manual_metadata_rows_to_editor_dataframe,
+    reset_manual_metadata_rows,
+)
+from app.ui.metadata_template import render_metadata_template_download
 from app.ui.page_utils import (
     INPUT_TEMPLATE_DOC_PATH,
     UPLOAD_OUTPUT_DIR,
@@ -22,18 +34,6 @@ from app.ui.page_utils import (
     initialize_session_state,
     set_uploaded_file_state,
 )
-from app.ui.manual_metadata_editor import (
-    MANUAL_METADATA_DELETE_COLUMN,
-    append_manual_metadata_row,
-    apply_manual_metadata_editor_changes,
-    delete_selected_manual_metadata_rows,
-    editor_dataframe_to_manual_records,
-    ensure_manual_metadata_rows,
-    manual_metadata_editor_version,
-    manual_metadata_rows_to_editor_dataframe,
-    reset_manual_metadata_rows,
-)
-from app.ui.metadata_template import render_metadata_template_download
 from app.ui.performance_helpers import ensure_large_file_runtime_ready
 from app.ui.status_blocks import render_metric_row, render_page_header
 from app.ui.workbench_cache import (
@@ -46,6 +46,7 @@ ensure_project_root_on_path()
 from app.core.agent.session_store import (
     set_last_uploaded_file,
 )
+from app.core.parser.manual_metadata_input import save_manual_metadata_records
 from app.core.parser.metadata_completion import (
     apply_reviewed_completion_values,
     complete_metadata_file,
@@ -56,7 +57,6 @@ from app.core.parser.metadata_learning import (
     learn_metadata_memory_from_dataframe,
     learn_metadata_memory_from_file,
 )
-from app.core.parser.manual_metadata_input import save_manual_metadata_records
 from app.core.utils.file_utils import get_file_extension, save_uploaded_file
 
 initialize_session_state()

@@ -1,8 +1,8 @@
 """Execution-ready governance package workbench."""
 
+import sys
 from datetime import datetime
 from pathlib import Path
-import sys
 
 import streamlit as st
 
@@ -30,14 +30,14 @@ from app.core.orchestrator.pipeline_service import (
     run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_from_file,
 )
 from app.ui.page_overview import build_workflow_overview
+from app.ui.performance_helpers import render_lazy_dataframe_section
 from app.ui.result_overview import render_result_overview
+from app.ui.status_blocks import render_metric_row, render_page_header
 from app.ui.workbench_cache import (
     execution_package_export_results_to_dataframe,
     execution_package_summary_to_dataframe,
     execution_ready_rules_to_dataframe,
 )
-from app.ui.performance_helpers import render_lazy_dataframe_section
-from app.ui.status_blocks import render_metric_row, render_page_header
 
 EXPORT_FORMAT_LABELS = {
     "package JSON": "执行包 JSON",

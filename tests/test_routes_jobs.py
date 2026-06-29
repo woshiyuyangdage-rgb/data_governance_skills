@@ -11,9 +11,9 @@ from app.api.routes_jobs import (
     learn_metadata_memory_from_file_route,
     list_jobs,
     list_workflow_profiles,
-    run_manual_metadata_route,
     run_governance_task_route,
     run_interpreted_governance_task,
+    run_manual_metadata_route,
     save_manual_metadata_route,
 )
 from app.core.models.governance_task_request import GovernanceTaskRequest

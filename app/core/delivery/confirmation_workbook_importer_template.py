@@ -11,11 +11,11 @@ from app.core.delivery.confirmation_template_loader import (
 )
 from app.core.delivery.confirmation_template_matcher import ConfirmationTemplateMatcher
 from app.core.delivery.confirmation_workbook_importer_constants import REQUIRED_COLUMNS
-from app.core.models.confirmation_template_match_result import (
-    ConfirmationTemplateMatchResult,
-)
 from app.core.models.confirmation_template_mapping_result import (
     ConfirmationTemplateMappingResult,
+)
+from app.core.models.confirmation_template_match_result import (
+    ConfirmationTemplateMatchResult,
 )
 
 

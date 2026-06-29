@@ -4,7 +4,9 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from app.core.delivery.confirmation_workbook_exporter import ConfirmationWorkbookExporter
+from app.core.delivery.confirmation_workbook_exporter import (
+    ConfirmationWorkbookExporter,
+)
 from app.core.models.governance_backlog_item import GovernanceBacklogItem
 from app.core.models.mapping_result import MappingResult
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion

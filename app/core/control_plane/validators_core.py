@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from app.core.models.validation_result import ValidationResult
 from app.core.control_plane.validators_common import _records_from_content
+from app.core.models.validation_result import ValidationResult
 
 
 def _validate_workflow_profiles(content: Any) -> ValidationResult:

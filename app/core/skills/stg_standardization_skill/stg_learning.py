@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.core.models.stg_review_record import StgReviewRecord
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
+from app.core.models.stg_review_record import StgReviewRecord
 from app.core.normalize import clean_text, split_tokens
 from app.core.utils.file_utils import ensure_directory
 

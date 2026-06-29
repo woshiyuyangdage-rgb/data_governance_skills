@@ -30,8 +30,8 @@ from app.core.orchestrator.pipeline_service import (
     run_p0_plus_mapping_plus_stg_with_review_from_file,
     run_quality_only_from_stg_from_file,
     run_quality_only_from_stg_with_review_from_file,
-    save_manual_metadata_to_file,
     run_stg_only_from_mapping_from_file,
+    save_manual_metadata_to_file,
 )
 from app.core.orchestrator.profile_loader import list_enabled_profiles
 from app.core.orchestrator.task_service import run_governance_task

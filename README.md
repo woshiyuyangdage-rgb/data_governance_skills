@@ -133,6 +133,8 @@ python -m app.maintenance doctor
 - `POST /jobs/assess-governance-portfolio`
 - `POST /jobs/assess-rag-quality`
 - `POST /jobs/assess-text-to-sql-readiness`
+- `GET /jobs/project-workspaces`
+- `POST /jobs/project-workspaces`
 
 ## 六个产品级 Skills
 
@@ -259,6 +261,7 @@ python -m ruff check app tests
 - `docs/domain_governance_packs_and_project_templates_spec.md`
 - `docs/enterprise_metadata_intake_adapters_spec.md`
 - `docs/enterprise_delivery_adapters_spec.md`
+- `docs/project_workspace_spec.md`
 
 维护文档：
 

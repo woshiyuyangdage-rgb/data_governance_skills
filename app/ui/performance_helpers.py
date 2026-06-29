@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import contextmanager
-from collections.abc import Iterable, Mapping
 from datetime import date, datetime
 from pathlib import Path
-from typing import Callable
 
 import pandas as pd
 import streamlit as st

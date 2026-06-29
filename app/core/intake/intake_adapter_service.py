@@ -10,12 +10,12 @@ from app.core.intake.intake_profile_loader import (
     load_intake_mapping_specs,
 )
 from app.core.intake.intake_template_matcher import IntakeTemplateMatcher
-from app.core.models.intake_match_result import IntakeMatchResult
 from app.core.models.intake_mapping_result import IntakeMappingResult
+from app.core.models.intake_match_result import IntakeMatchResult
 from app.core.models.intake_normalization_result import IntakeNormalizationResult
 from app.core.models.table_meta import TableMeta
-from app.core.parser._shared import dataframe_to_tables, normalize_nullable
 from app.core.normalize import clean_text
+from app.core.parser._shared import dataframe_to_tables, normalize_nullable
 from app.core.rules.config_loader import get_intake_diagnosis_policies_config
 
 

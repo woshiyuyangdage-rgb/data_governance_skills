@@ -7,7 +7,6 @@ from io import BytesIO
 import pandas as pd
 import streamlit as st
 
-
 METADATA_TEMPLATE_COLUMNS: list[tuple[str, str]] = [
     ("table_name", "表英文名 / table_name"),
     ("table_name_cn", "表中文名 / table_name_cn"),

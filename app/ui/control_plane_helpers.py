@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from difflib import unified_diff
 import hashlib
+from difflib import unified_diff
 
 
 def content_fingerprint(content: str) -> str:

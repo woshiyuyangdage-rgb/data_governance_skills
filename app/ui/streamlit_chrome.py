@@ -11,7 +11,6 @@ import json
 
 import streamlit.components.v1 as components
 
-
 STREAMLIT_CHROME_TRANSLATIONS: dict[str, str] = {
     "File change.": "文件已变更。",
     "Rerun": "重新运行",

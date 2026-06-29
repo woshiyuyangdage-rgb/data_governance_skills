@@ -1,8 +1,8 @@
 """Governance backlog tracking page."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -21,20 +21,24 @@ from app.ui.page_utils import (
 ensure_project_root_on_path()
 
 import app.core.governance.backlog_store as backlog_store
-from app.core.governance.backlog_tracking_service import GovernanceBacklogTrackingService
-from app.core.models.workflow_result import WorkflowResult
-from app.core.orchestrator.pipeline_service import run_full_governance_backlog_package_from_file
-from app.ui.page_overview import build_workflow_overview
-from app.ui.result_overview import render_result_overview
-from app.ui.workbench_cache import (
-    backlog_summary_to_dataframe,
-    governance_backlog_items_to_dataframe,
+from app.core.governance.backlog_tracking_service import (
+    GovernanceBacklogTrackingService,
 )
+from app.core.models.workflow_result import WorkflowResult
+from app.core.orchestrator.pipeline_service import (
+    run_full_governance_backlog_package_from_file,
+)
+from app.ui.page_overview import build_workflow_overview
 from app.ui.performance_helpers import (
     render_dataframe_multiselect_filter,
     render_lazy_dataframe_section,
 )
+from app.ui.result_overview import render_result_overview
 from app.ui.status_blocks import render_metric_row, render_page_header
+from app.ui.workbench_cache import (
+    backlog_summary_to_dataframe,
+    governance_backlog_items_to_dataframe,
+)
 
 initialize_session_state()
 

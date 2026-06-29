@@ -17,12 +17,12 @@ from app.core.knowledge.knowledge_loader import (
 from app.core.models.table_meta import TableMeta
 from app.core.normalize import expand_tokens, normalize_tokens, split_tokens
 from app.core.parser._shared import STANDARD_COLUMNS
+from app.core.parser.loader import load_metadata_file
 from app.core.parser.metadata_learning import (
     load_field_completion_memory,
     load_table_completion_memory,
     metadata_name_key,
 )
-from app.core.parser.loader import load_metadata_file
 from app.core.utils.file_utils import ensure_directory, sanitize_filename
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]

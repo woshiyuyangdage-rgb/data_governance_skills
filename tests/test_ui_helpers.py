@@ -1,22 +1,26 @@
 """Tests for lightweight Streamlit UI helper logic."""
 
 import io
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
-from contextlib import contextmanager
 
 import pandas as pd
 
+from app.core.models.ai_ready_score import AiReadyScore
+from app.core.models.issue import Issue
+from app.core.models.mapping_result import MappingResult
+from app.core.models.workflow_profile import WorkflowProfile
+from app.core.models.workflow_result import WorkflowResult
+from app.ui import page_utils, performance_helpers, status_blocks, workbench_cache
+from app.ui import session_keys as keys
+from app.ui.column_labels import localize_dataframe
 from app.ui.control_plane_helpers import (
     can_publish_without_save,
     content_fingerprint,
     diff_stats,
     should_warn_baseline_changed,
 )
-from app.ui import page_utils
-from app.ui import performance_helpers
-from app.ui import workbench_cache
-from app.ui.column_labels import localize_dataframe
 from app.ui.manual_metadata_editor import (
     MANUAL_METADATA_DELETE_COLUMN,
     append_manual_metadata_row,
@@ -35,9 +39,11 @@ from app.ui.navigation import (
     build_quick_start_links,
 )
 from app.ui.page_overview import build_workflow_overview
-from app.ui.streamlit_chrome import (
-    STREAMLIT_CHROME_TRANSLATIONS,
-    build_streamlit_chrome_localizer_html,
+from app.ui.result_detail_viewer import build_result_detail_sections
+from app.ui.result_overview import (
+    artifact_download_key,
+    build_result_artifacts,
+    build_tool_response_overview,
 )
 from app.ui.review_form_helpers import (
     candidate_evidence,
@@ -45,26 +51,17 @@ from app.ui.review_form_helpers import (
     collect_quality_review_inputs,
     collect_stg_review_inputs,
 )
-from app.ui import status_blocks
-from app.ui.result_overview import (
-    artifact_download_key,
-    build_result_artifacts,
-    build_tool_response_overview,
-)
-from app.ui.result_detail_viewer import build_result_detail_sections
-from app.ui import session_keys as keys
 from app.ui.session_keys import build_session_defaults
+from app.ui.streamlit_chrome import (
+    STREAMLIT_CHROME_TRANSLATIONS,
+    build_streamlit_chrome_localizer_html,
+)
 from app.ui.value_formatters import format_value
+from app.ui.workbench_state import WorkbenchState
 from app.ui.workflow_run_panel import (
     review_replay_control_defaults,
     select_profile_name,
 )
-from app.ui.workbench_state import WorkbenchState
-from app.core.models.ai_ready_score import AiReadyScore
-from app.core.models.issue import Issue
-from app.core.models.mapping_result import MappingResult
-from app.core.models.workflow_profile import WorkflowProfile
-from app.core.models.workflow_result import WorkflowResult
 
 
 class _FakeSessionState(dict):

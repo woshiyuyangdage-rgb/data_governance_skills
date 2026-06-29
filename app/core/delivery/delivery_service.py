@@ -3,7 +3,9 @@
 from pathlib import Path
 from typing import Any
 
-from app.core.delivery.confirmation_workbook_exporter import ConfirmationWorkbookExporter
+from app.core.delivery.confirmation_workbook_exporter import (
+    ConfirmationWorkbookExporter,
+)
 from app.core.delivery.governance_delivery_builder import GovernanceDeliveryBuilder
 from app.core.models.confirmation_workbook_result import ConfirmationWorkbookResult
 from app.core.models.workflow_result import WorkflowResult

@@ -10,8 +10,8 @@ from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     load_standard_mapping_memory,
     lookup_learned_standard_mapping,
     prune_invalid_standard_mapping_memory,
-    summarize_standard_mapping_memory,
     standard_mapping_memory_details,
+    summarize_standard_mapping_memory,
 )
 
 

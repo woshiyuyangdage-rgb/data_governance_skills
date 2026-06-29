@@ -1,8 +1,8 @@
 """Adapter console for capability manifest, schema export, and local invocation."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import streamlit as st
 
@@ -23,10 +23,14 @@ ensure_project_root_on_path()
 
 from app.core.adapters.invocation_adapter import InvocationAdapter
 from app.ui.performance_helpers import records_to_dataframe, render_json_section
-from app.ui.status_blocks import render_key_value_block, render_metric_row, render_page_header
+from app.ui.status_blocks import (
+    render_key_value_block,
+    render_metric_row,
+    render_page_header,
+)
 from app.ui.workbench_cache import (
-    adapter_schema_cache_key,
     adapter_schema_bundle_cached,
+    adapter_schema_cache_key,
     build_adapter_console_default_arguments,
 )
 

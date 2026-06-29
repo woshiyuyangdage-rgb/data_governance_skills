@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from app.core.delivery.confirmation_workbook_exporter import ConfirmationWorkbookExporter
+from app.core.delivery.confirmation_workbook_exporter import (
+    ConfirmationWorkbookExporter,
+)
 from app.core.models.confirmation_workbook_result import ConfirmationWorkbookResult
 from app.core.models.governance_delivery_manifest import GovernanceDeliveryManifest
 from app.core.models.governance_delivery_package_result import (
