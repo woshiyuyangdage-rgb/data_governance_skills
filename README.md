@@ -170,7 +170,7 @@ tests/        pytest 自动化测试
 | 模块 | 位置 | 功能 |
 | --- | --- | --- |
 | API 接口层 | `app/api/` | 暴露 FastAPI 路由、请求模型、任务接口、报告接口和工具响应封装。`routes_jobs.py` 是聚合入口，具体任务路由按领域拆分。 |
-| UI 工作台 | `app/ui/` | Streamlit 多页面工作台，覆盖上传、诊断、报告、评审、Agent Shell、工具控制台、配置面板、质量规则、执行包、就绪度、AI-ready 评分、待办、组合视图和交付包。 |
+| UI 工作台 | `app/ui/` | Streamlit 多页面工作台，覆盖上传、诊断、报告、评审、Agent Shell、工具控制台、配置面板、质量规则、执行包、就绪度、AI-ready 评分、待办、组合视图、项目工作区、平台数据总览和交付包。 |
 | 编排引擎 | `app/core/orchestrator/` | 将解析、技能、评审、执行包、就绪度、AI-ready 评分、待办和组合评估串成 workflow profile。 |
 | 元数据解析 | `app/core/parser/` | 读取 CSV、Excel 和批量输入，转换为内部表字段模型，并处理解析异常。 |
 | 输入适配 | `app/core/intake/` | 诊断企业元数据模板、匹配列别名、选择最佳 sheet，并规范化输入文件。 |
@@ -262,6 +262,7 @@ python -m ruff check app tests
 - `docs/enterprise_metadata_intake_adapters_spec.md`
 - `docs/enterprise_delivery_adapters_spec.md`
 - `docs/project_workspace_spec.md`
+- `docs/platform_metrics_spec.md`
 
 维护文档：
 

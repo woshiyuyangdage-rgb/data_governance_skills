@@ -31,6 +31,14 @@ from app.core.models.issue import Issue
 from app.core.models.mapping_result import MappingResult, UnmappedField
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.models.parameter_resolution_result import ParameterResolutionResult
+from app.core.models.platform_metrics import (
+    PlatformDistributionItem,
+    PlatformFileInventoryItem,
+    PlatformKpi,
+    PlatformMetrics,
+    PlatformRecentActivity,
+    PlatformWorkspaceMetric,
+)
 from app.core.models.project_workspace import (
     ProjectWorkspace,
     ProjectWorkspaceArtifact,
@@ -116,6 +124,12 @@ __all__ = [
     "InterpretedIntent",
     "IntentExecutionResult",
     "ParameterResolutionResult",
+    "PlatformDistributionItem",
+    "PlatformFileInventoryItem",
+    "PlatformKpi",
+    "PlatformMetrics",
+    "PlatformRecentActivity",
+    "PlatformWorkspaceMetric",
     "ProjectWorkspace",
     "ProjectWorkspaceArtifact",
     "ProjectWorkspaceReviewState",

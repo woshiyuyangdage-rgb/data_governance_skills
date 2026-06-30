@@ -41,6 +41,43 @@ The storage layer is intentionally file based so tests, demos, and local governa
 
 Route responses include a workspace summary where relevant. The summary exposes latest run status, run count, unresolved review count, artifact count, owner, tags, and timestamps.
 
+## UI
+
+The Streamlit workbench exposes the feature through `app/ui/pages/20_project_workspace.py` in the governance management section.
+
+The page supports:
+
+- creating a project workspace with owner, domain pack, template, tags, and notes;
+- selecting an existing workspace and rebuilding the local index;
+- syncing the current workflow result into a workspace in one action;
+- recording the current workflow result as a workspace run;
+- updating review queue counts;
+- attaching local reports, workbooks, packages, manifests, or evidence files;
+- viewing run timelines and comparing two runs;
+- viewing workspace runs, review queues, artifacts, and raw JSON.
+
+## Workflow Result Sync
+
+`app/core/governance/project_workspace_sync_service.py` converts a `WorkflowResult` into project workspace records.
+
+The sync service:
+
+- records one project run with a compact workflow summary;
+- syncs manual review, quality-rule review, and backlog summaries into review queues;
+- attaches rule exports, execution package exports, confirmation workbooks, delivery package directories, and generated delivery files;
+- skips artifact paths already registered in the workspace.
+
+## Run Insights
+
+`app/core/governance/project_workspace_insights_service.py` builds lightweight project run analytics from saved workspace runs.
+
+The insights service:
+
+- builds a run timeline from each run's compact `result_summary`;
+- normalizes legacy and current metric names such as `diagnosis_issues` and `issue_count`;
+- compares two runs and reports baseline value, target value, delta, and direction;
+- treats lower issue and backlog counts as improvements, and higher coverage/output counts as improvements.
+
 ## Example Flow
 
 1. Create a workspace for a data-domain cleanup initiative.
@@ -57,6 +94,4 @@ Route responses include a workspace summary where relevant. The summary exposes 
 
 ## Next Extensions
 
-- Auto-attach workflow run outputs when a workflow is executed with a workspace id.
-- Add a Streamlit workspace page for project status, review queues, and artifact downloads.
-- Add before/after comparisons across runs for readiness score, backlog volume, and artifact coverage.
+- Add optional charts for run trends in the Streamlit workspace page.

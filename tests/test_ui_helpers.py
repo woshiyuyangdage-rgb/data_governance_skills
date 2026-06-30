@@ -33,6 +33,7 @@ from app.ui.manual_metadata_editor import (
 )
 from app.ui.metadata_template import build_metadata_template_file
 from app.ui.navigation import (
+    PAGE_DEFINITIONS,
     build_maintainer_links,
     build_navigation_sections,
     build_page_registry,
@@ -622,6 +623,10 @@ def test_navigation_registry_builds_chinese_sections_and_home_links(monkeypatch)
     assert page_by_key["home"]["target"] is home_page
     assert page_by_key["home"]["default"] is True
     assert page_by_key["upload"]["title"] == "01 上传元数据"
+    assert page_by_key["project_workspace"]["target"] == "pages/20_project_workspace.py"
+    assert page_by_key["platform_metrics"]["target"] == "pages/21_platform_metrics.py"
+    assert any(definition.key == "project_workspace" for definition in PAGE_DEFINITIONS)
+    assert any(definition.key == "platform_metrics" for definition in PAGE_DEFINITIONS)
     assert list(sections) == [
         "开始",
         "核心流程",
@@ -630,6 +635,9 @@ def test_navigation_registry_builds_chinese_sections_and_home_links(monkeypatch)
         "交付与批处理",
         "模板与接入",
     ]
+    governance_pages = [page["target"] for page in sections["治理管理"]]
+    assert "pages/20_project_workspace.py" in governance_pages
+    assert "pages/21_platform_metrics.py" in governance_pages
     assert [label for _, label, _ in quick_start_links] == [
         "1. 上传文件",
         "2. 开始诊断",
