@@ -111,6 +111,9 @@ def test_collect_platform_metrics_aggregates_local_runtime_data(
     assert _kpi(metrics, "execution_traces") == 1
     assert _kpi(metrics, "output_files") == 1
     assert metrics.workspace_metrics[0].pending_review_count == 3
+    assert metrics.workspace_metrics[0].delivery_completeness_score == 50
+    assert metrics.workspace_metrics[0].delivery_completeness_level == "partial"
+    assert "确认工作簿" in metrics.workspace_metrics[0].missing_delivery_components
     assert metrics.run_status_distribution[0].name == "success"
     assert metrics.workflow_profile_distribution[0].name == "governance_readiness"
     assert metrics.artifact_type_distribution[0].name == "report"
@@ -120,6 +123,9 @@ def test_collect_platform_metrics_aggregates_local_runtime_data(
     }
     assert metrics.trace_tool_distribution[0].name == "run_governance_profile"
     assert metrics.output_inventory[0].bucket == "reports"
+    assert any(
+        signal.signal_type == "blocked_backlog" for signal in metrics.health_signals
+    )
     assert metrics.recent_activities[0].activity_type in {
         "trace",
         "backlog",
@@ -174,3 +180,26 @@ def test_collect_platform_metrics_applies_status_filters(
     assert [item.name for item in metrics.trace_status_distribution] == ["failed"]
     assert _kpi(metrics, "execution_traces") == 1
     assert len(metrics.recent_activities) <= 2
+    assert any(signal.signal_type == "trace_failure" for signal in metrics.health_signals)
+    assert any(
+        signal.signal_type == "run_without_artifacts"
+        for signal in metrics.health_signals
+    )
+    assert any(
+        signal.signal_type == "low_delivery_completeness"
+        for signal in metrics.health_signals
+    )
+
+
+def test_collect_platform_metrics_reports_ok_health_when_no_risks(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_runtime_paths(tmp_path, monkeypatch)
+
+    metrics = metrics_service.collect_platform_metrics()
+
+    assert [signal.signal_type for signal in metrics.health_signals] == [
+        "platform_health"
+    ]
+    assert metrics.health_signals[0].severity == "ok"

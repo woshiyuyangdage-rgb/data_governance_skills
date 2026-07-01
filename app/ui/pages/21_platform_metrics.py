@@ -69,6 +69,24 @@ def _csv_download_data(dataframe: pd.DataFrame) -> bytes:
     return dataframe.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
 
 
+def _render_health_signal(signal: object) -> None:
+    severity = getattr(signal, "severity", "")
+    title = getattr(signal, "title", "")
+    detail = getattr(signal, "detail", "")
+    action = getattr(signal, "recommended_action", None)
+    message = f"**{title}**\n\n{detail}"
+    if action:
+        message = f"{message}\n\n建议：{action}"
+    if severity == "high":
+        st.error(message)
+    elif severity == "medium":
+        st.warning(message)
+    elif severity == "low":
+        st.info(message)
+    else:
+        st.success(message)
+
+
 render_page_header(
     "平台数据总览",
     "统计本地平台沉淀的工作区、运行、评审、待办、审计 trace 和交付文件。",
@@ -107,6 +125,13 @@ with filter_expander:
             value=20,
             step=5,
         )
+    min_delivery_score = st.slider(
+        "最低交付完整度",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=5,
+    )
 
 if st.button("刷新统计", use_container_width=False):
     st.cache_data.clear()
@@ -120,6 +145,7 @@ metrics = collect_platform_metrics(
 st.caption(f"统计时间：{metrics.generated_at}")
 
 kpi_lookup = {item.name: item for item in metrics.kpis}
+active_risk_count = sum(1 for signal in metrics.health_signals if signal.severity != "ok")
 render_metric_row(
     [
         ("工作区", kpi_lookup["project_workspaces"].value),
@@ -130,6 +156,7 @@ render_metric_row(
         ("Trace", kpi_lookup["execution_traces"].value),
         ("输出文件", kpi_lookup["output_files"].value),
         ("输出体量", _format_bytes(kpi_lookup["output_bytes"].value)),
+        ("风险提示", active_risk_count),
     ],
     max_columns=4,
 )
@@ -162,8 +189,8 @@ with export_cols[2]:
         use_container_width=True,
     )
 
-overview_tab, workspace_tab, backlog_tab, trace_tab, storage_tab, raw_tab = st.tabs(
-    ["概览", "工作区", "待办", "Trace", "文件", "原始数据"]
+overview_tab, health_tab, workspace_tab, backlog_tab, trace_tab, storage_tab, raw_tab = st.tabs(
+    ["概览", "健康", "工作区", "待办", "Trace", "文件", "原始数据"]
 )
 
 with overview_tab:
@@ -202,12 +229,42 @@ with overview_tab:
         key_prefix="platform_recent_activity",
     )
 
+with health_tab:
+    st.subheader("平台健康提示")
+    for signal in metrics.health_signals:
+        _render_health_signal(signal)
+    render_lazy_dataframe_section(
+        "健康信号明细",
+        _records_dataframe(metrics.health_signals),
+        compact=True,
+        key_prefix="platform_health_signals",
+    )
+
 with workspace_tab:
     workspace_df = _records_dataframe(metrics.workspace_metrics)
     if not workspace_df.empty:
+        workspace_df = workspace_df[
+            workspace_df["delivery_completeness_score"] >= min_delivery_score
+        ]
         workspace_df = workspace_df.sort_values(
-            by=["pending_review_count", "run_count", "artifact_count"],
-            ascending=[False, False, False],
+            by=[
+                "pending_review_count",
+                "delivery_completeness_score",
+                "run_count",
+                "artifact_count",
+            ],
+            ascending=[False, True, False, False],
+        )
+        completeness_df = (
+            workspace_df["delivery_completeness_level"]
+            .value_counts()
+            .rename_axis("name")
+            .reset_index(name="count")
+        )
+        _render_distribution(
+            "交付完整度等级分布",
+            completeness_df.to_dict("records"),
+            "platform_delivery_completeness",
         )
     render_lazy_dataframe_section(
         "工作区排行",

@@ -32,6 +32,8 @@ The service provides:
 - workspace, run, workflow, artifact, backlog, and trace distributions;
 - output directory file inventory;
 - recent activity rows across workspaces, backlog items, and traces.
+- health signals for failed traces, blocked backlog, high review load, missing artifacts, and large output directories.
+- workspace delivery completeness scoring.
 
 Bad JSON files, missing directories, and inaccessible files are skipped so the dashboard remains available during local development.
 
@@ -46,6 +48,7 @@ The page contains:
 - KPI row;
 - overview distributions;
 - workspace ranking;
+- health signal cards and details;
 - backlog status, priority, and owner distributions;
 - trace status and tool distributions;
 - output file inventory;
@@ -55,9 +58,47 @@ The page also provides:
 
 - filters for workspace, backlog, and trace status;
 - configurable recent activity count;
+- minimum delivery completeness filter;
 - JSON export for the full metrics payload;
 - CSV exports for workspace metrics and recent activity rows;
 - human-readable output size display.
+
+## Health Signals
+
+The dashboard derives health signals from the same local metrics payload.
+
+Current signals include:
+
+- `trace_failure`: failed or error traces exist in the scanned trace window;
+- `blocked_backlog`: blocked backlog items exist;
+- `pending_review_load`: project workspace review load exceeds the warning threshold;
+- `run_without_artifacts`: workspaces have recorded runs but no linked artifacts;
+- `low_delivery_completeness`: workspaces with runs are below the delivery completeness threshold;
+- `large_output_file_count`: output file count exceeds the warning threshold;
+- `large_output_size`: output bytes exceed the warning threshold;
+- `platform_health`: fallback OK signal when no risks are detected.
+
+Signals are advisory and local-only. They do not block workflow execution.
+
+## Delivery Completeness
+
+Each workspace receives a delivery completeness score from 0 to 100.
+
+The current score checks six components:
+
+- at least one run record;
+- at least one review state;
+- at least one linked artifact;
+- a confirmation workbook artifact;
+- an execution package artifact;
+- a delivery package, delivery artifact, or manifest artifact.
+
+Levels are:
+
+- `complete`: 85 or above;
+- `mostly_complete`: 60 to 84;
+- `partial`: 1 to 59;
+- `not_started`: 0.
 
 ## Non Goals
 

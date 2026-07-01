@@ -28,6 +28,9 @@ class PlatformWorkspaceMetric(BaseModel):
     run_count: int = 0
     artifact_count: int = 0
     pending_review_count: int = 0
+    delivery_completeness_score: int = 0
+    delivery_completeness_level: str = "not_started"
+    missing_delivery_components: list[str] = Field(default_factory=list)
     last_run_status: str | None = None
     updated_at: str | None = None
 
@@ -48,6 +51,17 @@ class PlatformFileInventoryItem(BaseModel):
     bucket: str
     file_count: int = 0
     total_bytes: int = 0
+
+
+class PlatformHealthSignal(BaseModel):
+    """One platform health or risk signal."""
+
+    severity: str
+    signal_type: str
+    title: str
+    detail: str
+    count: int | float = 0
+    recommended_action: str | None = None
 
 
 class PlatformMetrics(BaseModel):
@@ -81,3 +95,4 @@ class PlatformMetrics(BaseModel):
     trace_tool_distribution: list[PlatformDistributionItem] = Field(default_factory=list)
     output_inventory: list[PlatformFileInventoryItem] = Field(default_factory=list)
     recent_activities: list[PlatformRecentActivity] = Field(default_factory=list)
+    health_signals: list[PlatformHealthSignal] = Field(default_factory=list)

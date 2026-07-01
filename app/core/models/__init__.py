@@ -34,6 +34,7 @@ from app.core.models.parameter_resolution_result import ParameterResolutionResul
 from app.core.models.platform_metrics import (
     PlatformDistributionItem,
     PlatformFileInventoryItem,
+    PlatformHealthSignal,
     PlatformKpi,
     PlatformMetrics,
     PlatformRecentActivity,
@@ -126,6 +127,7 @@ __all__ = [
     "ParameterResolutionResult",
     "PlatformDistributionItem",
     "PlatformFileInventoryItem",
+    "PlatformHealthSignal",
     "PlatformKpi",
     "PlatformMetrics",
     "PlatformRecentActivity",
