@@ -172,7 +172,17 @@ def test_learned_mapping_memory_promotes_human_confirmed_standard(monkeypatch) -
     assert mapping.recommended_standard_code == "customer_name"
     assert mapping.match_score == 1.15
     assert "learned mapping memory matched" in mapping.match_reason
+    assert mapping.score_breakdown["total_score"] == mapping.match_score
+    assert mapping.score_breakdown["confidence_band"] == "high"
+    assert mapping.score_breakdown["confidence_score"] >= 0.9
+    assert mapping.score_breakdown["signal_categories"]["learning_memory"] == 1
     assert mapping.top_candidates[0]["standard_code"] == "customer_name"
+    assert (
+        mapping.top_candidates[0]["score_breakdown"]["signal_categories"][
+            "learning_memory"
+        ]
+        == 1
+    )
 
 
 def test_standard_mapping_flags_type_conflict_for_manual_review() -> None:
@@ -201,6 +211,11 @@ def test_standard_mapping_flags_type_conflict_for_manual_review() -> None:
     assert "Field type decimal conflicts with standard type string" in (
         mapping.risk_hint or ""
     )
+    assert mapping.score_breakdown["negative_signal_count"] >= 1
+    assert mapping.score_breakdown["confidence_band"] == "review"
+    assert mapping.score_breakdown["confidence_score"] < mapping.match_score
+    assert "data_type_conflict" in mapping.score_breakdown["review_reason_codes"]
+    assert mapping.score_breakdown["signal_categories"]["type_compatibility"] >= 1
     assert any("data type conflict" in item["match_reason"] for item in mapping.top_candidates)
 
 
@@ -266,6 +281,17 @@ def test_standard_mapping_promotes_contextual_alias_match() -> None:
     )
     assert "standard alias tokens matched within field name" in mapping.match_reason
     assert "field qualifier tokens are supported by table context" in mapping.match_reason
+    assert mapping.score_breakdown["signal_categories"]["alias_match"] >= 1
+    assert mapping.score_breakdown["signal_categories"]["context_match"] >= 1
+    assert mapping.top_candidates[0]["score_breakdown"]["total_score"] == (
+        mapping.top_candidates[0]["match_score"]
+    )
+    assert mapping.score_breakdown["nearest_competitor"]["standard_code"] == (
+        mapping.top_candidates[1]["standard_code"]
+    )
+    assert "score_margin" in mapping.score_breakdown["nearest_competitor"]
+    if mapping.score_breakdown["nearest_competitor"]["is_ambiguous"]:
+        assert "ambiguous_candidate" in mapping.score_breakdown["review_reason_codes"]
 
 
 def test_standard_mapping_keeps_unsupported_alias_qualifier_in_review() -> None:
@@ -292,6 +318,137 @@ def test_standard_mapping_keeps_unsupported_alias_qualifier_in_review() -> None:
     assert mapping.match_score < 0.9
     assert mapping.mapping_status == "manual_review"
     assert mapping.requires_manual_review is True
+    assert "low_confidence" in mapping.score_breakdown["review_reason_codes"]
     assert any(
         unmapped.field_name == "order_status" for unmapped in result.unmapped_fields
     )
+
+
+def test_standard_mapping_uses_value_domain_against_sample_values(monkeypatch) -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="sales_order_header",
+            business_domain="transaction",
+            fields=[
+                FieldMeta(
+                    field_name="order_status",
+                    field_name_cn="order status",
+                    data_type="varchar",
+                    sample_values="OPEN;CLOSED;CANCELLED",
+                    business_domain="transaction",
+                )
+            ],
+        )
+    ]
+
+    monkeypatch.setattr(
+        standard_mapping_recommendation,
+        "load_standard_fields",
+        lambda: pd.DataFrame(
+            [
+                {
+                    "standard_code": "status_code",
+                    "standard_name": "status_code",
+                    "standard_name_cn": "status code",
+                    "description": "Workflow status.",
+                    "data_type": "varchar",
+                    "data_length": "",
+                    "value_domain": "OPEN;CLOSED;CANCELLED",
+                    "business_domain": "transaction",
+                    "aliases": "status;order_status",
+                },
+                {
+                    "standard_code": "priority_code",
+                    "standard_name": "priority_code",
+                    "standard_name_cn": "priority code",
+                    "description": "Priority level.",
+                    "data_type": "varchar",
+                    "data_length": "",
+                    "value_domain": "HIGH;MEDIUM;LOW",
+                    "business_domain": "transaction",
+                    "aliases": "status;order_status",
+                },
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        standard_mapping_recommendation,
+        "semantic_match_source_fields",
+        lambda fields, candidate_limit=None: [None for _ in fields],
+    )
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    mapping = result.mapping_results[0]
+    assert mapping.recommended_standard_code == "status_code"
+    assert "value domain covers all sample values" in mapping.match_reason
+    assert mapping.score_breakdown["signal_categories"]["value_domain_match"] == 1
+    assert any(
+        "value domain mismatch" in item["match_reason"]
+        for item in mapping.top_candidates
+        if item["standard_code"] == "priority_code"
+    )
+    mismatched_candidate = next(
+        item
+        for item in mapping.top_candidates
+        if item["standard_code"] == "priority_code"
+    )
+    assert "value_domain_mismatch" in (
+        mismatched_candidate["score_breakdown"]["review_reason_codes"]
+    )
+
+
+def test_standard_mapping_value_domain_mismatch_requires_review(monkeypatch) -> None:
+    skill = StandardMappingRecommendationSkill()
+    tables = [
+        TableMeta(
+            table_name="sales_order_header",
+            business_domain="transaction",
+            fields=[
+                FieldMeta(
+                    field_name="status_code",
+                    field_name_cn="status code",
+                    data_type="varchar",
+                    sample_values="HIGH;LOW",
+                    business_domain="transaction",
+                )
+            ],
+        )
+    ]
+
+    monkeypatch.setattr(
+        standard_mapping_recommendation,
+        "load_standard_fields",
+        lambda: pd.DataFrame(
+            [
+                {
+                    "standard_code": "status_code",
+                    "standard_name": "status_code",
+                    "standard_name_cn": "status code",
+                    "description": "Workflow status.",
+                    "data_type": "varchar",
+                    "data_length": "",
+                    "value_domain": "OPEN;CLOSED;CANCELLED",
+                    "business_domain": "transaction",
+                    "aliases": "status",
+                },
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        standard_mapping_recommendation,
+        "semantic_match_source_fields",
+        lambda fields, candidate_limit=None: [None for _ in fields],
+    )
+
+    result = skill.run(StandardMappingInput(tables=tables, apply_overrides=False))
+
+    mapping = result.mapping_results[0]
+    assert mapping.recommended_standard_code == "status_code"
+    assert mapping.requires_manual_review is True
+    assert mapping.mapping_status == "manual_review"
+    assert "Field sample values do not match the standard value domain" in (
+        mapping.risk_hint or ""
+    )
+    assert "value_domain_mismatch" in mapping.score_breakdown["review_reason_codes"]

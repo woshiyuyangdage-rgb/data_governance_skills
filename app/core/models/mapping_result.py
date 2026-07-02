@@ -13,6 +13,7 @@ class MappingResult(BaseModel):
     recommended_standard_name_cn: str | None = None
     match_score: float = 0.0
     match_reason: str = ""
+    score_breakdown: dict[str, object] = Field(default_factory=dict)
     risk_hint: str | None = None
     action_suggestion: str | None = None
     requires_manual_review: bool = False

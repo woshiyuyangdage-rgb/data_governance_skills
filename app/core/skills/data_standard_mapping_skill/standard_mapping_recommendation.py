@@ -1,5 +1,6 @@
 """Rule-based P1 skill for standard field mapping recommendations."""
 
+import re
 from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
@@ -32,6 +33,9 @@ from app.core.skills.data_standard_mapping_skill.semantic_index import (
 EMPTY_TEXT_VALUES = {"", "nan", "none", "null"}
 SHARED_DOMAIN_VALUES = {"shared", "common", "global", "enterprise"}
 IDENTIFIER_TOKENS = {"id", "identifier", "number", "no", "code"}
+VALUE_SPLIT_PATTERN = re.compile(r"[;|,\r\n]+")
+MAX_VALUE_DOMAIN_ITEMS = 30
+MAX_VALUE_DOMAIN_ITEM_LENGTH = 64
 STRING_TYPE_TOKENS = {
     "char",
     "character",
@@ -159,6 +163,63 @@ class StandardMappingRecommendationSkill(BaseSkill):
         if field_domain == standard_domain:
             return True
         return field_domain in SHARED_DOMAIN_VALUES or standard_domain in SHARED_DOMAIN_VALUES
+
+    @staticmethod
+    def _compact_value_set(value_text: object) -> set[str]:
+        text = StandardMappingRecommendationSkill._optional_text(value_text)
+        if text is None:
+            return set()
+
+        values: list[str] = []
+        seen: set[str] = set()
+        for raw_value in VALUE_SPLIT_PATTERN.split(text):
+            value = raw_value.strip().strip("'\"")
+            if not value or value.lower() in EMPTY_TEXT_VALUES:
+                continue
+            if len(value) > MAX_VALUE_DOMAIN_ITEM_LENGTH:
+                return set()
+            key = clean_text(value)
+            if not key or key in seen:
+                continue
+            values.append(key)
+            seen.add(key)
+
+        if not values or len(values) > MAX_VALUE_DOMAIN_ITEMS:
+            return set()
+        return set(values)
+
+    @classmethod
+    def _value_domain_alignment(
+        cls,
+        sample_values: object,
+        value_domain: object,
+    ) -> tuple[float, str | None]:
+        sample_set = cls._compact_value_set(sample_values)
+        domain_set = cls._compact_value_set(value_domain)
+        if not sample_set or not domain_set:
+            return 0.0, None
+
+        overlap = sample_set.intersection(domain_set)
+        if overlap == sample_set:
+            return (
+                0.12,
+                f"value domain covers all sample values values={sorted(overlap)}",
+            )
+        if overlap:
+            return (
+                0.06,
+                f"value domain partially matches sample values values={sorted(overlap)}",
+            )
+        if len(sample_set) <= 8 and len(domain_set) <= 12:
+            return (
+                -0.08,
+                (
+                    "value domain mismatch "
+                    f"sample_values={sorted(sample_set)} "
+                    f"standard_values={sorted(domain_set)}"
+                ),
+            )
+        return 0.0, None
 
     @staticmethod
     def _text_tokens(*values: object) -> list[str]:
@@ -460,6 +521,16 @@ class StandardMappingRecommendationSkill(BaseSkill):
                     f"data length differs field={field_length} standard={standard_length}"
                 )
 
+        value_domain_score, value_domain_reason = (
+            StandardMappingRecommendationSkill._value_domain_alignment(
+                field_info.get("sample_values"),
+                candidate.value_domain,
+            )
+        )
+        if value_domain_reason is not None:
+            score += value_domain_score
+            reasons.append(value_domain_reason)
+
         return round(score, 2), reasons
 
     @classmethod
@@ -649,6 +720,15 @@ class StandardMappingRecommendationSkill(BaseSkill):
             actions.append("Review table ownership, business domain, or cross-domain reuse")
             requires_manual_review = True
 
+        value_domain_score, value_domain_reason = cls._value_domain_alignment(
+            field_info.get("sample_values"),
+            candidate.value_domain,
+        )
+        if value_domain_score < 0 and value_domain_reason is not None:
+            risks.append("Field sample values do not match the standard value domain")
+            actions.append("Review sample values against the standard value domain")
+            requires_manual_review = True
+
         if 0 < score < 0.9:
             risks.append("Recommendation confidence is below the auto-accept threshold")
             actions.append("Ask a data steward to review the candidate standard")
@@ -664,6 +744,149 @@ class StandardMappingRecommendationSkill(BaseSkill):
             actions.append("Use as an auto recommendation for review or downstream rules")
 
         return list(dict.fromkeys(risks)), list(dict.fromkeys(actions)), requires_manual_review
+
+    @staticmethod
+    def _reason_category(reason: str) -> str:
+        normalized_reason = reason.lower()
+        if "learned mapping memory" in normalized_reason:
+            return "learning_memory"
+        if "semantic" in normalized_reason:
+            return "semantic_match"
+        if "alias" in normalized_reason:
+            return "alias_match"
+        if "context" in normalized_reason or "domain pack" in normalized_reason:
+            return "context_match"
+        if "standard_name" in normalized_reason or "normalized token" in normalized_reason:
+            return "name_match"
+        if "token" in normalized_reason or "identifier-style" in normalized_reason:
+            return "token_match"
+        if "field_name_cn" in normalized_reason:
+            return "localized_name_match"
+        if "data type" in normalized_reason:
+            return "type_compatibility"
+        if "business domain" in normalized_reason:
+            return "domain_compatibility"
+        if "value domain" in normalized_reason:
+            return "value_domain_match"
+        if "data length" in normalized_reason:
+            return "length_match"
+        return "other"
+
+    @staticmethod
+    def _is_negative_reason(reason: str) -> bool:
+        normalized_reason = reason.lower()
+        return any(
+            marker in normalized_reason
+            for marker in (
+                "conflict",
+                "mismatch",
+                "differs",
+                "below",
+                "unsupported",
+            )
+        )
+
+    @staticmethod
+    def _confidence_band(confidence_score: float, review_indicators: list[str]) -> str:
+        if review_indicators:
+            return "review"
+        if confidence_score >= 0.85:
+            return "high"
+        if confidence_score >= 0.6:
+            return "medium"
+        return "low"
+
+    @staticmethod
+    def _review_reason_code(reason: str) -> str | None:
+        normalized_reason = reason.lower()
+        if "data type conflict" in normalized_reason:
+            return "data_type_conflict"
+        if "business domain mismatch" in normalized_reason:
+            return "business_domain_mismatch"
+        if "value domain mismatch" in normalized_reason:
+            return "value_domain_mismatch"
+        if "data length differs" in normalized_reason:
+            return "data_length_mismatch"
+        if "unsupported" in normalized_reason:
+            return "unsupported_signal"
+        return None
+
+    @classmethod
+    def _score_breakdown(
+        cls,
+        score: float,
+        reasons: list[str],
+        candidate: StandardCandidate | None = None,
+        nearest_competitor: tuple[StandardCandidate, float] | None = None,
+    ) -> dict[str, object]:
+        """Convert human-readable match reasons into stable, filterable signals."""
+        positive_signals: list[str] = []
+        negative_signals: list[str] = []
+        categories: dict[str, int] = {}
+        review_reason_codes: list[str] = []
+        for reason in reasons:
+            category = cls._reason_category(reason)
+            categories[category] = categories.get(category, 0) + 1
+            if cls._is_negative_reason(reason):
+                negative_signals.append(reason)
+                reason_code = cls._review_reason_code(reason)
+                if reason_code is not None:
+                    review_reason_codes.append(reason_code)
+            else:
+                positive_signals.append(reason)
+
+        review_indicators = list(negative_signals)
+        if 0 < score < 0.9:
+            review_indicators.append("match_score below auto-accept threshold 0.90")
+            review_reason_codes.append("low_confidence")
+
+        competitor_payload: dict[str, object] | None = None
+        if nearest_competitor is not None:
+            competitor, competitor_score = nearest_competitor
+            score_margin = round(score - competitor_score, 2)
+            is_ambiguous = competitor_score >= 0.75 and score_margin < 0.15
+            competitor_payload = {
+                "standard_code": competitor.standard_code,
+                "standard_name": competitor.standard_name,
+                "match_score": competitor_score,
+                "score_margin": score_margin,
+                "is_ambiguous": is_ambiguous,
+            }
+            if is_ambiguous:
+                review_indicators.append(
+                    "nearest competitor is close to the top candidate"
+                )
+                review_reason_codes.append("ambiguous_candidate")
+
+        unique_review_indicators = list(dict.fromkeys(review_indicators))
+        unique_review_reason_codes = list(dict.fromkeys(review_reason_codes))
+        confidence_score = min(1.0, max(0.0, score / 1.2))
+        confidence_score -= min(0.3, 0.08 * len(negative_signals))
+        if competitor_payload is not None and competitor_payload["is_ambiguous"]:
+            confidence_score -= 0.12
+        confidence_score = round(max(0.0, confidence_score), 2)
+
+        breakdown: dict[str, object] = {
+            "total_score": score,
+            "confidence_score": confidence_score,
+            "confidence_band": cls._confidence_band(
+                confidence_score,
+                unique_review_indicators,
+            ),
+            "positive_signal_count": len(positive_signals),
+            "negative_signal_count": len(negative_signals),
+            "signal_categories": categories,
+            "primary_signals": positive_signals[:5],
+            "review_indicators": unique_review_indicators,
+            "review_reason_codes": unique_review_reason_codes,
+        }
+        if candidate is not None:
+            breakdown["standard_code"] = candidate.standard_code
+            breakdown["standard_data_type"] = candidate.data_type
+            breakdown["standard_business_domain"] = candidate.business_domain
+        if competitor_payload is not None:
+            breakdown["nearest_competitor"] = competitor_payload
+        return breakdown
 
     @classmethod
     def _candidate_payload(
@@ -684,6 +907,7 @@ class StandardMappingRecommendationSkill(BaseSkill):
             "standard_name_cn": candidate.standard_name_cn,
             "match_score": score,
             "match_reason": "; ".join(reasons),
+            "score_breakdown": cls._score_breakdown(score, reasons, candidate),
             "risk_hint": "; ".join(risks),
             "action_suggestion": "; ".join(actions),
             "requires_manual_review": requires_manual_review,
@@ -755,6 +979,14 @@ class StandardMappingRecommendationSkill(BaseSkill):
                 "match_reason": (
                     "semantic embedding cosine similarity "
                     f"{match.score:.2f} against source_text={semantic_match.field_text}"
+                ),
+                "score_breakdown": StandardMappingRecommendationSkill._score_breakdown(
+                    round(match.score, 2),
+                    [
+                        "semantic embedding cosine similarity "
+                        f"{match.score:.2f} against source_text={semantic_match.field_text}"
+                    ],
+                    None,
                 ),
                 "risk_hint": "Semantic candidate should be reviewed with rules, type, and domain evidence",
                 "action_suggestion": "Compare with rule candidates before confirmation",
@@ -1080,6 +1312,17 @@ class StandardMappingRecommendationSkill(BaseSkill):
                         recommended_standard_name_cn=top_candidate.standard_name_cn,
                         match_score=top_score,
                         match_reason="; ".join(top_reasons),
+                        score_breakdown=self._score_breakdown(
+                            top_score,
+                            top_reasons,
+                            top_candidate,
+                            (
+                                top_candidates[1][0],
+                                top_candidates[1][1],
+                            )
+                            if len(top_candidates) > 1
+                            else None,
+                        ),
                         risk_hint=risk_hint,
                         action_suggestion=action_suggestion,
                         requires_manual_review=requires_manual_review,
