@@ -179,6 +179,10 @@ def test_start_end_fields_recommend_temporal_order() -> None:
     assert temporal_rules
     assert temporal_rules[0].confidence is not None
     assert temporal_rules[0].review_priority == "medium_review_priority"
+    assert temporal_rules[0].recommendation_evidence["source_category"] == (
+        "cross_field_pattern"
+    )
+    assert temporal_rules[0].recommendation_evidence["field_group_size"] == 2
 
 
 def test_amount_currency_fields_recommend_paired_presence() -> None:
@@ -252,6 +256,10 @@ def test_value_set_rule_uses_compact_sample_values() -> None:
         value_set_rule.reason or ""
     )
     assert "value_set_size:3" in value_set_rule.learning_context
+    assert value_set_rule.recommendation_evidence["sample_value_set_size"] == 3
+    assert "sample_value_set" in (
+        value_set_rule.recommendation_evidence["review_reason_codes"]
+    )
 
 
 def test_value_set_rule_ignores_oversized_sample_values() -> None:
@@ -298,6 +306,15 @@ def test_field_level_rules_include_confidence_and_review_priority() -> None:
     assert all(rule.rule_description for rule in result.quality_rule_suggestions)
     assert all(rule.risk_level for rule in result.quality_rule_suggestions)
     assert all(rule.export_formats for rule in result.quality_rule_suggestions)
+    assert all(rule.recommendation_evidence for rule in result.quality_rule_suggestions)
+    assert all(
+        "confidence_band" in rule.recommendation_evidence
+        for rule in result.quality_rule_suggestions
+    )
+    assert all(
+        rule.recommendation_evidence["source_category"] in {"source_metadata", "standard_mapping"}
+        for rule in result.quality_rule_suggestions
+    )
 
 
 def test_foreign_key_metadata_recommends_cross_table_reference_rule() -> None:
@@ -349,6 +366,9 @@ def test_foreign_key_metadata_recommends_cross_table_reference_rule() -> None:
     assert "contract_info.customer_id exists in customer_master.customer_id" == rule.rule_expression
     assert rule.requires_manual_review is True
     assert "custom_sql_check" in rule.export_formats
+    assert rule.recommendation_evidence["rule_scope"] == "cross_table"
+    assert rule.recommendation_evidence["target_table_name"] == "customer_master"
+    assert "reference_rule" in rule.recommendation_evidence["review_reason_codes"]
     assert "cross-table reference rules" in result.summary
 
 

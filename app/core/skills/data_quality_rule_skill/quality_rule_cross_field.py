@@ -13,6 +13,7 @@ from app.core.rules.config_loader import (
 from app.core.skills.data_quality_rule_skill.quality_rule_field_rules import (
     export_formats_for_rule,
     field_tokens,
+    recommendation_evidence_for_rule,
     risk_level_for_severity,
     rule_description_for,
     rule_name_for,
@@ -53,6 +54,24 @@ def build_cross_field_rule(
         rule_type=rule_type,
         confidence=confidence,
     )
+    recommendation_evidence = recommendation_evidence_for_rule(
+        template_name=str(match_basis or rule_type),
+        rule_type=rule_type,
+        recommendation_source=recommendation_source,
+        match_basis=match_basis,
+        reason=reason,
+        confidence=confidence,
+        review_priority=review_priority,
+        value_set_values=[],
+    )
+    recommendation_evidence.update(
+        {
+            "rule_scope": rule_scope,
+            "field_group_size": len(set(field_group)),
+            "target_table_name": target_table_name,
+            "target_field_name": target_field_name,
+        }
+    )
     return CrossFieldQualityRule(
         source_table_name=table_name,
         source_field_name=primary_field,
@@ -85,6 +104,7 @@ def build_cross_field_rule(
         recommendation_source=recommendation_source,
         match_basis=match_basis,
         reason=reason,
+        recommendation_evidence=recommendation_evidence,
         export_formats=export_formats_for_rule(rule_scope, rule_type),
         notes=notes,
     )

@@ -193,6 +193,61 @@ class StgStructureSuggestionSkill(BaseSkill):
         return "rename"
 
     @staticmethod
+    def _stg_confidence_band(confidence_score: float | None) -> str:
+        if confidence_score is None:
+            return "unknown"
+        if confidence_score >= 0.9:
+            return "high"
+        if confidence_score >= 0.6:
+            return "medium"
+        return "low"
+
+    @classmethod
+    def build_recommendation_evidence(
+        cls,
+        *,
+        mapping_source: str,
+        action: str,
+        match_score: float | None,
+        source_field_name: str,
+        source_data_type: str | None,
+        recommended_stg_field_name: str,
+        recommended_data_type: str | None,
+    ) -> dict[str, object]:
+        source_category = {
+            "standard_mapping": "standard_mapping",
+            "naming_enhancement": "naming_enhancement",
+            "original_fallback": "source_metadata_fallback",
+            "reserved_field": "reserved_metadata",
+            "learned_stg_memory": "learned_review_memory",
+        }.get(mapping_source, "source_metadata")
+        confidence_score = match_score
+        if confidence_score is None:
+            confidence_score = 0.7 if mapping_source == "naming_enhancement" else 0.45
+        review_reason_codes: list[str] = []
+        if mapping_source == "original_fallback":
+            review_reason_codes.append("source_metadata_fallback")
+        if mapping_source == "standard_mapping" and match_score is not None and match_score < 0.9:
+            review_reason_codes.append("low_mapping_confidence")
+        if action == "rename":
+            review_reason_codes.append("rename_required")
+        if cls.normalize_data_type(source_data_type) != recommended_data_type:
+            review_reason_codes.append("data_type_normalized")
+        return {
+            "mapping_source": mapping_source,
+            "source_category": source_category,
+            "confidence_score": round(float(confidence_score), 2),
+            "confidence_band": cls._stg_confidence_band(float(confidence_score)),
+            "review_reason_codes": list(dict.fromkeys(review_reason_codes)),
+            "action": action,
+            "source_field_name": source_field_name,
+            "recommended_stg_field_name": recommended_stg_field_name,
+            "name_changed": source_field_name != recommended_stg_field_name,
+            "source_data_type": source_data_type,
+            "recommended_data_type": recommended_data_type,
+        }
+
+    @staticmethod
     def build_issue(
         issue_id: str,
         object_name: str,
@@ -258,6 +313,15 @@ class StgStructureSuggestionSkill(BaseSkill):
             nullable=self.normalize_nullable(field.nullable),
             mapping_source="standard_mapping",
             match_score=mapping_result.match_score,
+            recommendation_evidence=self.build_recommendation_evidence(
+                mapping_source="standard_mapping",
+                action=action,
+                match_score=mapping_result.match_score,
+                source_field_name=field.field_name,
+                source_data_type=field.data_type,
+                recommended_stg_field_name=recommended_name,
+                recommended_data_type=recommended_type,
+            ),
             action=action,
             notes=notes,
         )
@@ -290,6 +354,15 @@ class StgStructureSuggestionSkill(BaseSkill):
             nullable=self.normalize_nullable(field.nullable),
             mapping_source=mapping_source,
             match_score=None,
+            recommendation_evidence=self.build_recommendation_evidence(
+                mapping_source=mapping_source,
+                action=action,
+                match_score=None,
+                source_field_name=field.field_name,
+                source_data_type=field.data_type,
+                recommended_stg_field_name=recommended_name,
+                recommended_data_type=recommended_type,
+            ),
             action=action,
             notes=note_text,
         )

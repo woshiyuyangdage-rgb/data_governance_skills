@@ -83,15 +83,28 @@ def test_stg_structure_skill_generates_table_and_field_suggestions(monkeypatch) 
     assert field_lookup["customer_id"].mapping_source == "standard_mapping"
     assert field_lookup["customer_id"].recommended_stg_field_name == "customer_id"
     assert field_lookup["customer_id"].recommended_data_type == "string"
+    assert field_lookup["customer_id"].recommendation_evidence["source_category"] == (
+        "standard_mapping"
+    )
+    assert field_lookup["customer_id"].recommendation_evidence["confidence_band"] == "high"
 
     assert field_lookup["snapshot_dt"].mapping_source == "naming_enhancement"
     assert field_lookup["snapshot_dt"].recommended_stg_field_name == "snapshot_date"
     assert field_lookup["snapshot_dt"].recommended_data_type == "date"
+    assert field_lookup["snapshot_dt"].recommendation_evidence["source_category"] == (
+        "naming_enhancement"
+    )
+    assert "rename_required" in (
+        field_lookup["snapshot_dt"].recommendation_evidence["review_reason_codes"]
+    )
 
     assert field_lookup["batch_no"].mapping_source == "original_fallback"
     assert field_lookup["batch_no"].recommended_stg_field_name == "batch_no"
     assert field_lookup["batch_no"].action == "keep"
     assert field_lookup["batch_no"].recommended_data_type == "bigint"
+    assert field_lookup["batch_no"].recommendation_evidence["source_category"] == (
+        "source_metadata_fallback"
+    )
 
     issue_types = {issue.issue_type for issue in result.issues}
     assert "stg_field_technical_reservation" in issue_types
@@ -199,3 +212,10 @@ def test_stg_structure_uses_learned_review_memory(monkeypatch) -> None:
     assert suggestion.mapping_source == "learned_stg_memory"
     assert suggestion.confirmed_source is None
     assert "learned_from_stg_review_history" in (suggestion.notes or "")
+    assert suggestion.recommendation_evidence["source_category"] == (
+        "learned_review_memory"
+    )
+    assert suggestion.recommendation_evidence["confidence_band"] == "high"
+    assert "learned_stg_memory" in (
+        suggestion.recommendation_evidence["review_reason_codes"]
+    )

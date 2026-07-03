@@ -1,6 +1,6 @@
 """Models for STG field structure suggestions."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class StgFieldSuggestion(BaseModel):
@@ -16,6 +16,7 @@ class StgFieldSuggestion(BaseModel):
     nullable: bool | None = None
     mapping_source: str
     match_score: float | None = None
+    recommendation_evidence: dict[str, object] = Field(default_factory=dict)
     action: str
     notes: str | None = None
     confirmed_source: str | None = None

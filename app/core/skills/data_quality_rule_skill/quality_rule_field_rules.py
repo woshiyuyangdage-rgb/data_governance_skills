@@ -184,6 +184,80 @@ def infer_review_priority(
     return "standard_review_priority"
 
 
+def confidence_band_for_rule(confidence: float | None) -> str:
+    if confidence is None:
+        return "unknown"
+    if confidence >= 0.85:
+        return "high"
+    if confidence >= 0.6:
+        return "medium"
+    return "low"
+
+
+def source_category_for_rule(recommendation_source: str) -> str:
+    return {
+        "confirmed_mapping": "confirmed_standard_mapping",
+        "standard_mapping": "standard_mapping",
+        "confirmed_stg": "confirmed_stg_mapping",
+        "stg_suggestion": "stg_mapping",
+        "source_field_fallback": "source_metadata",
+        "cross_field_pattern": "cross_field_pattern",
+        "domain_rule_template": "domain_template",
+    }.get(recommendation_source, "weak_hint")
+
+
+def review_reason_codes_for_rule(
+    *,
+    rule_type: str,
+    recommendation_source: str,
+    review_priority: str,
+    confidence: float | None,
+    value_set_size: int,
+) -> list[str]:
+    codes: list[str] = []
+    if confidence is not None and confidence < 0.6:
+        codes.append("low_confidence")
+    if review_priority != "standard_review_priority":
+        codes.append(review_priority)
+    if "reference" in rule_type.lower():
+        codes.append("reference_rule")
+    if recommendation_source == "source_field_fallback":
+        codes.append("source_metadata_fallback")
+    if value_set_size:
+        codes.append("sample_value_set")
+    return list(dict.fromkeys(codes))
+
+
+def recommendation_evidence_for_rule(
+    *,
+    template_name: str,
+    rule_type: str,
+    recommendation_source: str,
+    match_basis: str | None,
+    reason: str | None,
+    confidence: float | None,
+    review_priority: str,
+    value_set_values: list[str],
+) -> dict[str, object]:
+    return {
+        "template_name": template_name,
+        "source_category": source_category_for_rule(recommendation_source),
+        "confidence_score": confidence,
+        "confidence_band": confidence_band_for_rule(confidence),
+        "review_priority": review_priority,
+        "review_reason_codes": review_reason_codes_for_rule(
+            rule_type=rule_type,
+            recommendation_source=recommendation_source,
+            review_priority=review_priority,
+            confidence=confidence,
+            value_set_size=len(value_set_values),
+        ),
+        "match_basis": match_basis,
+        "primary_reason": reason,
+        "sample_value_set_size": len(value_set_values),
+    }
+
+
 def field_key(table_name: str, field_name: str) -> str:
     """Build the common table-field lookup key."""
     return f"{table_name}.{field_name}"
@@ -494,6 +568,16 @@ def build_quality_rule_suggestion(
         recommendation_source=recommendation_source,
         match_basis=match_basis,
         reason=reason,
+        recommendation_evidence=recommendation_evidence_for_rule(
+            template_name=template_name,
+            rule_type=rule_type,
+            recommendation_source=recommendation_source,
+            match_basis=match_basis,
+            reason=reason,
+            confidence=confidence,
+            review_priority=review_priority,
+            value_set_values=value_set_values,
+        ),
         export_formats=export_formats_for_rule("field", rule_type),
         learning_context=learning_context,
         notes=(

@@ -571,6 +571,25 @@ def apply_learned_stg_field(
         payload["recommended_data_type"] = learned_field.final_data_type
     payload["mapping_source"] = "learned_stg_memory"
     payload["action"] = "rename"
+    recommendation_evidence = dict(payload.get("recommendation_evidence") or {})
+    recommendation_evidence.update(
+        {
+            "mapping_source": "learned_stg_memory",
+            "source_category": "learned_review_memory",
+            "confidence_score": 1.0,
+            "confidence_band": "high",
+            "review_reason_codes": ["learned_stg_memory"],
+            "action": "rename",
+            "recommended_stg_field_name": learned_field.final_stg_field_name,
+            "recommended_data_type": (
+                learned_field.final_data_type or payload.get("recommended_data_type")
+            ),
+            "name_changed": (
+                payload.get("source_field_name") != learned_field.final_stg_field_name
+            ),
+        }
+    )
+    payload["recommendation_evidence"] = recommendation_evidence
     evidence = (
         "learned_from_stg_review_history "
         f"scope={learned_field.match_scope} "

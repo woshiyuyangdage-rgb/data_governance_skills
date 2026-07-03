@@ -25,5 +25,6 @@ class CrossFieldQualityRule(BaseModel):
     recommendation_source: str
     match_basis: str | None = None
     reason: str | None = None
+    recommendation_evidence: dict[str, object] = Field(default_factory=dict)
     export_formats: list[str] = Field(default_factory=list)
     notes: str | None = None
