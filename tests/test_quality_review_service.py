@@ -48,6 +48,9 @@ def test_quality_review_actions_build_expected_confirmed_rules() -> None:
         },
         source="test",
     )
+    assert records[0].config_fingerprint
+    assert records[0].standard_set_version
+    assert records[0].source_field_hash
 
     reviewed_suggestions, applied_count, replay_summary = (
         apply_quality_rule_overrides_to_results(suggestions, records)
@@ -184,3 +187,26 @@ def test_cross_table_review_preserves_reference_metadata() -> None:
     assert confirmed.target_field_name == "customer_id"
     assert confirmed.rule_name == suggestion.rule_name
     assert confirmed.export_formats == suggestion.export_formats
+
+
+def test_quality_review_marks_stale_override_for_review() -> None:
+    suggestion = _suggestion("order_id", "not_null")
+    records = build_quality_rule_review_records_from_results(
+        [suggestion],
+        {"sales_order.order_id.not_null": {"review_action": "accept"}},
+        source="test",
+    )
+    changed_suggestion = suggestion.model_copy(
+        update={"rule_expression": "order_id is not null"}
+    )
+
+    reviewed_suggestions, applied_count, replay_summary = (
+        apply_quality_rule_overrides_to_results([changed_suggestion], records)
+    )
+
+    assert applied_count == 0
+    assert replay_summary["confirmed_count"] == 0
+    assert reviewed_suggestions[0].confirmed_source == "override_stale_review_required"
+    assert reviewed_suggestions[0].requires_manual_review is True
+    assert reviewed_suggestions[0].review_action == "stale_review_required"
+    assert "source_field_hash" in (reviewed_suggestions[0].reviewer_note or "")

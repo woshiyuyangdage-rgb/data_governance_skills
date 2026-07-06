@@ -7,6 +7,10 @@ import pandas as pd
 
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.models.stg_review_record import StgReviewRecord
+from app.core.review.sqlite_review_repository import (
+    load_review_payloads,
+    save_review_payloads,
+)
 from app.core.utils.file_utils import ensure_directory
 from app.core.utils.time_utils import utc_now_compact
 
@@ -26,6 +30,10 @@ MAPPING_OVERRIDE_COLUMNS = [
     "reviewer_note",
     "reviewed_at",
     "source",
+    "dictionary_version",
+    "standard_set_version",
+    "config_fingerprint",
+    "source_field_hash",
 ]
 STG_OVERRIDE_COLUMNS = [
     "source_table_name",
@@ -38,6 +46,10 @@ STG_OVERRIDE_COLUMNS = [
     "reviewer_note",
     "reviewed_at",
     "source",
+    "dictionary_version",
+    "standard_set_version",
+    "config_fingerprint",
+    "source_field_hash",
 ]
 
 
@@ -58,6 +70,20 @@ def _write_csv(path: Path, records: list[dict[str, object]], columns: list[str])
     dataframe = pd.DataFrame(records, columns=columns)
     dataframe.to_csv(path, index=False, encoding="utf-8")
     return str(path)
+
+
+def _review_state_db_path() -> Path:
+    if MAPPING_OVERRIDES_PATH.parent.name == "overrides":
+        return MAPPING_OVERRIDES_PATH.parent.parent / "state" / "review_state.sqlite"
+    return MAPPING_OVERRIDES_PATH.parent / "review_state.sqlite"
+
+
+def _mapping_record_key(record: dict[str, object]) -> str:
+    return f"{record.get('table_name', '')}.{record.get('field_name', '')}"
+
+
+def _stg_record_key(record: dict[str, object]) -> str:
+    return f"{record.get('source_table_name', '')}.{record.get('source_field_name', '')}"
 
 
 def _merge_by_key(
@@ -97,6 +123,12 @@ def _learned_stg_output_dir() -> Path:
 
 def load_mapping_overrides() -> list[MappingReviewRecord]:
     """Load locally persisted mapping overrides."""
+    sqlite_records = load_review_payloads(
+        _review_state_db_path(),
+        record_type="mapping_review",
+    )
+    if sqlite_records:
+        return [MappingReviewRecord(**row) for row in sqlite_records]
     dataframe = _read_csv(MAPPING_OVERRIDES_PATH, MAPPING_OVERRIDE_COLUMNS)
     return [MappingReviewRecord(**row) for row in dataframe.to_dict("records")]
 
@@ -107,6 +139,11 @@ def save_mapping_review_records(records: list[MappingReviewRecord]) -> dict[str,
     existing_records = [record.model_dump() for record in load_mapping_overrides()]
     merged = _merge_by_key(existing_records, new_records, ["table_name", "field_name"])
     csv_path = _write_csv(MAPPING_OVERRIDES_PATH, merged, MAPPING_OVERRIDE_COLUMNS)
+    save_review_payloads(
+        _review_state_db_path(),
+        record_type="mapping_review",
+        keyed_payloads=[(_mapping_record_key(record), record) for record in merged],
+    )
     history_path = _save_review_session_snapshot("mapping_review", new_records)
     result: dict[str, str | int] = {
         "path": csv_path,
@@ -139,6 +176,12 @@ def build_mapping_override_lookup(
 
 def load_stg_overrides() -> list[StgReviewRecord]:
     """Load locally persisted STG overrides."""
+    sqlite_records = load_review_payloads(
+        _review_state_db_path(),
+        record_type="stg_review",
+    )
+    if sqlite_records:
+        return [StgReviewRecord(**row) for row in sqlite_records]
     dataframe = _read_csv(STG_OVERRIDES_PATH, STG_OVERRIDE_COLUMNS)
     return [StgReviewRecord(**row) for row in dataframe.to_dict("records")]
 
@@ -153,6 +196,11 @@ def save_stg_review_records(records: list[StgReviewRecord]) -> dict[str, str | i
         ["source_table_name", "source_field_name"],
     )
     csv_path = _write_csv(STG_OVERRIDES_PATH, merged, STG_OVERRIDE_COLUMNS)
+    save_review_payloads(
+        _review_state_db_path(),
+        record_type="stg_review",
+        keyed_payloads=[(_stg_record_key(record), record) for record in merged],
+    )
     history_path = _save_review_session_snapshot("stg_review", new_records)
     result: dict[str, str | int] = {
         "path": csv_path,

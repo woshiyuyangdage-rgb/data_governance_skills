@@ -5,6 +5,10 @@ from collections import Counter
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
 from app.core.models.quality_rule_suggestion import QualityRuleSuggestion
+from app.core.review.provenance import (
+    quality_rule_review_provenance,
+    stale_provenance_fields,
+)
 from app.core.review.quality_override_store import (
     build_quality_rule_key,
     build_quality_rule_override_lookup,
@@ -89,6 +93,7 @@ def build_quality_rule_review_records_from_results(
             final_rule_expression = final_rule_expression or suggestion.rule_expression
             final_severity = final_severity or suggestion.severity
 
+        provenance = quality_rule_review_provenance(suggestion)
         records.append(
             QualityRuleReviewRecord(
                 source_table_name=suggestion.source_table_name,
@@ -116,6 +121,7 @@ def build_quality_rule_review_records_from_results(
                 reviewer_note=_normalize_optional_text(user_input.get("reviewer_note")),
                 reviewed_at=_utc_now(),
                 source=source,
+                **provenance,
             )
         )
 
@@ -178,8 +184,29 @@ def apply_quality_rule_overrides_to_results(
             reviewed_suggestions.append(suggestion)
             continue
 
-        applied_records.append(override)
         payload = suggestion.model_dump()
+        stale_fields = stale_provenance_fields(
+            override,
+            quality_rule_review_provenance(suggestion),
+        )
+        if stale_fields:
+            stale_reason = (
+                "saved review provenance is stale; changed_fields="
+                f"{','.join(stale_fields)}"
+            )
+            payload["requires_manual_review"] = True
+            payload["confirmed_source"] = "override_stale_review_required"
+            payload["review_action"] = "stale_review_required"
+            payload["notes"] = (
+                f"{suggestion.notes} {stale_reason}"
+                if suggestion.notes
+                else stale_reason
+            )
+            payload["reviewer_note"] = stale_reason
+            reviewed_suggestions.append(QualityRuleSuggestion(**payload))
+            continue
+
+        applied_records.append(override)
         action = _normalize_action(override.review_action)
 
         if action == "accept":

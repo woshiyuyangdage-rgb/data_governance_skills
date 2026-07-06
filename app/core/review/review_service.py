@@ -12,6 +12,11 @@ from app.core.review.override_store import (
     build_mapping_override_lookup,
     build_stg_override_lookup,
 )
+from app.core.review.provenance import (
+    mapping_review_provenance,
+    stale_provenance_fields,
+    stg_review_provenance,
+)
 from app.core.utils.time_utils import utc_now_seconds
 
 
@@ -63,6 +68,7 @@ def build_mapping_review_records_from_results(
         elif action in {"reject", "mark_for_manual_review"} and not final_standard_code:
             final_standard_code = result.recommended_standard_code
 
+        provenance = mapping_review_provenance(result)
         records.append(
             MappingReviewRecord(
                 table_name=result.table_name,
@@ -73,6 +79,7 @@ def build_mapping_review_records_from_results(
                 reviewer_note=_normalize_optional_text(user_input.get("reviewer_note")),
                 reviewed_at=_utc_now(),
                 source=source,
+                **provenance,
             )
         )
 
@@ -106,6 +113,7 @@ def build_stg_review_records_from_results(
             )
             final_data_type = final_data_type or suggestion.recommended_data_type
 
+        provenance = stg_review_provenance(suggestion)
         records.append(
             StgReviewRecord(
                 source_table_name=suggestion.source_table_name,
@@ -118,6 +126,7 @@ def build_stg_review_records_from_results(
                 reviewer_note=_normalize_optional_text(user_input.get("reviewer_note")),
                 reviewed_at=_utc_now(),
                 source=source,
+                **provenance,
             )
         )
 
@@ -163,9 +172,31 @@ def apply_mapping_overrides_to_results(
             confirmed_results.append(result)
             continue
 
+        base_payload = result.model_dump()
+        stale_fields = stale_provenance_fields(
+            override,
+            mapping_review_provenance(result),
+        )
+        if stale_fields:
+            base_payload["requires_manual_review"] = True
+            base_payload["mapping_status"] = "stale_review_required"
+            base_payload["confirmed_source"] = "override_stale_review_required"
+            base_payload["review_action"] = "stale_review_required"
+            stale_reason = (
+                "saved review provenance is stale; changed_fields="
+                f"{','.join(stale_fields)}"
+            )
+            base_payload["match_reason"] = (
+                f"{result.match_reason}; {stale_reason}"
+                if result.match_reason
+                else stale_reason
+            )
+            base_payload["reviewer_note"] = stale_reason
+            confirmed_results.append(MappingResult(**base_payload))
+            continue
+
         applied_count += 1
         applied_records.append(override)
-        base_payload = result.model_dump()
         action = override.review_action
 
         if action == "accept":
@@ -230,9 +261,30 @@ def apply_stg_overrides_to_suggestions(
             confirmed_suggestions.append(suggestion)
             continue
 
+        base_payload = suggestion.model_dump()
+        stale_fields = stale_provenance_fields(
+            override,
+            stg_review_provenance(suggestion),
+        )
+        if stale_fields:
+            stale_reason = (
+                "saved review provenance is stale; changed_fields="
+                f"{','.join(stale_fields)}"
+            )
+            base_payload["action"] = "manual_review_required"
+            base_payload["confirmed_source"] = "override_stale_review_required"
+            base_payload["review_action"] = "stale_review_required"
+            base_payload["notes"] = (
+                f"{suggestion.notes} {stale_reason}"
+                if suggestion.notes
+                else stale_reason
+            )
+            base_payload["reviewer_note"] = stale_reason
+            confirmed_suggestions.append(StgFieldSuggestion(**base_payload))
+            continue
+
         applied_count += 1
         applied_records.append(override)
-        base_payload = suggestion.model_dump()
         action = override.review_action
 
         if action == "accept":

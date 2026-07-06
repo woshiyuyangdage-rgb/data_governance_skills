@@ -31,3 +31,7 @@ class QualityRuleReviewRecord(BaseModel):
     reviewer_note: str | None = None
     reviewed_at: str | None = None
     source: str
+    dictionary_version: str | None = None
+    standard_set_version: str | None = None
+    config_fingerprint: str | None = None
+    source_field_hash: str | None = None

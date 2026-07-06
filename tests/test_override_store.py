@@ -79,4 +79,5 @@ def test_override_store_can_save_load_and_lookup_records(tmp_path: Path, monkeyp
         stg_lookup["ods_customer_snapshot.snapshot_dt"].final_stg_field_name
         == "snapshot_business_date"
     )
+    assert (tmp_path / "review_state.sqlite").exists()
     assert (tmp_path / "learned_stg" / "stg_field_memory.csv").exists()

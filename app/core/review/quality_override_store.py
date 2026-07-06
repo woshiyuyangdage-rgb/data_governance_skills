@@ -6,6 +6,10 @@ from pathlib import Path
 import pandas as pd
 
 from app.core.models.quality_rule_review_record import QualityRuleReviewRecord
+from app.core.review.sqlite_review_repository import (
+    load_review_payloads,
+    save_review_payloads,
+)
 from app.core.utils.file_utils import ensure_directory
 from app.core.utils.time_utils import utc_now_compact
 
@@ -41,6 +45,10 @@ QUALITY_RULE_OVERRIDE_COLUMNS = [
     "reviewer_note",
     "reviewed_at",
     "source",
+    "dictionary_version",
+    "standard_set_version",
+    "config_fingerprint",
+    "source_field_hash",
 ]
 
 
@@ -74,6 +82,16 @@ def _write_csv(path: Path, records: list[dict[str, object]]) -> str:
     dataframe = pd.DataFrame(normalized_records, columns=QUALITY_RULE_OVERRIDE_COLUMNS)
     dataframe.to_csv(path, index=False, encoding="utf-8")
     return str(path)
+
+
+def _review_state_db_path() -> Path:
+    if QUALITY_RULE_OVERRIDES_PATH.parent.name == "overrides":
+        return (
+            QUALITY_RULE_OVERRIDES_PATH.parent.parent
+            / "state"
+            / "review_state.sqlite"
+        )
+    return QUALITY_RULE_OVERRIDES_PATH.parent / "review_state.sqlite"
 
 
 def _parse_field_group(value: object) -> list[str]:
@@ -172,6 +190,12 @@ def build_quality_rule_key(
 
 def load_quality_rule_overrides() -> list[QualityRuleReviewRecord]:
     """Load locally persisted quality rule overrides."""
+    sqlite_records = load_review_payloads(
+        _review_state_db_path(),
+        record_type="quality_rule_review",
+    )
+    if sqlite_records:
+        return [QualityRuleReviewRecord(**row) for row in sqlite_records]
     dataframe = _read_csv(QUALITY_RULE_OVERRIDES_PATH, QUALITY_RULE_OVERRIDE_COLUMNS)
     records = []
     for row in dataframe.to_dict("records"):
@@ -196,6 +220,23 @@ def save_quality_rule_review_records(
     existing_records = [record.model_dump() for record in load_quality_rule_overrides()]
     merged = _merge_by_key(existing_records, new_records)
     csv_path = _write_csv(QUALITY_RULE_OVERRIDES_PATH, merged)
+    save_review_payloads(
+        _review_state_db_path(),
+        record_type="quality_rule_review",
+        keyed_payloads=[
+            (
+                build_quality_rule_key(
+                    str(record.get("source_table_name", "") or ""),
+                    str(record.get("source_field_name", "") or ""),
+                    str(record.get("rule_type", "") or ""),
+                    rule_scope=str(record.get("rule_scope", "field") or "field"),
+                    field_group=_parse_field_group(record.get("field_group")),
+                ),
+                record,
+            )
+            for record in merged
+        ],
+    )
     history_path = _save_review_session_snapshot(new_records)
     from app.core.skills.data_quality_rule_skill.quality_rule_learning import (
         clear_quality_rule_learning_caches,

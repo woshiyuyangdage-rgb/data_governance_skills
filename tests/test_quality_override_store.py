@@ -65,4 +65,5 @@ def test_quality_override_store_can_save_load_and_lookup_records(
         "token:id",
         "type:varchar",
     ]
+    assert (tmp_path / "review_state.sqlite").exists()
     assert Path(str(result["history_path"])).exists()
