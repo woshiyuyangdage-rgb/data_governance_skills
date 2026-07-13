@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_review_record import StgReviewRecord
 from app.core.skills.stg_standardization_skill.stg_learning import (
@@ -15,6 +17,8 @@ from app.core.skills.stg_standardization_skill.stg_learning import (
     stg_field_memory_details,
     summarize_stg_field_memory,
 )
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 def test_stg_learning_memory_saves_only_confirmed_reviews(tmp_path: Path) -> None:
@@ -64,6 +68,22 @@ def test_stg_learning_memory_saves_only_confirmed_reviews(tmp_path: Path) -> Non
         memory,
         source_table_name="ods_customer_snapshot",
     ) is None
+
+
+def test_stg_learning_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(LocalPathAccessError):
+        learn_stg_memory_from_review_records([], output_dir=outside_dir)
+
+    assert not outside_dir.exists()
 
 
 def test_apply_learned_stg_field_updates_suggestion_without_confirming(

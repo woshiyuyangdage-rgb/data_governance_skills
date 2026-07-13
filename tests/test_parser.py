@@ -8,7 +8,8 @@ import pytest
 from app.core.parser.csv_parser import parse_csv
 from app.core.parser.excel_parser import parse_excel
 from app.core.parser.loader import load_metadata_file
-from app.core.parser.parser_exceptions import MissingRequiredColumnsError
+from app.core.parser.parser_exceptions import MissingRequiredColumnsError, ParserError
+from app.core.utils import file_utils
 from app.ui.metadata_template import build_metadata_template_dataframe
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -137,6 +138,24 @@ def test_load_metadata_file_supports_sample_csv() -> None:
 
     assert len(tables) == 4
     assert tables[0].table_name == "customer_master"
+
+
+def test_load_metadata_file_rejects_paths_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    safe_root.mkdir()
+    outside_csv_path = tmp_path / "outside" / "metadata.csv"
+    outside_csv_path.parent.mkdir()
+    outside_csv_path.write_text("table_name\ncustomer_master\n", encoding="utf-8")
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(ParserError) as exc_info:
+        load_metadata_file(str(outside_csv_path))
+
+    assert "outside allowed local roots" in str(exc_info.value)
 
 
 def test_parse_csv_missing_required_columns_raises_error(tmp_path: Path) -> None:

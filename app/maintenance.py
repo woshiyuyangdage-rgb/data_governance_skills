@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -26,7 +27,26 @@ QUICK_CHECK_TEST_TARGETS = (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 CLEAN_ARTIFACT_NAMES = {"__pycache__", ".pytest_cache", ".ruff_cache"}
-CLEAN_ARTIFACT_PREFIXES = ("pytest-cache-files-", ".pytest_runtime", "pytest_tmp")
+CLEAN_ARTIFACT_PREFIXES = (
+    "pytest-cache-files-",
+    ".pytest_runtime",
+    "pytest_parent",
+    "pytest_tmp",
+)
+CLEAN_TRAVERSAL_EXCLUDED_DIR_NAMES = {
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".tox",
+    ".venv",
+    "node_modules",
+    "venv",
+}
+MAX_CLEAN_REPORT_ITEMS = 30
+HYGIENE_SCAN_ROOTS = ("app", "tests", "outputs")
+DEV_ONLY_REQUIREMENTS = {"pytest", "ruff"}
+REQUIRED_DEV_REQUIREMENTS = {"pytest", "ruff"}
 
 COMMON_COMMAND_GROUPS = (
     (
@@ -34,8 +54,10 @@ COMMON_COMMAND_GROUPS = (
         (
             ("Validate config", "python -m app.maintenance validate-config"),
             ("Platform doctor", "python -m app.maintenance doctor"),
+            ("Workspace hygiene", "python -m app.maintenance workspace-hygiene"),
             ("Quick check", "python -m app.maintenance quick-check"),
             ("Clean local artifacts", "python -m app.maintenance clean-local-artifacts"),
+            ("Lint", "python -m ruff check app tests"),
             ("Full tests", "python -m pytest -q"),
         ),
     ),
@@ -164,6 +186,87 @@ def _check_domain_delivery_references() -> list[str]:
     return errors
 
 
+def _read_pyproject_version() -> str | None:
+    pyproject_path = PROJECT_ROOT / "pyproject.toml"
+    if not pyproject_path.exists():
+        return None
+
+    in_project_section = False
+    for line in pyproject_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped == "[project]":
+            in_project_section = True
+            continue
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_project_section = False
+            continue
+        if not in_project_section or not stripped.startswith("version"):
+            continue
+        _key, _separator, raw_value = stripped.partition("=")
+        return raw_value.strip().strip('"').strip("'") or None
+    return None
+
+
+def _get_application_version() -> str:
+    from app.main import app
+
+    return str(app.version)
+
+
+def _check_version_consistency() -> list[str]:
+    project_version = _read_pyproject_version()
+    application_version = _get_application_version()
+    if project_version is None:
+        return ["pyproject.toml is missing [project].version"]
+    if project_version != application_version:
+        return [
+            "pyproject.toml project version "
+            f"'{project_version}' does not match FastAPI app version "
+            f"'{application_version}'"
+        ]
+    return []
+
+
+def _requirement_name(requirement_line: str) -> str | None:
+    line = requirement_line.split("#", 1)[0].strip()
+    if not line or line.startswith("-"):
+        return None
+    match = re.match(r"([A-Za-z0-9_.-]+)", line)
+    if match is None:
+        return None
+    return match.group(1).replace("_", "-").lower()
+
+
+def _load_requirement_names(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    return {
+        name
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if (name := _requirement_name(line)) is not None
+    }
+
+
+def _check_dependency_layering() -> list[str]:
+    runtime_requirements = _load_requirement_names(PROJECT_ROOT / "requirements.txt")
+    dev_requirements = _load_requirement_names(PROJECT_ROOT / "requirements-dev.txt")
+    errors: list[str] = []
+
+    misplaced = sorted(runtime_requirements.intersection(DEV_ONLY_REQUIREMENTS))
+    for package_name in misplaced:
+        errors.append(
+            f"development-only dependency '{package_name}' belongs in requirements-dev.txt"
+        )
+
+    missing_dev = sorted(REQUIRED_DEV_REQUIREMENTS.difference(dev_requirements))
+    for package_name in missing_dev:
+        errors.append(
+            f"requirements-dev.txt is missing required development dependency '{package_name}'"
+        )
+
+    return errors
+
+
 def _build_control_plane_service() -> Any:
     from app.core.control_plane import ControlPlaneService
 
@@ -221,6 +324,8 @@ def run_platform_doctor() -> int:
     """Run platform-level consistency checks for routine maintenance."""
     validation_exit_code = validate_config_assets()
     checks = {
+        "version consistency": _check_version_consistency(),
+        "dependency layering": _check_dependency_layering(),
         "tool handlers": _check_tool_handlers(),
         "project template references": _check_project_template_references(),
         "domain delivery references": _check_domain_delivery_references(),
@@ -283,9 +388,143 @@ def _is_cleanable_artifact(path: Path) -> bool:
 def _iter_project_directories_bottom_up() -> list[Path]:
     directories: list[Path] = []
     for root, dirnames, _ in os.walk(PROJECT_ROOT, onerror=lambda _error: None):
+        dirnames[:] = [
+            dirname
+            for dirname in dirnames
+            if dirname not in CLEAN_TRAVERSAL_EXCLUDED_DIR_NAMES
+        ]
         root_path = Path(root)
         directories.extend(root_path / dirname for dirname in dirnames)
     return sorted(directories, key=lambda item: len(item.parts), reverse=True)
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
+
+
+def _is_safe_cleanable_artifact_path(path: Path) -> bool:
+    try:
+        project_root = PROJECT_ROOT.resolve(strict=False)
+        resolved_path = path.resolve(strict=False)
+    except OSError:
+        return False
+    if not _is_relative_to(resolved_path, project_root):
+        return False
+
+    try:
+        relative_path = path.relative_to(PROJECT_ROOT)
+    except ValueError:
+        relative_path = resolved_path.relative_to(project_root)
+    return not any(
+        part in CLEAN_TRAVERSAL_EXCLUDED_DIR_NAMES for part in relative_path.parts
+    )
+
+
+def _project_relative_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def _hygiene_file_count(path: Path, pattern: str = "*") -> int:
+    if not path.exists():
+        return 0
+    try:
+        return sum(1 for item in path.glob(pattern) if item.is_file())
+    except OSError:
+        return 0
+
+
+def _iter_hygiene_directories() -> tuple[list[Path], list[str]]:
+    directories: list[Path] = []
+    warnings: list[str] = []
+
+    def onerror(error: OSError) -> None:
+        raw_path = getattr(error, "filename", "")
+        path = Path(str(raw_path)) if raw_path else PROJECT_ROOT
+        reason = getattr(error, "strerror", None) or str(error)
+        warnings.append(f"{_project_relative_path(path)}: {reason}")
+
+    for root_name in HYGIENE_SCAN_ROOTS:
+        root_path = PROJECT_ROOT / root_name
+        if not root_path.exists():
+            continue
+        for root, dirnames, _filenames in os.walk(root_path, onerror=onerror):
+            current_root = Path(root)
+            directories.extend(current_root / dirname for dirname in dirnames)
+
+    return directories, warnings
+
+
+def collect_workspace_hygiene() -> dict[str, object]:
+    """Collect local runtime artifact counts and inaccessible path warnings."""
+    directories, warnings = _iter_hygiene_directories()
+    cache_directories = sum(1 for path in directories if _is_cleanable_artifact(path))
+    return {
+        "execution_trace_files": _hygiene_file_count(
+            PROJECT_ROOT / "app" / "data" / "audit" / "execution_traces",
+            "*.json",
+        ),
+        "report_files": _hygiene_file_count(PROJECT_ROOT / "outputs" / "reports"),
+        "cache_directories": cache_directories,
+        "inaccessible_paths": warnings,
+    }
+
+
+def run_workspace_hygiene() -> int:
+    """Report local runtime artifact volume and filesystem access warnings."""
+    summary = collect_workspace_hygiene()
+    inaccessible_paths = list(summary["inaccessible_paths"])
+
+    print("Workspace hygiene")
+    print(f"Execution trace JSON files: {summary['execution_trace_files']}")
+    print(f"Report output files: {summary['report_files']}")
+    print(f"Local cache directories: {summary['cache_directories']}")
+
+    if not inaccessible_paths:
+        print("[OK] no inaccessible local artifact paths detected")
+        return 0
+
+    print("[WARN] inaccessible local artifact paths detected")
+    for path in inaccessible_paths:
+        print(f"  {path}")
+    print(
+        "Run clean-local-artifacts first; ACL-protected leftovers may require "
+        "an elevated/admin shell after verifying each path is under the project root."
+    )
+    return 1
+
+
+def _print_limited_paths(
+    heading: str,
+    paths: Sequence[Path],
+    *,
+    max_items: int = MAX_CLEAN_REPORT_ITEMS,
+) -> None:
+    print(f"{heading} {len(paths)} directories:")
+    for path in paths[:max_items]:
+        print(f"  {path}")
+    remaining_count = len(paths) - max_items
+    if remaining_count > 0:
+        print(f"  ... and {remaining_count} more")
+
+
+def _print_limited_skipped_paths(
+    skipped: Sequence[tuple[Path, str]],
+    *,
+    max_items: int = MAX_CLEAN_REPORT_ITEMS,
+) -> None:
+    print(f"Skipped {len(skipped)} directories:")
+    for path, reason in skipped[:max_items]:
+        print(f"  {path}: {reason}")
+    remaining_count = len(skipped) - max_items
+    if remaining_count > 0:
+        print(f"  ... and {remaining_count} more")
 
 
 def clean_local_artifacts() -> int:
@@ -295,12 +534,15 @@ def clean_local_artifacts() -> int:
     for path in _iter_project_directories_bottom_up():
         if not _is_cleanable_artifact(path):
             continue
+        if not _is_safe_cleanable_artifact_path(path):
+            skipped.append((Path(_project_relative_path(path)), "outside safe cleanup roots"))
+            continue
         try:
             shutil.rmtree(path)
         except OSError as exc:
-            skipped.append((path.relative_to(PROJECT_ROOT), str(exc)))
+            skipped.append((Path(_project_relative_path(path)), str(exc)))
             continue
-        removed.append(path.relative_to(PROJECT_ROOT))
+        removed.append(Path(_project_relative_path(path)))
 
     print("Local artifact cleanup")
     if not removed and not skipped:
@@ -308,13 +550,14 @@ def clean_local_artifacts() -> int:
         return 0
 
     if removed:
-        print(f"Removed {len(removed)} directories:")
-        for path in removed:
-            print(f"  {path}")
+        _print_limited_paths("Removed", removed)
     if skipped:
-        print(f"Skipped {len(skipped)} directories:")
-        for path, reason in skipped:
-            print(f"  {path}: {reason}")
+        _print_limited_skipped_paths(skipped)
+        print(
+            "Some local artifacts could not be removed by this user. "
+            "If these are ACL-protected pytest leftovers, rerun from an "
+            "elevated/admin shell after verifying each path is under the project root."
+        )
     return 1 if skipped else 0
 
 
@@ -343,6 +586,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run platform doctor plus focused maintenance tests.",
     )
     quick_check_parser.set_defaults(handler=lambda _args: run_quick_check())
+
+    hygiene_parser = subparsers.add_parser(
+        "workspace-hygiene",
+        help="Report local trace, report, cache, and inaccessible artifact paths.",
+    )
+    hygiene_parser.set_defaults(handler=lambda _args: run_workspace_hygiene())
 
     clean_parser = subparsers.add_parser(
         "clean-local-artifacts",

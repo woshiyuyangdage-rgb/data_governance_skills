@@ -12,7 +12,7 @@ from app.core.models.governance_delivery_manifest import GovernanceDeliveryManif
 from app.core.models.governance_delivery_package_result import (
     GovernanceDeliveryPackageResult,
 )
-from app.core.utils.file_utils import ensure_directory
+from app.core.utils.file_utils import ensure_directory, resolve_allowed_local_path
 from app.core.utils.time_utils import utc_now_seconds
 
 
@@ -134,7 +134,11 @@ class GovernanceDeliveryBuilder:
         reports: dict[str, str] | None = None,
     ) -> tuple[GovernanceDeliveryManifest, GovernanceDeliveryPackageResult, list[ConfirmationWorkbookResult]]:
         """Build a local directory with confirmation workbooks and manifest."""
-        package_dir = Path(output_dir) / package_name
+        resolved_output_dir = resolve_allowed_local_path(
+            output_dir,
+            path_label="output_dir",
+        )
+        package_dir = resolved_output_dir / package_name
         ensure_directory(package_dir)
 
         effective_mapping = confirmed_mapping_results or mapping_results or []

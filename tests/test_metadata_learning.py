@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from app.core.parser import metadata_completion, metadata_learning
 from app.core.parser.metadata_learning import (
@@ -14,6 +15,8 @@ from app.core.parser.metadata_learning import (
     prune_invalid_metadata_completion_memory,
     summarize_metadata_completion_memory,
 )
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 def test_learning_memory_extracts_quality_metadata(tmp_path: Path) -> None:
@@ -41,6 +44,33 @@ def test_learning_memory_extracts_quality_metadata(tmp_path: Path) -> None:
     assert summary.table_memory_count == 1
     assert field_memory.iloc[0]["field_name_cn"] == "客户等级"
     assert table_memory.iloc[0]["table_name_cn"] == "客户主数据"
+
+
+def test_learning_memory_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(LocalPathAccessError):
+        learn_metadata_memory_from_dataframe(
+            pd.DataFrame(
+                [
+                    {
+                        "table_name": "customer_master",
+                        "field_name": "customer_level",
+                    }
+                ]
+            ),
+            source="quality_sample.csv",
+            output_dir=outside_dir,
+        )
+
+    assert not outside_dir.exists()
 
 
 def test_completion_prefers_learned_memory(monkeypatch, tmp_path: Path) -> None:

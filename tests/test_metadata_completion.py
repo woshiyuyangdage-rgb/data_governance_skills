@@ -15,6 +15,8 @@ from app.core.parser.metadata_completion import (
     metadata_completion_changes_to_dataframe,
     save_completed_metadata,
 )
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 @pytest.fixture(autouse=True)
@@ -136,6 +138,30 @@ def test_save_completed_metadata_persists_only_reviewed_changes(tmp_path: Path) 
     assert tables[0].table_name == "transaction_detail"
     assert tables[0].fields[0].field_name_cn
     assert tables[0].fields[0].field_description is None
+
+
+def test_save_completed_metadata_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+    source_dataframe = pd.DataFrame(
+        [{"table_name": "transaction_detail", "field_name": "txn_amt"}]
+    )
+    suggestions = complete_metadata_dataframe(source_dataframe)
+
+    with pytest.raises(LocalPathAccessError):
+        save_completed_metadata(
+            suggestions,
+            output_dir=outside_dir,
+            base_filename="outside_completed",
+        )
+
+    assert not outside_dir.exists()
 
 
 def test_completion_accepts_human_edited_final_value() -> None:

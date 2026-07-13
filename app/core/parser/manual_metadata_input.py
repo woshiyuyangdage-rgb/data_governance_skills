@@ -15,7 +15,12 @@ import pandas as pd
 from app.core.models.table_meta import TableMeta
 from app.core.parser._shared import STANDARD_COLUMNS, clean_text, dataframe_to_tables
 from app.core.parser.parser_exceptions import EmptyInputFileError, ParserError
-from app.core.utils.file_utils import ensure_directory, sanitize_filename
+from app.core.utils.file_utils import (
+    LocalPathAccessError,
+    ensure_directory,
+    resolve_allowed_local_path,
+    sanitize_filename,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 MANUAL_METADATA_OUTPUT_DIR = PROJECT_ROOT / "outputs" / "manual_metadata"
@@ -137,7 +142,13 @@ def save_manual_metadata_records(
 ) -> str:
     """Persist manual metadata rows as a local CSV file and return its path."""
     dataframe = manual_metadata_records_to_dataframe(records)
-    target_dir = Path(output_dir or MANUAL_METADATA_OUTPUT_DIR)
+    try:
+        target_dir = resolve_allowed_local_path(
+            output_dir or MANUAL_METADATA_OUTPUT_DIR,
+            path_label="output_dir",
+        )
+    except LocalPathAccessError as exc:
+        raise ParserError(str(exc)) from exc
     ensure_directory(target_dir)
 
     base_name = sanitize_filename(base_filename or "manual_metadata")

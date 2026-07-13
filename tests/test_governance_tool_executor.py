@@ -6,6 +6,7 @@ from app.core.agent import session_store
 from app.core.audit import trace_store
 from app.core.audit.trace_store import get_trace
 from app.core.tools.governance_tool_executor import GovernanceToolExecutor
+from app.core.utils import file_utils
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "samples" / "sample_metadata.csv"
@@ -143,6 +144,54 @@ def test_executor_can_build_and_export_execution_package(
     assert trace is not None
     assert trace.package_rule_count == 1
     assert trace.exported_package_path is not None
+
+
+def test_executor_rejects_quality_export_output_dir_outside_allowed_roots(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_runtime_dirs(tmp_path, monkeypatch)
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+    executor = GovernanceToolExecutor()
+    confirmed_rules = [
+        {
+            "source_table_name": "sales_order",
+            "source_field_name": "order_id",
+            "recommended_field_name": "order_id",
+            "rule_type": "not_null",
+            "rule_expression": "not_null",
+            "severity": "high",
+            "priority": "P1",
+            "confirmation_source": "override_accept",
+        }
+    ]
+
+    rule_response = executor.export_confirmed_quality_rules(
+        {
+            "confirmed_quality_rules": confirmed_rules,
+            "export_format": "json",
+            "output_dir": str(outside_dir),
+            "base_filename": "outside_quality_rules",
+        }
+    )
+    package_response = executor.export_execution_ready_package(
+        {
+            "confirmed_quality_rules": confirmed_rules,
+            "export_format": "manifest",
+            "output_dir": str(outside_dir),
+            "base_filename": "outside_execution_package",
+        }
+    )
+
+    assert rule_response.status == "failed"
+    assert package_response.status == "failed"
+    assert "outside allowed local roots" in rule_response.message
+    assert "outside allowed local roots" in package_response.message
+    assert not outside_dir.exists()
 
 
 def test_executor_can_assess_rag_quality_and_record_trace(

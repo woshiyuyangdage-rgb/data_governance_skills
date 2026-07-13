@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from openpyxl import load_workbook
 
 from app.core.adapters.execution_package_builder import ExecutionPackageBuilder
@@ -57,6 +58,8 @@ from app.core.reports.report_service import (
     export_all_reports,
 )
 from app.core.review import override_store
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_METADATA_PATH = PROJECT_ROOT / "app" / "data" / "samples" / "sample_metadata.csv"
@@ -105,6 +108,22 @@ def test_export_all_reports_returns_existing_paths(tmp_path: Path) -> None:
     assert set(report_paths.keys()) == {"json", "markdown", "excel"}
     for report_path in report_paths.values():
         assert Path(report_path).exists()
+
+
+def test_export_all_reports_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(LocalPathAccessError):
+        export_all_reports(_build_demo_result(), str(outside_dir), "outside_report")
+
+    assert not outside_dir.exists()
 
 
 def test_build_report_base_filename_uses_profile_report_mode() -> None:

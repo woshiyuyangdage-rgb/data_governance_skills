@@ -9,7 +9,7 @@ import pandas as pd
 
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.normalize import expand_tokens, normalize_tokens, split_tokens
-from app.core.utils.file_utils import ensure_directory
+from app.core.utils.file_utils import ensure_directory, resolve_allowed_local_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 LEARNED_MAPPING_DIR = PROJECT_ROOT / "app" / "data" / "learned_mapping"
@@ -378,7 +378,10 @@ def learn_standard_mapping_memory_from_review_records(
     output_dir: str | Path | None = None,
 ) -> StandardMappingLearningSummary:
     """Merge accepted/edited review records into the local mapping memory."""
-    target_dir = Path(output_dir or LEARNED_MAPPING_DIR)
+    target_dir = resolve_allowed_local_path(
+        output_dir or LEARNED_MAPPING_DIR,
+        path_label="output_dir",
+    )
     ensure_directory(target_dir)
     memory_path = target_dir / STANDARD_MAPPING_MEMORY_PATH.name
     new_rows = [

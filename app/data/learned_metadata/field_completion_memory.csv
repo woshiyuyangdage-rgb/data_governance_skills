@@ -1,11 +1,11 @@
 field_key,field_name,field_name_cn,field_description,table_name,table_name_cn,business_domain,source
-customer_name,customer_name,客户名称,Official customer display name.,customer_master,客户主数据,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-created_date,created_dt,创建日期,Creation date of the customer record.,customer_master,客户主数据,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-order_identifier,Order__ID,订单ID,Order identifier.,Sales Order Header,销售订单头,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-order_status,order_status,订单状态,Current order status.,Sales Order Header,销售订单头,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-order_amount,order_amt,订单金额,Order amount before settlement.,Sales Order Header,销售订单头,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-customer_identifier,customer_id,客户ID,Customer identifier,ods_customer_snapshot,客户快照,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-snapshot_date,snapshot_dt,快照日期,Snapshot business date,ods_customer_snapshot,客户快照,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-batch_number,batch_no,批次号,ETL batch identifier,ods_customer_snapshot,客户快照,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-log_identifier,log_id,日志ID,Audit log identifier,user_audit_log,用户审计日志,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
-event_trace_code,event_trace_code,事件追踪编码,Trace code for audit event.,user_audit_log,用户审计日志,,D:\Projects\data_governance_skills\app\data\samples\sample_metadata.csv
+customer_name,customer_name,客户名称,Official customer display name.,customer_master,客户主数据,,app/data/samples/sample_metadata.csv
+created_date,created_dt,创建日期,Creation date of the customer record.,customer_master,客户主数据,,app/data/samples/sample_metadata.csv
+order_identifier,Order__ID,订单ID,Order identifier.,Sales Order Header,销售订单头,,app/data/samples/sample_metadata.csv
+order_status,order_status,订单状态,Current order status.,Sales Order Header,销售订单头,,app/data/samples/sample_metadata.csv
+order_amount,order_amt,订单金额,Order amount before settlement.,Sales Order Header,销售订单头,,app/data/samples/sample_metadata.csv
+customer_identifier,customer_id,客户ID,Customer identifier,ods_customer_snapshot,客户快照,,app/data/samples/sample_metadata.csv
+snapshot_date,snapshot_dt,快照日期,Snapshot business date,ods_customer_snapshot,客户快照,,app/data/samples/sample_metadata.csv
+batch_number,batch_no,批次号,ETL batch identifier,ods_customer_snapshot,客户快照,,app/data/samples/sample_metadata.csv
+log_identifier,log_id,日志ID,Audit log identifier,user_audit_log,用户审计日志,,app/data/samples/sample_metadata.csv
+event_trace_code,event_trace_code,事件追踪编码,Trace code for audit event.,user_audit_log,用户审计日志,,app/data/samples/sample_metadata.csv

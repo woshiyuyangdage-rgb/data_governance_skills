@@ -18,6 +18,7 @@ from app.core.orchestrator.pipeline_service import (
     run_p0_plus_mapping_plus_stg_plus_quality_from_file,
     run_p0_plus_mapping_plus_stg_plus_quality_with_review_and_package_from_file,
 )
+from app.core.utils.file_utils import resolve_allowed_local_path
 
 router = APIRouter()
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -96,8 +97,9 @@ def export_execution_ready_package_route(
     """Export an execution-ready governance package."""
     try:
         package, confirmed_rules = _resolve_execution_ready_package_from_payload(payload)
-        output_dir = Path(
-            payload.output_dir or PROJECT_ROOT / "outputs" / "execution_packages"
+        output_dir = resolve_allowed_local_path(
+            payload.output_dir or PROJECT_ROOT / "outputs" / "execution_packages",
+            path_label="output_dir",
         )
         base_filename = payload.base_filename or (
             f"execution_ready_package_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

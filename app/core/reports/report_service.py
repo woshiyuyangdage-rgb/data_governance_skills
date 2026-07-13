@@ -8,7 +8,11 @@ from app.core.orchestrator.profile_loader import get_workflow_profile
 from app.core.reports.excel_reporter import export_workflow_result_to_excel
 from app.core.reports.json_reporter import export_workflow_result_to_json
 from app.core.reports.markdown_reporter import export_workflow_result_to_markdown
-from app.core.utils.file_utils import ensure_directory, sanitize_filename
+from app.core.utils.file_utils import (
+    ensure_directory,
+    resolve_allowed_local_path,
+    sanitize_filename,
+)
 
 DEFAULT_REPORT_OUTPUT_DIR = Path(__file__).resolve().parents[3] / "outputs" / "reports"
 
@@ -54,15 +58,25 @@ def export_all_reports(
     base_filename: str,
 ) -> dict[str, str]:
     """Export JSON, Markdown, and Excel reports in one call."""
-    ensure_directory(output_dir)
+    resolved_output_dir = resolve_allowed_local_path(
+        output_dir,
+        path_label="output_dir",
+    )
+    ensure_directory(resolved_output_dir)
     safe_name = sanitize_filename(base_filename)
 
-    json_path = export_workflow_result_to_json(result, f"{output_dir}/{safe_name}.json")
+    json_path = export_workflow_result_to_json(
+        result,
+        str(resolved_output_dir / f"{safe_name}.json"),
+    )
     markdown_path = export_workflow_result_to_markdown(
         result,
-        f"{output_dir}/{safe_name}.md",
+        str(resolved_output_dir / f"{safe_name}.md"),
     )
-    excel_path = export_workflow_result_to_excel(result, f"{output_dir}/{safe_name}.xlsx")
+    excel_path = export_workflow_result_to_excel(
+        result,
+        str(resolved_output_dir / f"{safe_name}.xlsx"),
+    )
 
     return {
         "json": json_path,

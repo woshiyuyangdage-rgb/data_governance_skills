@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from app.core.models.mapping_review_record import MappingReviewRecord
 from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     clear_standard_mapping_memory_by_field_key,
@@ -13,6 +15,8 @@ from app.core.skills.data_standard_mapping_skill.mapping_learning import (
     standard_mapping_memory_details,
     summarize_standard_mapping_memory,
 )
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 def test_learning_memory_saves_only_confirmed_mapping_reviews(tmp_path: Path) -> None:
@@ -60,6 +64,22 @@ def test_learning_memory_saves_only_confirmed_mapping_reviews(tmp_path: Path) ->
         memory,
         table_name="order_header",
     ) is None
+
+
+def test_standard_mapping_learning_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(LocalPathAccessError):
+        learn_standard_mapping_memory_from_review_records([], output_dir=outside_dir)
+
+    assert not outside_dir.exists()
 
 
 def test_learning_memory_keeps_latest_mapping_for_same_field(tmp_path: Path) -> None:

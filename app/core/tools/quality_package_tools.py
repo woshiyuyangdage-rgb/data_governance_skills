@@ -23,6 +23,7 @@ from app.core.tools.quality_tool_payloads import (
     coerce_confirmed_quality_rules,
     coerce_execution_ready_package,
 )
+from app.core.utils.file_utils import resolve_allowed_local_path
 from app.core.utils.time_utils import utc_now_compact
 
 
@@ -157,9 +158,10 @@ class QualityPackageToolMixin:
                         quality_overrides,
                     )
 
-            output_dir = Path(
+            output_dir = resolve_allowed_local_path(
                 self._optional_string(arguments, "output_dir")
-                or (Path(__file__).resolve().parents[3] / "outputs" / "rule_exports")
+                or (Path(__file__).resolve().parents[3] / "outputs" / "rule_exports"),
+                path_label="output_dir",
             )
             base_filename = (
                 self._optional_string(arguments, "base_filename")
@@ -311,13 +313,14 @@ class QualityPackageToolMixin:
             package, _, confirmed_rules = (
                 _resolve_execution_ready_package_from_arguments(self, arguments)
             )
-            output_dir = Path(
+            output_dir = resolve_allowed_local_path(
                 self._optional_string(arguments, "output_dir")
                 or (
                     Path(__file__).resolve().parents[3]
                     / "outputs"
                     / "execution_packages"
-                )
+                ),
+                path_label="output_dir",
             )
             base_filename = (
                 self._optional_string(arguments, "base_filename")

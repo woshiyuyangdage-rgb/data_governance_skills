@@ -2,9 +2,13 @@
 
 from pathlib import Path
 
+import pytest
+
 from app.core.delivery.delivery_service import DeliveryService
 from app.core.models.mapping_result import MappingResult
 from app.core.models.workflow_result import WorkflowResult
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 def test_delivery_service_builds_workbooks_and_package(tmp_path: Path) -> None:
@@ -43,4 +47,21 @@ def test_delivery_service_builds_workbooks_and_package(tmp_path: Path) -> None:
             "package_manifest"
         ]
     ).exists()
+
+
+def test_delivery_service_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(LocalPathAccessError):
+        DeliveryService().build_confirmation_workbooks(
+            WorkflowResult(),
+            output_dir=str(outside_dir),
+        )
 

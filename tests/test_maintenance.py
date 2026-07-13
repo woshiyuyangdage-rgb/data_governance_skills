@@ -1,5 +1,7 @@
 """Tests for command-line maintenance helpers."""
 
+from pathlib import Path
+
 from app import maintenance
 from app.core.models.validation_result import ValidationResult
 
@@ -119,6 +121,7 @@ def test_maintenance_main_without_command_prints_help(capsys) -> None:
     captured = capsys.readouterr()
     assert exit_code == 2
     assert "validate-config" in captured.out
+    assert "workspace-hygiene" in captured.out
     assert "quick-check" in captured.out
     assert "commands" in captured.out
 
@@ -283,15 +286,212 @@ def test_domain_delivery_reference_check_reports_missing_pack(monkeypatch) -> No
     ]
 
 
+def test_version_consistency_check_accepts_matching_versions(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "demo"\nversion = "1.2.3"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(maintenance, "_get_application_version", lambda: "1.2.3")
+
+    assert maintenance._check_version_consistency() == []
+
+
+def test_version_consistency_check_reports_mismatch(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "demo"\nversion = "1.2.3"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(maintenance, "_get_application_version", lambda: "1.2.4")
+
+    assert maintenance._check_version_consistency() == [
+        "pyproject.toml project version '1.2.3' does not match FastAPI app version "
+        "'1.2.4'"
+    ]
+
+
+def test_dependency_layering_check_accepts_split_dependencies(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "requirements.txt").write_text(
+        "fastapi>=0.110,<1.0\nstreamlit>=1.32,<2.0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "requirements-dev.txt").write_text(
+        "-r requirements.txt\npytest>=8.0,<9.0\nruff\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+
+    assert maintenance._check_dependency_layering() == []
+
+
+def test_dependency_layering_check_reports_runtime_dev_dependencies(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "requirements.txt").write_text(
+        "fastapi>=0.110,<1.0\npytest>=8.0,<9.0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "requirements-dev.txt").write_text(
+        "-r requirements.txt\npytest>=8.0,<9.0\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+
+    assert maintenance._check_dependency_layering() == [
+        "development-only dependency 'pytest' belongs in requirements-dev.txt",
+        "requirements-dev.txt is missing required development dependency 'ruff'",
+    ]
+
+
 def test_print_common_commands_lists_daily_operations(capsys) -> None:
     exit_code = maintenance.print_common_commands()
 
     captured = capsys.readouterr()
     assert exit_code == 0
     assert "Common local commands" in captured.out
+    assert "python -m app.maintenance workspace-hygiene" in captured.out
     assert "python -m app.maintenance doctor" in captured.out
     assert "python -m app.maintenance quick-check" in captured.out
+    assert "python -m ruff check app tests" in captured.out
     assert "python -m pytest -q" in captured.out
+
+
+def test_collect_workspace_hygiene_counts_runtime_artifacts(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    trace_dir = tmp_path / "app" / "data" / "audit" / "execution_traces"
+    trace_dir.mkdir(parents=True)
+    (trace_dir / "trace-a.json").write_text("{}", encoding="utf-8")
+    (trace_dir / ".gitkeep").write_text("", encoding="utf-8")
+
+    report_dir = tmp_path / "outputs" / "reports"
+    report_dir.mkdir(parents=True)
+    (report_dir / "report.json").write_text("{}", encoding="utf-8")
+    (report_dir / "report.md").write_text("# report", encoding="utf-8")
+
+    (tmp_path / "app" / "__pycache__").mkdir()
+    (tmp_path / "tests" / ".pytest_cache").mkdir(parents=True)
+
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+
+    summary = maintenance.collect_workspace_hygiene()
+
+    assert summary == {
+        "execution_trace_files": 1,
+        "report_files": 2,
+        "cache_directories": 2,
+        "inaccessible_paths": [],
+    }
+
+
+def test_run_workspace_hygiene_reports_inaccessible_paths(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        maintenance,
+        "collect_workspace_hygiene",
+        lambda: {
+            "execution_trace_files": 3,
+            "report_files": 4,
+            "cache_directories": 5,
+            "inaccessible_paths": ["app/data/pytest_tmp_p3: Access denied"],
+        },
+    )
+
+    exit_code = maintenance.run_workspace_hygiene()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "Execution trace JSON files: 3" in captured.out
+    assert "[WARN] inaccessible local artifact paths detected" in captured.out
+    assert "app/data/pytest_tmp_p3: Access denied" in captured.out
+    assert "elevated/admin shell" in captured.out
+
+
+def test_iter_project_directories_bottom_up_skips_excluded_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    (tmp_path / ".venv" / "Lib" / "site-packages" / "pkg" / "__pycache__").mkdir(
+        parents=True
+    )
+    (tmp_path / "app" / "__pycache__").mkdir(parents=True)
+
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+
+    relative_directories = {
+        path.relative_to(tmp_path) for path in maintenance._iter_project_directories_bottom_up()
+    }
+
+    assert Path("app") / "__pycache__" in relative_directories
+    assert not any(path.parts[0] == ".venv" for path in relative_directories)
+
+
+def test_clean_local_artifacts_skips_virtualenv_and_removes_project_cache(
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+) -> None:
+    virtualenv_cache = (
+        tmp_path / ".venv" / "Lib" / "site-packages" / "pkg" / "__pycache__"
+    )
+    app_cache = tmp_path / "app" / "core" / "__pycache__"
+    test_cache = tmp_path / "tests" / ".pytest_cache"
+    pytest_parent = tmp_path / "outputs" / "pytest_parent3"
+    pytest_tmp = tmp_path / "outputs" / "pytest_tmp_example"
+    virtualenv_cache.mkdir(parents=True)
+    app_cache.mkdir(parents=True)
+    test_cache.mkdir(parents=True)
+    pytest_parent.mkdir(parents=True)
+    pytest_tmp.mkdir(parents=True)
+
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+
+    exit_code = maintenance.clean_local_artifacts()
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert virtualenv_cache.exists()
+    assert not app_cache.exists()
+    assert not test_cache.exists()
+    assert not pytest_parent.exists()
+    assert not pytest_tmp.exists()
+    assert "Removed 4 directories" in captured.out
+    assert ".venv" not in captured.out
+
+
+def test_clean_local_artifacts_reports_admin_hint_for_skipped_cache(
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+) -> None:
+    cache_path = tmp_path / "app" / "__pycache__"
+    cache_path.mkdir(parents=True)
+
+    def deny_remove(_path: Path) -> None:
+        raise PermissionError("Access is denied")
+
+    monkeypatch.setattr(maintenance, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(maintenance.shutil, "rmtree", deny_remove)
+
+    exit_code = maintenance.clean_local_artifacts()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert cache_path.exists()
+    assert "Skipped 1 directories" in captured.out
+    assert "Access is denied" in captured.out
+    assert "elevated/admin shell" in captured.out
 
 
 def test_quick_check_runs_doctor_then_focused_tests(monkeypatch) -> None:

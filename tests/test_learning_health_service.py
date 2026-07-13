@@ -1,6 +1,9 @@
 """Tests for learned-memory health service."""
 
 import json
+from pathlib import Path
+
+import pytest
 
 from app.core.learning import learning_health_service
 from app.core.learning.learning_health_service import LearningHealthService
@@ -16,6 +19,8 @@ from app.core.skills.stg_standardization_skill.stg_learning import (
     StgLearningSummary,
     StgMemoryHealth,
 )
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 def test_learning_health_service_summarizes_all_learning_memories(monkeypatch) -> None:
@@ -422,6 +427,41 @@ def test_learning_health_service_exports_maintenance_report(
     assert "Learning Memory Maintenance Report" in markdown_path.read_text(
         encoding="utf-8"
     )
+
+
+def test_learning_health_service_rejects_report_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    def fake_maintenance_report(
+        self,
+        backup_limit: int = 3,
+    ) -> dict[str, object]:
+        return {
+            "generated_at": "2026-06-08T00:00:00Z",
+            "health": {"total_memory_count": 0},
+            "detail_counts": {},
+            "backup_summary": {"backup_count": 0},
+            "recommendations": [],
+            "markdown": "# Learning Memory Maintenance Report",
+        }
+
+    monkeypatch.setattr(
+        LearningHealthService,
+        "maintenance_report",
+        fake_maintenance_report,
+    )
+
+    with pytest.raises(LocalPathAccessError):
+        LearningHealthService().export_maintenance_report(output_dir=outside_dir)
+
+    assert not outside_dir.exists()
 
 
 def test_learning_health_service_backs_up_before_pruning_invalid(

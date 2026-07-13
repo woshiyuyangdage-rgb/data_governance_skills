@@ -70,9 +70,13 @@ python -m streamlit run app/ui/streamlit_app.py
 运行基础检查：
 
 ```bash
-python -m pytest -q
+python -m pip install -r requirements-dev.txt
+python -m ruff check app tests
 python -m app.maintenance doctor
+python -m pytest -q
 ```
+
+仓库包含 GitHub Actions 配置，推送到 `main`、提交 pull request 或手动触发时，会在 Python 3.10 和 3.13 上运行同一套检查。
 
 ### 输入文件
 
@@ -96,9 +100,11 @@ python -m app.maintenance doctor
 
 ```json
 {
-  "file_path": "D:/Projects/data_governance_skills/app/data/samples/sample_metadata.csv"
+  "file_path": "app/data/samples/sample_metadata.csv"
 }
 ```
+
+本地文件读取和输出目录默认限制在项目安全根目录内。可信单用户场景如果需要读取或写入项目目录外的本地路径，可以通过 `DATA_GOVERNANCE_ALLOWED_LOCAL_ROOTS` 追加允许根目录；多个目录使用当前操作系统的路径分隔符连接。
 
 ### 常规治理流程
 

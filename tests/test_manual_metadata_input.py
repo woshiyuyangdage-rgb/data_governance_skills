@@ -2,11 +2,15 @@
 
 from pathlib import Path
 
+import pytest
+
 from app.core.parser.loader import load_metadata_file
 from app.core.parser.manual_metadata_input import (
     manual_metadata_records_to_tables,
     save_manual_metadata_records,
 )
+from app.core.parser.parser_exceptions import ParserError
+from app.core.utils import file_utils
 
 
 def test_manual_metadata_records_convert_to_tables_with_carried_table_context() -> None:
@@ -66,3 +70,27 @@ def test_save_manual_metadata_records_creates_reusable_csv(tmp_path: Path) -> No
     assert len(tables) == 1
     assert tables[0].table_name == "customer_master"
     assert tables[0].fields[0].field_name == "customer_id"
+
+
+def test_save_manual_metadata_records_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(ParserError) as exc_info:
+        save_manual_metadata_records(
+            [
+                {
+                    "table_name": "customer_master",
+                    "field_name": "customer_id",
+                }
+            ],
+            output_dir=outside_dir,
+        )
+
+    assert "outside allowed local roots" in str(exc_info.value)

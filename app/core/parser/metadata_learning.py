@@ -10,7 +10,7 @@ import pandas as pd
 from app.core.models.table_meta import TableMeta
 from app.core.normalize import expand_tokens, normalize_tokens, split_tokens
 from app.core.parser.loader import load_metadata_file
-from app.core.utils.file_utils import ensure_directory
+from app.core.utils.file_utils import ensure_directory, resolve_allowed_local_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 LEARNED_METADATA_DIR = PROJECT_ROOT / "app" / "data" / "learned_metadata"
@@ -267,7 +267,7 @@ def _metadata_memory_paths(
 ) -> tuple[Path, Path]:
     if output_dir is None:
         return FIELD_MEMORY_PATH, TABLE_MEMORY_PATH
-    target_dir = Path(output_dir)
+    target_dir = resolve_allowed_local_path(output_dir, path_label="output_dir")
     return target_dir / FIELD_MEMORY_PATH.name, target_dir / TABLE_MEMORY_PATH.name
 
 
@@ -441,7 +441,10 @@ def learn_metadata_memory_from_tables(
     output_dir: str | Path | None = None,
 ) -> MetadataLearningSummary:
     """Merge high-quality metadata into the local completion memory."""
-    target_dir = Path(output_dir or LEARNED_METADATA_DIR)
+    target_dir = resolve_allowed_local_path(
+        output_dir or LEARNED_METADATA_DIR,
+        path_label="output_dir",
+    )
     ensure_directory(target_dir)
     field_path = target_dir / FIELD_MEMORY_PATH.name
     table_path = target_dir / TABLE_MEMORY_PATH.name

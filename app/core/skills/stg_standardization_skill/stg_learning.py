@@ -10,7 +10,7 @@ import pandas as pd
 from app.core.models.stg_field_suggestion import StgFieldSuggestion
 from app.core.models.stg_review_record import StgReviewRecord
 from app.core.normalize import clean_text, split_tokens
-from app.core.utils.file_utils import ensure_directory
+from app.core.utils.file_utils import ensure_directory, resolve_allowed_local_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 LEARNED_STG_DIR = PROJECT_ROOT / "app" / "data" / "learned_stg"
@@ -385,7 +385,10 @@ def learn_stg_memory_from_review_records(
     output_dir: str | Path | None = None,
 ) -> StgLearningSummary:
     """Merge accepted/edited STG review records into local memory."""
-    target_dir = Path(output_dir or LEARNED_STG_DIR)
+    target_dir = resolve_allowed_local_path(
+        output_dir or LEARNED_STG_DIR,
+        path_label="output_dir",
+    )
     ensure_directory(target_dir)
     memory_path = target_dir / STG_FIELD_MEMORY_PATH.name
     new_rows = [

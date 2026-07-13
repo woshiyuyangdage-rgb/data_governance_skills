@@ -44,7 +44,11 @@ from app.core.skills.stg_standardization_skill.stg_learning import (
     stg_field_memory_details,
     summarize_stg_field_memory,
 )
-from app.core.utils.file_utils import ensure_directory, sanitize_filename
+from app.core.utils.file_utils import (
+    ensure_directory,
+    resolve_allowed_local_path,
+    sanitize_filename,
+)
 from app.core.utils.time_utils import utc_now_compact, utc_now_seconds
 
 DEFAULT_LEARNING_REPORT_OUTPUT_DIR = (
@@ -349,7 +353,10 @@ class LearningHealthService:
     ) -> dict[str, object]:
         """Export the consolidated maintenance report as JSON and Markdown."""
         report = self.maintenance_report(backup_limit=backup_limit)
-        target_dir = Path(output_dir or DEFAULT_LEARNING_REPORT_OUTPUT_DIR)
+        target_dir = resolve_allowed_local_path(
+            output_dir or DEFAULT_LEARNING_REPORT_OUTPUT_DIR,
+            path_label="output_dir",
+        )
         ensure_directory(target_dir)
         safe_name = sanitize_filename(
             base_filename or f"learning_memory_maintenance_{utc_now_compact()}"

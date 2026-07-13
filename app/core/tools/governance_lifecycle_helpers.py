@@ -26,6 +26,7 @@ from app.core.orchestrator.pipeline_service import (
     run_governance_readiness_assessment_from_file,
     run_governance_readiness_assessment_with_review_from_file,
 )
+from app.core.utils.file_utils import resolve_allowed_local_path
 from app.core.utils.time_utils import utc_now_compact
 
 
@@ -161,13 +162,14 @@ def maybe_export_governance_work_package(
     if not should_export:
         return {}
 
-    output_dir = Path(
+    output_dir = resolve_allowed_local_path(
         context._optional_string(arguments, "output_dir")
         or (
             Path(__file__).resolve().parents[3]
             / "outputs"
             / "governance_work_packages"
-        )
+        ),
+        path_label="output_dir",
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     base_filename = (

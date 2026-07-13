@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+import pytest
+from fastapi import HTTPException
+
 from app.api.routes_jobs import (
     ConfirmedQualityRuleExportRequest,
     ExecutionPackageBuildRequest,
@@ -16,6 +19,7 @@ from app.api.routes_jobs import (
 )
 from app.core.models.confirmed_quality_rule import ConfirmedQualityRule
 from app.core.models.cross_field_quality_rule import CrossFieldQualityRule
+from app.core.utils import file_utils
 
 
 def test_quality_rule_review_and_summary_routes() -> None:
@@ -111,6 +115,42 @@ def test_export_confirmed_quality_rules_route(tmp_path: Path) -> None:
     assert Path(export_result["output_path"]).exists()
 
 
+def test_export_confirmed_quality_rules_route_rejects_outside_output_dir(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        export_confirmed_quality_rules_route(
+            ConfirmedQualityRuleExportRequest(
+                export_format="json",
+                confirmed_quality_rules=[
+                    ConfirmedQualityRule(
+                        source_table_name="sales_order",
+                        source_field_name="order_id",
+                        recommended_field_name="order_id",
+                        rule_type="not_null",
+                        rule_expression="not_null",
+                        severity="high",
+                        priority="P1",
+                        confirmation_source="override_accept",
+                    )
+                ],
+                output_dir=str(outside_dir),
+                base_filename="outside_quality_rules",
+            )
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "outside allowed local roots" in str(exc_info.value.detail)
+    assert not outside_dir.exists()
+
+
 def test_execution_package_build_and_export_routes(tmp_path: Path) -> None:
     confirmed_rule = ConfirmedQualityRule(
         source_table_name="sales_order",
@@ -145,3 +185,39 @@ def test_execution_package_build_and_export_routes(tmp_path: Path) -> None:
     assert export_result["rule_count"] == 1
     assert Path(export_result["output_path"]).exists()
     assert "supported_export_formats" in summary_response
+
+
+def test_export_execution_ready_package_route_rejects_outside_output_dir(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        export_execution_ready_package_route(
+            ExecutionPackageExportRequest(
+                export_format="manifest",
+                confirmed_quality_rules=[
+                    ConfirmedQualityRule(
+                        source_table_name="sales_order",
+                        source_field_name="order_id",
+                        recommended_field_name="order_id",
+                        rule_type="not_null",
+                        rule_expression="not_null",
+                        severity="high",
+                        priority="P1",
+                        confirmation_source="override_accept",
+                    )
+                ],
+                output_dir=str(outside_dir),
+                base_filename="outside_execution_package",
+            )
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "outside allowed local roots" in str(exc_info.value.detail)
+    assert not outside_dir.exists()

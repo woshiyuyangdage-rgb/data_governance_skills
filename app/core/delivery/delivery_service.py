@@ -9,7 +9,7 @@ from app.core.delivery.confirmation_workbook_exporter import (
 from app.core.delivery.governance_delivery_builder import GovernanceDeliveryBuilder
 from app.core.models.confirmation_workbook_result import ConfirmationWorkbookResult
 from app.core.models.workflow_result import WorkflowResult
-from app.core.utils.file_utils import ensure_directory
+from app.core.utils.file_utils import ensure_directory, resolve_allowed_local_path
 
 DEFAULT_DELIVERY_OUTPUT_DIR = (
     Path(__file__).resolve().parents[3] / "app" / "data" / "delivery_packages"
@@ -29,7 +29,10 @@ class DeliveryService:
 
     @staticmethod
     def _ensure_output_dir(output_dir: str | None = None) -> Path:
-        path = Path(output_dir) if output_dir else DEFAULT_DELIVERY_OUTPUT_DIR
+        path = resolve_allowed_local_path(
+            output_dir or DEFAULT_DELIVERY_OUTPUT_DIR,
+            path_label="output_dir",
+        )
         ensure_directory(path)
         return path
 

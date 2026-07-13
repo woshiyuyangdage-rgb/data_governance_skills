@@ -2,8 +2,12 @@
 
 from pathlib import Path
 
+import pytest
+
 from app.core.delivery.governance_delivery_builder import GovernanceDeliveryBuilder
 from app.core.models.mapping_result import MappingResult
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 def test_governance_delivery_builder_builds_manifest_and_package(
@@ -39,3 +43,21 @@ def test_governance_delivery_builder_builds_manifest_and_package(
     assert len(workbook_results) == 4
     assert Path(package_result.generated_files["package_manifest"]).exists()
 
+
+def test_governance_delivery_builder_rejects_output_dir_outside_allowed_roots(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(LocalPathAccessError):
+        GovernanceDeliveryBuilder().build_delivery_package(
+            output_dir=str(outside_dir),
+            package_name="outside_delivery",
+        )
+
+    assert not outside_dir.exists()

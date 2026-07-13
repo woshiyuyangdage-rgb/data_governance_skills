@@ -23,7 +23,11 @@ from app.core.parser.metadata_learning import (
     load_table_completion_memory,
     metadata_name_key,
 )
-from app.core.utils.file_utils import ensure_directory, sanitize_filename
+from app.core.utils.file_utils import (
+    ensure_directory,
+    resolve_allowed_local_path,
+    sanitize_filename,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 METADATA_COMPLETION_OUTPUT_DIR = PROJECT_ROOT / "outputs" / "metadata_completion"
@@ -541,7 +545,10 @@ def save_completed_metadata(
     base_filename: str | None = None,
 ) -> MetadataCompletionResult:
     """Persist a reviewed metadata dataframe and return an updated result."""
-    target_dir = Path(output_dir or METADATA_COMPLETION_OUTPUT_DIR)
+    target_dir = resolve_allowed_local_path(
+        output_dir or METADATA_COMPLETION_OUTPUT_DIR,
+        path_label="output_dir",
+    )
     ensure_directory(target_dir)
     base_name = sanitize_filename(base_filename or "completed_metadata")
     destination = target_dir / f"{Path(base_name).stem}_{uuid4().hex[:8]}.csv"

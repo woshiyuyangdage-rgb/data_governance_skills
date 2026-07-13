@@ -15,6 +15,7 @@ from app.core.orchestrator.pipeline_service import (
 from app.core.review.quality_override_store import load_quality_rule_overrides
 from app.core.review.quality_review_service import build_confirmed_quality_rules
 from app.core.skills.data_quality_rule_skill import QualityRuleRecommendationSkill
+from app.core.utils.file_utils import resolve_allowed_local_path
 
 router = APIRouter()
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -52,7 +53,10 @@ def export_confirmed_quality_rules_route(
                     load_quality_rule_overrides(),
                 )
 
-        output_dir = Path(payload.output_dir or PROJECT_ROOT / "outputs" / "rule_exports")
+        output_dir = resolve_allowed_local_path(
+            payload.output_dir or PROJECT_ROOT / "outputs" / "rule_exports",
+            path_label="output_dir",
+        )
         base_filename = payload.base_filename or (
             f"confirmed_quality_rules_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         )
