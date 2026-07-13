@@ -1,23 +1,33 @@
 """Local execution trace storage for tool-layer audit records."""
 
 import json
+import os
 from pathlib import Path
 from uuid import uuid4
 
 from app.core.models.execution_trace import ExecutionTrace
-from app.core.utils.file_utils import ensure_directory
+from app.core.utils.file_utils import ensure_directory, resolve_allowed_local_path
 from app.core.utils.time_utils import utc_now_seconds
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TRACE_DIR = PROJECT_ROOT / "app" / "data" / "audit" / "execution_traces"
+TRACE_DIR_ENV = "DATA_GOVERNANCE_TRACE_DIR"
 
 
 def _utc_now() -> str:
     return utc_now_seconds()
 
 
+def get_trace_dir() -> Path:
+    """Return the configured local directory for execution trace JSON files."""
+    env_value = os.environ.get(TRACE_DIR_ENV, "").strip()
+    if env_value:
+        return resolve_allowed_local_path(env_value, path_label="trace_dir")
+    return Path(TRACE_DIR).expanduser().resolve(strict=False)
+
+
 def _trace_path(trace_id: str) -> Path:
-    return TRACE_DIR / f"{trace_id}.json"
+    return get_trace_dir() / f"{trace_id}.json"
 
 
 def trace_to_dict(trace: ExecutionTrace) -> dict[str, object]:
@@ -54,7 +64,7 @@ def build_trace_summary(
 
 def save_trace(trace: ExecutionTrace) -> ExecutionTrace:
     """Persist one execution trace as a local JSON file."""
-    ensure_directory(TRACE_DIR)
+    ensure_directory(get_trace_dir())
     if not trace.trace_id:
         trace.trace_id = uuid4().hex
     if not trace.started_at:
@@ -82,11 +92,12 @@ def get_trace(trace_id: str) -> ExecutionTrace | None:
 
 def list_recent_traces(limit: int = 20) -> list[ExecutionTrace]:
     """Return recent traces sorted by file modification time."""
-    if not TRACE_DIR.exists():
+    trace_dir = get_trace_dir()
+    if not trace_dir.exists():
         return []
 
     trace_files = sorted(
-        TRACE_DIR.glob("*.json"),
+        trace_dir.glob("*.json"),
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )

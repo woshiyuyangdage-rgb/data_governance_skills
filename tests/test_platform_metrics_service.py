@@ -132,6 +132,26 @@ def test_collect_platform_metrics_aggregates_local_runtime_data(
         "workspace",
     }
 
+def test_collect_platform_metrics_reads_configured_trace_dir(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _patch_runtime_paths(tmp_path, monkeypatch)
+    configured_dir = tmp_path / "configured_traces"
+    monkeypatch.setenv(trace_store.TRACE_DIR_ENV, str(configured_dir))
+    trace_store.save_trace(
+        ExecutionTrace(
+            trace_id="configured-trace-1",
+            tool_name="configured_trace_dir",
+            status="success",
+            started_at="2026-06-29T12:00:00Z",
+        )
+    )
+
+    metrics = metrics_service.collect_platform_metrics()
+
+    assert _kpi(metrics, "execution_traces") == 1
+    assert (configured_dir / "configured-trace-1.json").exists()
 
 def test_collect_platform_metrics_applies_status_filters(
     tmp_path: Path,

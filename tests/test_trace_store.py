@@ -2,13 +2,18 @@
 
 from pathlib import Path
 
+import pytest
+
 from app.core.audit import trace_store
 from app.core.audit.trace_store import (
     build_trace_summary,
     get_trace,
+    get_trace_dir,
     list_recent_traces,
     save_trace,
 )
+from app.core.utils import file_utils
+from app.core.utils.file_utils import LocalPathAccessError
 
 
 def test_trace_store_handles_empty_directory(tmp_path: Path, monkeypatch) -> None:
@@ -18,6 +23,37 @@ def test_trace_store_handles_empty_directory(tmp_path: Path, monkeypatch) -> Non
 
     assert traces == []
 
+def test_trace_store_uses_configured_trace_dir(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    configured_dir = tmp_path / "configured_traces"
+    monkeypatch.setenv(trace_store.TRACE_DIR_ENV, str(configured_dir))
+
+    trace = build_trace_summary(tool_name="configured_trace_dir")
+    trace.status = "success"
+    saved = save_trace(trace)
+
+    assert get_trace_dir() == configured_dir.resolve(strict=False)
+    assert (configured_dir / f"{saved.trace_id}.json").exists()
+    assert get_trace(saved.trace_id) is not None
+
+
+def test_trace_store_rejects_configured_trace_dir_outside_allowed_roots(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    safe_root = tmp_path / "safe_project"
+    outside_dir = tmp_path / "outside_traces"
+    safe_root.mkdir()
+    monkeypatch.setattr(file_utils, "PROJECT_ROOT", safe_root)
+    monkeypatch.setenv(trace_store.TRACE_DIR_ENV, str(outside_dir))
+    monkeypatch.delenv(file_utils.ALLOWED_LOCAL_ROOTS_ENV, raising=False)
+
+    with pytest.raises(LocalPathAccessError):
+        get_trace_dir()
+
+    assert not outside_dir.exists()
 
 def test_trace_store_can_save_get_and_list_recent_traces(
     tmp_path: Path,

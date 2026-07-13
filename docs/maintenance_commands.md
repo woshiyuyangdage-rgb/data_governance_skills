@@ -97,6 +97,10 @@ $env:DATA_GOVERNANCE_ALLOWED_LOCAL_ROOTS = "D:\trusted-metadata"
 
 Use `;` between multiple roots on Windows and `:` on Unix-like systems.
 
+Execution traces default to `app/data/audit/execution_traces`. To move trace
+files to another trusted local directory, set `DATA_GOVERNANCE_TRACE_DIR` to a
+path that is inside the project tree or one of `DATA_GOVERNANCE_ALLOWED_LOCAL_ROOTS`.
+
 ## Run Quick Check
 
 Run this before small commits when you want a faster confidence pass than the full suite:

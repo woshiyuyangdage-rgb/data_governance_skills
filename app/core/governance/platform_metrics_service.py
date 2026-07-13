@@ -56,7 +56,7 @@ def _safe_counter_value(value: object | None, fallback: str = "unknown") -> str:
 
 
 def _load_recent_traces(limit: int = TRACE_SCAN_LIMIT) -> list[ExecutionTrace]:
-    trace_dir = trace_store.TRACE_DIR
+    trace_dir = trace_store.get_trace_dir()
     if not trace_dir.exists():
         return []
     traces: list[ExecutionTrace] = []

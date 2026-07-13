@@ -106,6 +106,8 @@ python -m pytest -q
 
 本地文件读取和输出目录默认限制在项目安全根目录内。可信单用户场景如果需要读取或写入项目目录外的本地路径，可以通过 `DATA_GOVERNANCE_ALLOWED_LOCAL_ROOTS` 追加允许根目录；多个目录使用当前操作系统的路径分隔符连接。
 
+执行 trace 默认写入 `app/data/audit/execution_traces`。如需把 trace 迁移到其他可信目录，可设置 `DATA_GOVERNANCE_TRACE_DIR`；该目录仍需位于项目根或 `DATA_GOVERNANCE_ALLOWED_LOCAL_ROOTS` 允许的根目录内。
+
 ### 常规治理流程
 
 ```text
